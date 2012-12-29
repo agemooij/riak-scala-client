@@ -78,6 +78,8 @@ abstract class RiakBucket[T : RootJsonFormat] {
 case class RiakBucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: ActorRef, name: String) extends RiakBucket[T] {
   import system.dispatcher
   import spray.client.HttpConduit._
+  import spray.http._
+  import spray.http.StatusCodes._
   import spray.httpx._
   import spray.httpx.unmarshalling._
   import spray.httpx.SprayJsonSupport._
@@ -88,11 +90,13 @@ case class RiakBucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: 
     val pipeline = sendReceive(httpConduit)
 
     pipeline(Get(url(key))).map { response =>
-      if (response.status.isSuccess)
-        response.entity.as[T] match {
-          case Right(value) => Some(value)
-          case Left(error) => None
-      } else None
+      response.status match {
+        case OK              => asEntityOption(response)
+        case MultipleChoices => None
+        case NotFound        => None
+        case BadRequest      => None
+        case other           => None
+      }
     }
   }
 
@@ -113,5 +117,34 @@ case class RiakBucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: 
 
     pipeline(Delete(url(key))).map(x => ())
   }
+
+
+  private def asEntityOption(response: HttpResponse): Option[T] = {
+    response.entity.as[T] match {
+      case Right(value) => Some(value)
+      case Left(error) => None
+    }
+  }
+}
+
+
+sealed abstract class RiakResult[+A] {
+  def value: A
+}
+
+case class RiakSuccess[+A](
+  value: A,
+  vclock: String,
+  etag: String
+  // lastModified: DateTime,
+  // links: Seq[RiakLink]
+) extends RiakResult[A] {
+
+}
+
+case class RiakFailure(
+  // error code (enum, similar to spray StatusCode)
+) extends RiakResult[Nothing] {
+  def value = throw new NoSuchElementException("RiakFailure.value")
 }
 
