@@ -1,9 +1,5 @@
 import com.typesafe.startscript.StartScriptPlugin
 
-seq(StartScriptPlugin.startScriptForClassesSettings: _*)
-
-seq(ScctPlugin.instrumentSettings : _*)
-
 name := "riak-scala-client"
 
 version := "0.1-SNAPSHOT"
@@ -36,7 +32,7 @@ libraryDependencies ++= {
     "com.typesafe.akka" %%  "akka-actor"             % akkaVersion,
     "com.typesafe.akka" %%  "akka-slf4j"             % akkaVersion,
     "io.spray"          %   "spray-client"           % sprayVersion,
-    "io.spray"          %%  "spray-json"  % "1.2.3",
+    "io.spray"          %%  "spray-json"             % "1.2.3",
     "com.basho.riak"    %   "riak-client"            % "1.0.6",
     "ch.qos.logback"    %   "logback-classic"        % "1.0.9"        % "runtime",
     "com.typesafe.akka" %%  "akka-testkit"           % akkaVersion    % "test",
