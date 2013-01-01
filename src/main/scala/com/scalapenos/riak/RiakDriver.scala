@@ -8,7 +8,7 @@ import spray.json.RootJsonFormat
 
 /*
 
-val client = RiakClient()
+val client = Riak()
 val connection = client.connect()
 val bucket = connection.bucket("test")
 
@@ -17,15 +17,15 @@ bucket
 */
 
 // ============================================================================
-// RiakClient
+// Riak
 // ============================================================================
 
-object RiakClient extends ExtensionId[RiakClient] with ExtensionIdProvider {
-  def lookup() = RiakClient
-  def createExtension(system: ExtendedActorSystem) = new RiakClient(system)
+object Riak extends ExtensionId[Riak] with ExtensionIdProvider {
+  def lookup() = Riak
+  def createExtension(system: ExtendedActorSystem) = new Riak(system)
 }
 
-class RiakClient(system: ExtendedActorSystem) extends Extension {
+class Riak(system: ExtendedActorSystem) extends Extension {
   def this() = this(ActorSystem("riak-scala-driver").asInstanceOf[ExtendedActorSystem])
 
   def connect(): RiakConnection = connect("127.0.0.1", 8098)
@@ -43,7 +43,7 @@ class RiakClient(system: ExtendedActorSystem) extends Extension {
 //       wrapped in another trait
 
 trait RiakConnection {
-  def bucket[T : RootJsonFormat](name: String): RiakBucket[T]
+  def bucket[T : RootJsonFormat](name: String): Bucket[T]
 }
 
 case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: Int) extends RiakConnection {
@@ -60,22 +60,22 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
     dispatchStrategy = DispatchStrategies.Pipelined // TODO: read this from the settings
   )))
 
-  def bucket[T : RootJsonFormat](name: String) = RiakBucketImpl(system, httpConduit, name)
+  def bucket[T : RootJsonFormat](name: String) = BucketImpl(system, httpConduit, name)
 }
 
 
 
 // ============================================================================
-// RiakBucket
+// Bucket
 // ============================================================================
 
-abstract class RiakBucket[T : RootJsonFormat] {
-  def fetch(key: String): Future[Option[T]]
-  def store(key: String, value: T): Future[T]
-  def delete(key: String): Future[Unit]
+abstract class Bucket[T : RootJsonFormat] {
+  def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]]
+  def store(key: String, value: T): Future[T] // Future[StoreResponse[T]]
+  def delete(key: String): Future[Unit] // Future[DeleteResponse[T]]
 }
 
-case class RiakBucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: ActorRef, name: String) extends RiakBucket[T] {
+case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: ActorRef, name: String) extends Bucket[T] {
   import system.dispatcher
   import spray.client.HttpConduit._
   import spray.http._
@@ -86,16 +86,16 @@ case class RiakBucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: 
 
   private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
 
-  def fetch(key: String): Future[Option[T]] = {
+  def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]] = {
     val pipeline = sendReceive(httpConduit)
 
     pipeline(Get(url(key))).map { response =>
       response.status match {
-        case OK              => asEntityOption(response)
-        case MultipleChoices => None
-        case NotFound        => None
-        case BadRequest      => None
-        case other           => None
+        case OK              => fetchedValue(response)
+        case MultipleChoices => resolveValues(response, resolver)
+        case NotFound        => FetchKeyNotFound
+        case BadRequest      => FetchParametersInvalid("Does Riak even give us a reason for this?")
+        case other           => FetchError("Unexpected response code '%s' on fetch".format(other))
       }
     }
   }
@@ -119,32 +119,86 @@ case class RiakBucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: 
   }
 
 
-  private def asEntityOption(response: HttpResponse): Option[T] = {
+  private def fetchedValue(response: HttpResponse): FetchResponse[T] = {
+    import com.github.nscala_time.time.Imports._
+
     response.entity.as[T] match {
-      case Right(value) => Some(value)
-      case Left(error) => None
+      case Right(value) => FetchedValue(value, "", "", DateTime.now) // TODO: fill in the header-derived values
+      case Left(error) => FetchValueUnmarshallingFailed(error.toString)
+    }
+  }
+
+  private def resolveValues(response: HttpResponse, resolver: Resolver[T]): FetchResponse[T] = {
+    // TODO: implement me!!
+
+    FetchError("Resolving multiple values using a resolver has not been implemented yet.")
+  }
+}
+
+
+// ============================================================================
+// Resolving multiple fetch values
+// ============================================================================
+
+// TODO: resolvers should take a set of FetchedValue[T]s, so that they can look at vector clocks, timestamps, etc.
+
+trait Resolver[T] {
+  def resolve(values: Set[FetchedValue[T]]): FetchedValue[T]
+}
+
+case class LastValueWinsResolver[T]() extends Resolver[T] {
+  def resolve(values: Set[FetchedValue[T]]) = {
+    values.reduceLeft { (first, second) =>
+      if (second.lastModified.isAfter(first.lastModified)) second
+      else first
     }
   }
 }
 
 
-sealed abstract class RiakResult[+A] {
+
+// ============================================================================
+// Responses
+// ============================================================================
+
+sealed trait RiakResponse {
+  def isSuccess: Boolean
+  def isFailure = !isSuccess
+}
+
+sealed trait RiakSuccess extends RiakResponse {
+  def isSuccess = true
+}
+
+sealed trait RiakFailure extends RiakResponse {
+  def isSuccess = false
+}
+
+
+import com.github.nscala_time.time.Imports._
+
+sealed abstract class FetchResponse[+A] extends RiakResponse {
   def value: A
 }
 
-case class RiakSuccess[+A](
+final case class FetchedValue[+A](
   value: A,
   vclock: String,
-  etag: String
-  // lastModified: DateTime,
+  etag: String,
+  lastModified: DateTime
   // links: Seq[RiakLink]
-) extends RiakResult[A] {
-
+  // meta: Seq[RiakMeta]
+) extends FetchResponse[A] with RiakSuccess {
+  // TODO: the usual Monad stuff, like map, flatmap, filter
 }
 
-case class RiakFailure(
-  // error code (enum, similar to spray StatusCode)
-) extends RiakResult[Nothing] {
+
+sealed abstract class FetchFailed extends FetchResponse[Nothing] with RiakFailure {
   def value = throw new NoSuchElementException("RiakFailure.value")
 }
+
+case object FetchKeyNotFound extends FetchFailed
+case class  FetchParametersInvalid(reason: String) extends FetchFailed
+case class  FetchValueUnmarshallingFailed(cause: String) extends FetchFailed
+case class  FetchError(cause: String) extends FetchFailed
 

@@ -16,11 +16,11 @@ class RiakDriverDataStoresSpec extends AkkaActorSystemSpecification {
 
   "The riak driver" should {
     "be able to perform a simple get-put-get-delete-get CRUD flow" in {
-      val client = RiakClient(system)
+      val client = Riak(system)
       val connection = client.connect()
       val bucket = connection.bucket[Kitten]("test")
 
-      Await.result(bucket.fetch("Nano"), 5 seconds) must beNone
+      Await.result(bucket.fetch("Nano"), 5 seconds) must beEqualTo(FetchKeyNotFound)
     }
   }
 
