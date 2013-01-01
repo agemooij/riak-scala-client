@@ -29,15 +29,15 @@ libraryDependencies ++= {
   val akkaVersion  = "2.1.0"
   val sprayVersion = "1.1-20121228"
   Seq(
-    "com.typesafe.akka" %%  "akka-actor"             % akkaVersion,
-    "com.typesafe.akka" %%  "akka-slf4j"             % akkaVersion,
-    "io.spray"          %   "spray-client"           % sprayVersion,
-    "io.spray"          %%  "spray-json"             % "1.2.3",
-    "com.basho.riak"    %   "riak-client"            % "1.0.6",
-    "ch.qos.logback"    %   "logback-classic"        % "1.0.9"        % "runtime",
-    "com.typesafe.akka" %%  "akka-testkit"           % akkaVersion    % "test",
-    "io.spray"          %   "spray-testkit"          % sprayVersion   % "test",
-    "org.specs2"        %%  "specs2"                 % "1.13"         % "test"
+    "com.typesafe.akka"       %%  "akka-actor"             % akkaVersion,
+    "com.typesafe.akka"       %%  "akka-slf4j"             % akkaVersion,
+    "io.spray"                %   "spray-client"           % sprayVersion,
+    "io.spray"                %%  "spray-json"             % "1.2.3",
+    "com.github.nscala-time"  %%  "nscala-time"            % "0.2.0",
+    "ch.qos.logback"          %   "logback-classic"        % "1.0.9"        % "runtime",
+    "com.typesafe.akka"       %%  "akka-testkit"           % akkaVersion    % "test",
+    "io.spray"                %   "spray-testkit"          % sprayVersion   % "test",
+    "org.specs2"              %%  "specs2"                 % "1.13"         % "test"
   )
 }
 
