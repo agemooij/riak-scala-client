@@ -84,11 +84,10 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   import spray.httpx.unmarshalling._
   import spray.httpx.SprayJsonSupport._
 
+  private def pipeline = sendReceive(httpConduit)
   private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
 
   def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]] = {
-    val pipeline = sendReceive(httpConduit)
-
     pipeline(Get(url(key))).map { response =>
       response.status match {
         case OK              => fetchedValue(response)
@@ -101,8 +100,6 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   }
 
   def store(key: String, value: T): Future[T] = {
-    val pipeline = sendReceive(httpConduit)
-
     pipeline(Put(url(key) + "?returnbody=true", value)).map { response =>
       if (response.status.isSuccess)
         response.entity.as[T] match {
@@ -113,8 +110,6 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   }
 
   def delete(key: String): Future[Unit] = {
-    val pipeline = sendReceive(httpConduit)
-
     pipeline(Delete(url(key))).map(x => ())
   }
 
