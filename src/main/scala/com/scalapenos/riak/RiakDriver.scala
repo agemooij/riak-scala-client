@@ -51,6 +51,8 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
   import spray.client._
   import spray.io.IOExtension
 
+  // TODO: set up a riak client id (use a GUID)
+
   private[this] val ioBridge = IOExtension(system).ioBridge()
   private[this] val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
   private[this] val httpConduit = system.actorOf(Props(new HttpConduit(
@@ -84,8 +86,6 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   import spray.httpx.unmarshalling._
   import spray.httpx.SprayJsonSupport._
 
-  private def pipeline = sendReceive(httpConduit)
-  private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
 
   def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]] = {
     pipeline(Get(url(key))).map { response =>
@@ -113,6 +113,9 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
     pipeline(Delete(url(key))).map(x => ())
   }
 
+
+  private def pipeline = sendReceive(httpConduit)
+  private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
 
   private def fetchedValue(response: HttpResponse): FetchResponse[T] = {
     import com.github.nscala_time.time.Imports._
