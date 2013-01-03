@@ -8,18 +8,9 @@ import spray.json.RootJsonFormat
 
 import org.joda.time.DateTime
 
-/*
-
-val client = Riak()
-val connection = client.connect()
-val bucket = connection.bucket("test")
-
-bucket
-
-*/
 
 // ============================================================================
-// Riak
+// Riak (the main entry point)
 // ============================================================================
 
 object Riak extends ExtensionId[Riak] with ExtensionIdProvider {
@@ -88,6 +79,7 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   import spray.httpx.unmarshalling._
   import spray.httpx.SprayJsonSupport._
 
+  private val clientId = "%s".format(java.util.UUID.randomUUID())
 
   def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]] = {
     pipeline(Get(url(key))).map { response =>
@@ -116,7 +108,10 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   }
 
 
-  private def pipeline = sendReceive(httpConduit)
+  private def pipeline = {
+    addHeader("X-Riak-ClientId", clientId) ~> sendReceive(httpConduit)
+  }
+
   private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
 
   private def fetchedValue(response: HttpResponse): FetchResponse[T] = fetchedValue(response.entity, response.headers)
