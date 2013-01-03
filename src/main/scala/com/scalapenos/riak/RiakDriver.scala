@@ -6,6 +6,8 @@ import akka.actor._
 
 import spray.json.RootJsonFormat
 
+import org.joda.time.DateTime
+
 /*
 
 val client = Riak()
@@ -77,10 +79,48 @@ abstract class Bucket[T : RootJsonFormat] {
   def delete(key: String): Future[Unit] // Future[DeleteResponse[T]]
 }
 
+import scala.reflect._
+private[riak] case class ActorBasedBucket[T : RootJsonFormat: ClassTag](bucketActor: ActorRef, name: String) extends Bucket[T] {
+  import BucketActor._
+  import scala.concurrent.duration._
+  import akka.pattern.ask
+  import akka.pattern.pipe
+  import akka.util.Timeout
+
+  implicit val timeout = Timeout(5 seconds)
+
+  def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()) = {
+    ask(bucketActor, Fetch(key, resolver)).mapTo[FetchResponse[T]]
+  }
+
+  // Future[StoreResponse[T]]
+  def store(key: String, value: T) = ask(bucketActor, Store(key, value)).mapTo[T]
+
+  // Future[DeleteResponse[T]]
+  def delete(key: String) = ask(bucketActor, Delete(key)).mapTo[Unit]
+}
+
+object BucketActor {
+  case class Fetch[T](key: String, resolver: Resolver[T])
+  case class Store[T](key: String, value: T)
+  case class Delete(key: String)
+}
+
+class BucketActor[T : RootJsonFormat](httpConduit: ActorRef, name: String) extends Actor with ActorLogging {
+
+
+  def receive = {
+    case x =>
+  }
+}
+
+
+
+
 case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: ActorRef, name: String) extends Bucket[T] {
   import system.dispatcher
   import spray.client.HttpConduit._
-  import spray.http._
+  import spray.http.{HttpEntity, HttpHeader, HttpResponse}
   import spray.http.StatusCodes._
   import spray.httpx._
   import spray.httpx.unmarshalling._
@@ -117,19 +157,43 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   private def pipeline = sendReceive(httpConduit)
   private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
 
-  private def fetchedValue(response: HttpResponse): FetchResponse[T] = {
-    import com.github.nscala_time.time.Imports._
-
-    response.entity.as[T] match {
-      case Right(value) => FetchedValue(value, "", "", DateTime.now) // TODO: fill in the header-derived values
+  private def fetchedValue(response: HttpResponse): FetchResponse[T] = fetchedValue(response.entity, response.headers)
+  private def fetchedValue(entity: HttpEntity, headers: List[HttpHeader]): FetchResponse[T] = {
+    entity.as[T] match {
       case Left(error) => FetchValueUnmarshallingFailed(error.toString)
+      case Right(value) => {
+        import spray.http.HttpHeaders._
+
+        val vClock = headers.find(_.is("x-riak-vclock")).map(_.value)
+        val eTag = headers.find(_.is("etag")).map(_.value)
+        val lastModified = headers.find(_.is("last-modified"))
+                                  .map(h => new DateTime(h.asInstanceOf[`Last-Modified`].date.clicks))
+
+        FetchedValue(value, vClock, eTag, lastModified)
+      }
     }
   }
 
   private def resolveValues(response: HttpResponse, resolver: Resolver[T]): FetchResponse[T] = {
-    // TODO: implement me!!
+    import spray.http._
 
-    FetchError("Resolving multiple values using a resolver has not been implemented yet.")
+    response.entity.as[MultipartContent] match {
+      case Left(error) => FetchValueUnmarshallingFailed(error.toString)
+      case Right(multipartContent) => {
+        val values = multipartContent.parts.toSet.flatMap { part: BodyPart =>
+          fetchedValue(part.entity, part.headers) match {
+            case value: FetchedValue[T] => Some(value)
+            case _                      => None
+          }
+        }
+
+        println("===============================================================================")
+        values.foreach(println)
+        println("===============================================================================")
+
+        resolver.resolve(values)
+      }
+    }
   }
 }
 
@@ -138,8 +202,6 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
 // Resolving multiple fetch values
 // ============================================================================
 
-// TODO: resolvers should take a set of FetchedValue[T]s, so that they can look at vector clocks, timestamps, etc.
-
 trait Resolver[T] {
   def resolve(values: Set[FetchedValue[T]]): FetchedValue[T]
 }
@@ -147,8 +209,8 @@ trait Resolver[T] {
 case class LastValueWinsResolver[T]() extends Resolver[T] {
   def resolve(values: Set[FetchedValue[T]]) = {
     values.reduceLeft { (first, second) =>
-      if (second.lastModified.isAfter(first.lastModified)) second
-      else first
+      (for (f <- first.lastModified; s <- second.lastModified)
+       yield (if (s.isAfter(f)) second else first)).getOrElse(second)
     }
   }
 }
@@ -172,8 +234,21 @@ sealed trait RiakFailure extends RiakResponse {
   def isSuccess = false
 }
 
+// sealed abstract class RiakValue[+A] extends RiakSuccess {
+//   def value: A
+//   def vclock: Option[String]
+//   def etag: Option[String]
+//   def lastModified: Option[DateTime]
+//   // def links: Seq[RiakLink]
+//   // def meta: Seq[RiakMeta]
 
-import com.github.nscala_time.time.Imports._
+//   // TODO: the usual Monad stuff, like map, flatmap, filter
+// }
+
+
+// ============================================================================
+// Fetch Responses
+// ============================================================================
 
 sealed abstract class FetchResponse[+A] extends RiakResponse {
   def value: A
@@ -181,13 +256,13 @@ sealed abstract class FetchResponse[+A] extends RiakResponse {
 
 final case class FetchedValue[+A](
   value: A,
-  vclock: String,
-  etag: String,
-  lastModified: DateTime
+  vclock: Option[String],
+  etag: Option[String],
+  lastModified: Option[DateTime]
   // links: Seq[RiakLink]
   // meta: Seq[RiakMeta]
 ) extends FetchResponse[A] with RiakSuccess {
-  // TODO: the usual Monad stuff, like map, flatmap, filter
+
 }
 
 
@@ -200,3 +275,22 @@ case class  FetchParametersInvalid(reason: String) extends FetchFailed
 case class  FetchValueUnmarshallingFailed(cause: String) extends FetchFailed
 case class  FetchError(cause: String) extends FetchFailed
 
+
+// ============================================================================
+// Store Responses
+// ============================================================================
+
+sealed abstract class StoreResponse[+A] extends RiakResponse
+
+case object StoreSuccessful extends StoreResponse[Nothing] with RiakSuccess
+
+final case class StoredValue[+A](
+  value: A,
+  vclock: Option[String],
+  etag: Option[String],
+  lastModified: Option[DateTime]
+  // links: Seq[RiakLink]
+  // meta: Seq[RiakMeta]
+) extends FetchResponse[A] with RiakSuccess {
+
+}
