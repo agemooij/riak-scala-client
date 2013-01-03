@@ -79,44 +79,6 @@ abstract class Bucket[T : RootJsonFormat] {
   def delete(key: String): Future[Unit] // Future[DeleteResponse[T]]
 }
 
-import scala.reflect._
-private[riak] case class ActorBasedBucket[T : RootJsonFormat: ClassTag](bucketActor: ActorRef, name: String) extends Bucket[T] {
-  import BucketActor._
-  import scala.concurrent.duration._
-  import akka.pattern.ask
-  import akka.pattern.pipe
-  import akka.util.Timeout
-
-  implicit val timeout = Timeout(5 seconds)
-
-  def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()) = {
-    ask(bucketActor, Fetch(key, resolver)).mapTo[FetchResponse[T]]
-  }
-
-  // Future[StoreResponse[T]]
-  def store(key: String, value: T) = ask(bucketActor, Store(key, value)).mapTo[T]
-
-  // Future[DeleteResponse[T]]
-  def delete(key: String) = ask(bucketActor, Delete(key)).mapTo[Unit]
-}
-
-object BucketActor {
-  case class Fetch[T](key: String, resolver: Resolver[T])
-  case class Store[T](key: String, value: T)
-  case class Delete(key: String)
-}
-
-class BucketActor[T : RootJsonFormat](httpConduit: ActorRef, name: String) extends Actor with ActorLogging {
-
-
-  def receive = {
-    case x =>
-  }
-}
-
-
-
-
 case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: ActorRef, name: String) extends Bucket[T] {
   import system.dispatcher
   import spray.client.HttpConduit._
