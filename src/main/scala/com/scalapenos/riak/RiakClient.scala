@@ -79,8 +79,6 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   import spray.httpx.unmarshalling._
   import spray.httpx.SprayJsonSupport._
 
-  private val clientId = "%s".format(java.util.UUID.randomUUID())
-
   def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]] = {
     pipeline(Get(url(key))).map { response =>
       response.status match {
@@ -108,9 +106,9 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   }
 
 
-  private def pipeline = {
-    addHeader("X-Riak-ClientId", clientId) ~> sendReceive(httpConduit)
-  }
+  private val clientId = "%s".format(java.util.UUID.randomUUID())
+
+  private def pipeline = addHeader("X-Riak-ClientId", clientId) ~> sendReceive(httpConduit)
 
   private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
 
@@ -143,10 +141,6 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
             case _                      => None
           }
         }
-
-        println("===============================================================================")
-        values.foreach(println)
-        println("===============================================================================")
 
         resolver.resolve(values)
       }
