@@ -75,7 +75,6 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   import spray.client.HttpConduit._
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
   import spray.http.StatusCodes._
-  import spray.httpx._
   import spray.httpx.unmarshalling._
   import spray.httpx.SprayJsonSupport._
 
@@ -91,7 +90,11 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
     }
   }
 
+  // OUTDATED !!
+  // TODO: rewrite to match how fetch has been implemented
   def store(key: String, value: T): Future[T] = {
+    import spray.httpx._
+
     pipeline(Put(url(key) + "?returnbody=true", value)).map { response =>
       if (response.status.isSuccess)
         response.entity.as[T] match {
@@ -101,6 +104,8 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
     }
   }
 
+  // OUTDATED !!
+  // TODO: rewrite to match how fetch has been implemented
   def delete(key: String): Future[Unit] = {
     pipeline(Delete(url(key))).map(x => ())
   }
@@ -123,6 +128,8 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
         val eTag = headers.find(_.is("etag")).map(_.value)
         val lastModified = headers.find(_.is("last-modified"))
                                   .map(h => new DateTime(h.asInstanceOf[`Last-Modified`].date.clicks))
+
+        // TODO: make sure the DateTime is always in the Zulu zone
 
         FetchedValue(value, vClock, eTag, lastModified)
       }
