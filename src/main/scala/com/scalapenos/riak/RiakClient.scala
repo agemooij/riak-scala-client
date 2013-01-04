@@ -64,6 +64,15 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
 // Bucket
 // ============================================================================
 
+// TODO: Get rid of the T typing and provide unmarshalling at the RiakValue layer.
+//       The driver should be type-agnostic
+//       Fetch should return a Future[Option[RiakValue]]
+//       Store should return a ...
+//       Delete should return a ...
+//       Resolvers should aso be type agnostic
+//       RiakValue should have an as[T] method that uses the content type to
+//         lookup an unmarshaller and convert the raw String value to a T
+
 abstract class Bucket[T : RootJsonFormat] {
   def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]]
   def store(key: String, value: T): Future[T] // Future[StoreResponse[T]]
@@ -77,6 +86,9 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   import spray.http.StatusCodes._
   import spray.httpx.unmarshalling._
   import spray.httpx.SprayJsonSupport._
+
+  // TODO: all error situations should be thrown as exceptions so that they cause the future to fail
+  //       That way we can simplify the RiakResponse/RiakValue hierarchy
 
   def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]] = {
     pipeline(Get(url(key))).map { response =>
@@ -138,6 +150,9 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
 
   private def resolveValues(response: HttpResponse, resolver: Resolver[T]): FetchResponse[T] = {
     import spray.http._
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // TODO: it should do a put so the resolution sticks !!!!
 
     response.entity.as[MultipartContent] match {
       case Left(error) => FetchValueUnmarshallingFailed(error.toString)
