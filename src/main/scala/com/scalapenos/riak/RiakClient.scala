@@ -6,7 +6,7 @@ import akka.actor._
 
 import spray.http.ContentType
 
-import org.joda.time.DateTime
+import com.github.nscala_time.time.Imports._
 
 
 // ============================================================================
@@ -36,7 +36,7 @@ class Riak(system: ExtendedActorSystem) extends Extension {
 //       wrapped in another trait
 
 trait RiakConnection {
-  def bucket(name: String): Bucket
+  def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
 }
 
 case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: Int) extends RiakConnection {
@@ -53,7 +53,7 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
     dispatchStrategy = DispatchStrategies.Pipelined // TODO: read this from the settings
   )))
 
-  def bucket(name: String) = BucketImpl(system, httpConduit, name)
+  def bucket(name: String, resolver: ConflictResolver) = BucketImpl(system, httpConduit, name, resolver)
 }
 
 
@@ -61,13 +61,11 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
 // Bucket
 // ============================================================================
 
-trait Bucket {
+abstract class Bucket(resolver: ConflictResolver) {
   // TODO: add Retry support, maybe at the bucket level
-  // TODO: move the ConflictResolver to the bucket level too?
-
   // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
 
-  def fetch(key: String)(implicit resolver: ConflictResolver = LastValueWinsResolver): Future[Option[RiakValue]]
+  def fetch(key: String): Future[Option[RiakValue]]
 
   def store(key: String, value: RiakValue): Future[Option[RiakValue]]
   // TODO: change this into any object that can be implicitly converted into a RiakValue
@@ -77,7 +75,7 @@ trait Bucket {
   def delete(key: String): Future[Nothing]
 }
 
-case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String) extends Bucket {
+case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, resolver: ConflictResolver) extends Bucket(resolver) {
   import system.dispatcher
   import spray.client.HttpConduit._
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
@@ -88,7 +86,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String) 
   // TODO: all error situations should be thrown as exceptions so that they cause the future to fail
   //       That way we can simplify the RiakResponse/RiakValue hierarchy
 
-  def fetch(key: String)(implicit resolver: ConflictResolver = LastValueWinsResolver): Future[Option[RiakValue]] = {
+  def fetch(key: String): Future[Option[RiakValue]] = {
     pipeline(Get(url(key))).map { response =>
       response.status match {
         case OK              => toRiakValue(response)
@@ -103,22 +101,9 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String) 
 
   def store(key: String, value: String): Future[Option[RiakValue]] = store(key, RiakValue(value))
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
-    import spray.httpx._
-
     // TODO: set vclock header
 
-    // TODO: Spray already sets the content type header based on what we pass in,
-    //       so there should be an implicit Spray Marshaller that takes a RiakValue and
-    //       turns it into an HttpBody with the correct ContentType and byte array
-    //
-    // implicit val RiakValueMarshaller = new Marshaller[RiakValue] {
-    //   def apply(value: RiakValue, ctx: MarshallingContext) {
-    //     ctx.marshalTo(HttpBody(value.contentType, value.bytes))
-    //   }
-    // }
-
-    // TODO: as soon as we ave the riakValueMarshaller active, marshall the value instead of the contained string
-    pipeline(Put(url(key) + "?returnbody=true", value.value)).map { response =>
+    pipeline(Put(url(key) + "?returnbody=true", value)).map { response =>
       response.status match {
         case OK              => toRiakValue(response)
         case NoContent       => None
@@ -157,7 +142,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String) 
       // TODO: make sure the DateTime is always in the Zulu zone
 
       for (vClock <- vClockOption; eTag <- eTagOption; lastModified <- lastModifiedOption)
-      yield RiakValue(entity.asString, body.contentType, vClock, eTag, lastModified)
+      yield RiakValue(body.buffer, body.contentType, vClock, eTag, lastModified)
     }
   }
 
@@ -211,12 +196,12 @@ case object LastValueWinsResolver extends ConflictResolver {
 // Should unmarshallers be RiakValue => T or Array[Byte] => T ?
 //   Probably the first, since it just adds some extra information
 
-// It's probably a good idea to define a VClock type so we can easily create
+// It's probably a good idea to define a VClock (implicit) value class so we can easily create
 // a common empty one that denotes the case when no vclock information is
-// available.
+// available. The same goes for eTags.
 
 final case class RiakValue(
-  value: String,
+  value: Array[Byte],
   contentType: ContentType,
   vclock: String,
   etag: String,
@@ -225,10 +210,39 @@ final case class RiakValue(
   // meta: Seq[RiakMeta]
 ) {
 
+  def asString = new String(value, contentType.charset.nioCharset)
+
   // TODO: add as[T: RiakValueUnmarshaller] function linked to the ContentType
 
   // TODO: add common manipulation functions
 }
+
+object RiakValue {
+  def apply(value: String): RiakValue = {
+    val contentType = ContentType.`text/plain`
+
+    new RiakValue(
+      value.getBytes(contentType.charset.nioCharset),
+      contentType,
+      "",
+      "",
+      DateTime.now
+    )
+  }
+
+  import spray.http.HttpBody
+  import spray.httpx.marshalling._
+  implicit val RiakValueMarshaller: Marshaller[RiakValue] = new Marshaller[RiakValue] {
+    def apply(riakValue: RiakValue, ctx: MarshallingContext) {
+      ctx.marshalTo(HttpBody(riakValue.contentType, riakValue.value))
+    }
+  }
+}
+
+
+// ============================================================================
+// Exceptions
+// ============================================================================
 
 case class FetchFailed(cause: String) extends RuntimeException(cause)
 case class ConflictResolutionFailed(cause: String) extends RuntimeException(cause)
