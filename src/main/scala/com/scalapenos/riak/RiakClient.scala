@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 import akka.actor._
 
-import spray.json.RootJsonFormat
+import spray.http.ContentType
 
 import org.joda.time.DateTime
 
@@ -36,15 +36,13 @@ class Riak(system: ExtendedActorSystem) extends Extension {
 //       wrapped in another trait
 
 trait RiakConnection {
-  def bucket[T : RootJsonFormat](name: String): Bucket[T]
+  def bucket(name: String): Bucket
 }
 
 case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: Int) extends RiakConnection {
   import spray.can.client.HttpClient
   import spray.client._
   import spray.io.IOExtension
-
-  // TODO: set up a riak client id (use a GUID)
 
   private[this] val ioBridge = IOExtension(system).ioBridge()
   private[this] val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
@@ -55,7 +53,7 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
     dispatchStrategy = DispatchStrategies.Pipelined // TODO: read this from the settings
   )))
 
-  def bucket[T : RootJsonFormat](name: String) = BucketImpl(system, httpConduit, name)
+  def bucket(name: String) = BucketImpl(system, httpConduit, name)
 }
 
 
@@ -73,13 +71,20 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
 //       RiakValue should have an as[T] method that uses the content type to
 //         lookup an unmarshaller and convert the raw String value to a T
 
-abstract class Bucket[T : RootJsonFormat] {
-  def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]]
-  def store(key: String, value: T): Future[T] // Future[StoreResponse[T]]
-  def delete(key: String): Future[Unit] // Future[DeleteResponse[T]]
+trait Bucket {
+  // TODO: add Retry support, maybe at the bucket level
+  // TODO: move the Resolver to the bucket level too?
+
+  def fetch(key: String)(implicit resolver: Resolver = LastValueWinsResolver): Future[Option[RiakValue]]
+
+  // TODO: change this into any object that can be implicitly converted into a RiakValue
+  def store(key: String, value: String): Future[Option[RiakValue]]
+  // TODO: add a version tat takes a RiakValue
+
+  def delete(key: String): Future[Nothing]
 }
 
-case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: ActorRef, name: String) extends Bucket[T] {
+case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String) extends Bucket {
   import system.dispatcher
   import spray.client.HttpConduit._
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
@@ -90,36 +95,38 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
   // TODO: all error situations should be thrown as exceptions so that they cause the future to fail
   //       That way we can simplify the RiakResponse/RiakValue hierarchy
 
-  def fetch(key: String)(implicit resolver: Resolver[T] = LastValueWinsResolver()): Future[FetchResponse[T]] = {
+  def fetch(key: String)(implicit resolver: Resolver = LastValueWinsResolver): Future[Option[RiakValue]] = {
     pipeline(Get(url(key))).map { response =>
       response.status match {
-        case OK              => fetchedValue(response)
-        case MultipleChoices => resolveValues(response, resolver)
-        case NotFound        => FetchKeyNotFound
-        case BadRequest      => FetchParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => FetchError("Unexpected response code '%s' on fetch".format(other))
+        case OK              => toRiakValue(response)
+        case MultipleChoices => resolveConflict(response, resolver)
+        case NotFound        => None
+        case BadRequest      => throw new FetchParametersInvalid("Does Riak even give us a reason for this?")
+        case other           => throw new FetchFailed("Unexpected response code '%s' on fetch".format(other))
       }
     }
   }
 
-  // OUTDATED !!
   // TODO: rewrite to match how fetch has been implemented
-  def store(key: String, value: T): Future[T] = {
-    import spray.httpx._
+  def store(key: String, value: String): Future[Option[RiakValue]] = {
+    throw new NotImplementedError("Store has not been implemented yet!")
 
-    pipeline(Put(url(key) + "?returnbody=true", value)).map { response =>
-      if (response.status.isSuccess)
-        response.entity.as[T] match {
-          case Right(value) => value
-          case Left(error) => throw new PipelineException(error.toString)
-      } else throw new UnsuccessfulResponseException(response.status)
-    }
+    // import spray.httpx._
+
+    // pipeline(Put(url(key) + "?returnbody=true", value)).map { response =>
+    //   if (response.status.isSuccess)
+    //     response.entity.as[T] match {
+    //       case Right(value) => value
+    //       case Left(error) => throw new PipelineException(error.toString)
+    //   } else throw new UnsuccessfulResponseException(response.status)
+    // }
   }
 
-  // OUTDATED !!
   // TODO: rewrite to match how fetch has been implemented
-  def delete(key: String): Future[Unit] = {
-    pipeline(Delete(url(key))).map(x => ())
+  def delete(key: String): Future[Nothing] = {
+    throw new NotImplementedError("Delete has not been implemented yet!")
+
+    //pipeline(Delete(url(key))).map(x => ())
   }
 
 
@@ -129,42 +136,36 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
 
   private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
 
-  private def fetchedValue(response: HttpResponse): FetchResponse[T] = fetchedValue(response.entity, response.headers)
-  private def fetchedValue(entity: HttpEntity, headers: List[HttpHeader]): FetchResponse[T] = {
-    entity.as[T] match {
-      case Left(error) => FetchValueUnmarshallingFailed(error.toString)
-      case Right(value) => {
-        import spray.http.HttpHeaders._
+  private def toRiakValue(response: HttpResponse): Option[RiakValue] = toRiakValue(response.entity, response.headers)
+  private def toRiakValue(entity: HttpEntity, headers: List[HttpHeader]): Option[RiakValue] = {
+    entity.toOption.flatMap { body =>
+      import spray.http.HttpHeaders._
 
-        val vClock = headers.find(_.is("x-riak-vclock")).map(_.value)
-        val eTag = headers.find(_.is("etag")).map(_.value)
-        val lastModified = headers.find(_.is("last-modified"))
-                                  .map(h => new DateTime(h.asInstanceOf[`Last-Modified`].date.clicks))
+      val vClockOption       = headers.find(_.is("x-riak-vclock")).map(_.value)
+      val eTagOption         = headers.find(_.is("etag")).map(_.value)
+      val lastModifiedOption = headers.find(_.is("last-modified"))
+                                      .map(h => new DateTime(h.asInstanceOf[`Last-Modified`].date.clicks))
 
-        // TODO: make sure the DateTime is always in the Zulu zone
+      // TODO: make sure the DateTime is always in the Zulu zone
 
-        FetchedValue(value, vClock, eTag, lastModified)
-      }
+      for (vClock <- vClockOption; eTag <- eTagOption; lastModified <- lastModifiedOption)
+      yield RiakValue(entity.asString, body.contentType, vClock, eTag, lastModified)
     }
   }
 
-  private def resolveValues(response: HttpResponse, resolver: Resolver[T]): FetchResponse[T] = {
+  private def resolveConflict(response: HttpResponse, resolver: Resolver): Option[RiakValue] = {
     import spray.http._
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO: it should do a put so the resolution sticks !!!!
-
     response.entity.as[MultipartContent] match {
-      case Left(error) => FetchValueUnmarshallingFailed(error.toString)
+      case Left(error) => throw new ConflictResolutionFailed(error.toString)
       case Right(multipartContent) => {
-        val values = multipartContent.parts.toSet.flatMap { part: BodyPart =>
-          fetchedValue(part.entity, part.headers) match {
-            case value: FetchedValue[T] => Some(value)
-            case _                      => None
-          }
-        }
+        val values = multipartContent.parts.flatMap(part => toRiakValue(part.entity, part.headers)).toSet
+        val value = resolver.resolve(values)
 
-        resolver.resolve(values)
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // TODO: the resolved value needs to be stored back so the resolution sticks !!!!
+
+        Some(value)
       }
     }
   }
@@ -175,15 +176,17 @@ case class BucketImpl[T : RootJsonFormat](system: ActorSystem, httpConduit: Acto
 // Resolving multiple fetch values
 // ============================================================================
 
-trait Resolver[T] {
-  def resolve(values: Set[FetchedValue[T]]): FetchedValue[T]
+// TODO: Rename to ConflictResolver?
+
+trait Resolver {
+  def resolve(values: Set[RiakValue]): RiakValue
 }
 
-case class LastValueWinsResolver[T]() extends Resolver[T] {
-  def resolve(values: Set[FetchedValue[T]]) = {
+case object LastValueWinsResolver extends Resolver {
+  def resolve(values: Set[RiakValue]): RiakValue = {
     values.reduceLeft { (first, second) =>
-      (for (f <- first.lastModified; s <- second.lastModified)
-       yield (if (s.isAfter(f)) second else first)).getOrElse(second)
+      if (second.lastModified.isAfter(first.lastModified)) second
+      else first
     }
   }
 }
@@ -194,76 +197,18 @@ case class LastValueWinsResolver[T]() extends Resolver[T] {
 // Responses
 // ============================================================================
 
-sealed trait RiakResponse {
-  def isSuccess: Boolean
-  def isFailure = !isSuccess
-}
-
-sealed trait RiakSuccess extends RiakResponse {
-  def isSuccess = true
-}
-
-sealed trait RiakFailure extends RiakResponse {
-  def isSuccess = false
-}
-
-// sealed abstract class RiakValue[+A] extends RiakSuccess {
-//   def value: A
-//   def vclock: Option[String]
-//   def etag: Option[String]
-//   def lastModified: Option[DateTime]
-//   // def links: Seq[RiakLink]
-//   // def meta: Seq[RiakMeta]
-
-//   // TODO: the usual Monad stuff, like map, flatmap, filter
-// }
-
-
-// ============================================================================
-// Fetch Responses
-// ============================================================================
-
-sealed abstract class FetchResponse[+A] extends RiakResponse {
-  def value: A
-}
-
-final case class FetchedValue[+A](
-  value: A,
-  vclock: Option[String],
-  etag: Option[String],
-  lastModified: Option[DateTime]
+final case class RiakValue(
+  value: String,
+  contentType: ContentType,
+  vclock: String,
+  etag: String,
+  lastModified: DateTime
   // links: Seq[RiakLink]
   // meta: Seq[RiakMeta]
-) extends FetchResponse[A] with RiakSuccess {
+) {
 
 }
 
-
-sealed abstract class FetchFailed extends FetchResponse[Nothing] with RiakFailure {
-  def value = throw new NoSuchElementException("RiakFailure.value")
-}
-
-case object FetchKeyNotFound extends FetchFailed
-case class  FetchParametersInvalid(reason: String) extends FetchFailed
-case class  FetchValueUnmarshallingFailed(cause: String) extends FetchFailed
-case class  FetchError(cause: String) extends FetchFailed
-
-
-// ============================================================================
-// Store Responses
-// ============================================================================
-
-sealed abstract class StoreResponse[+A] extends RiakResponse
-
-case object StoreSuccessful extends StoreResponse[Nothing] with RiakSuccess
-
-final case class StoredValue[+A](
-  value: A,
-  vclock: Option[String],
-  etag: Option[String],
-  lastModified: Option[DateTime]
-  // links: Seq[RiakLink]
-  // meta: Seq[RiakMeta]
-) extends FetchResponse[A] with RiakSuccess {
-
-}
+case class FetchFailed(cause: String) extends RuntimeException(cause)
+case class FetchParametersInvalid(cause: String) extends RuntimeException(cause)
+case class ConflictResolutionFailed(cause: String) extends RuntimeException(cause)
