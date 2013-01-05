@@ -23,6 +23,10 @@ class Riak(system: ExtendedActorSystem) extends Extension {
 
   def connect(): RiakConnection = connect("127.0.0.1", 8098)
   def connect(host: String, port: Int): RiakConnection = RiakConnectionImpl(system, host, port)
+
+  // TODO: how to deal with:
+  //       - Shutting down the ActorSystem when we're done and we created the actor system to begin with)
+  //       - someone else shutting down the ActorSystem, leaving us in an invalid state
 }
 
 
@@ -72,7 +76,7 @@ abstract class Bucket(resolver: ConflictResolver) {
   def store(key: String, value: String): Future[Option[RiakValue]]
   // def store[T: RiakValueMarshaller](key: String, value: T): Future[Option[RiakValue]]
 
-  def delete(key: String): Future[Nothing]
+  def delete(key: String): Future[Unit]
 }
 
 case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, resolver: ConflictResolver) extends Bucket(resolver) {
@@ -80,11 +84,6 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
   import spray.client.HttpConduit._
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
   import spray.http.StatusCodes._
-  import spray.httpx.unmarshalling._
-  import spray.httpx.SprayJsonSupport._
-
-  // TODO: all error situations should be thrown as exceptions so that they cause the future to fail
-  //       That way we can simplify the RiakResponse/RiakValue hierarchy
 
   def fetch(key: String): Future[Option[RiakValue]] = {
     pipeline(Get(url(key))).map { response =>
@@ -93,11 +92,10 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
         case MultipleChoices => resolveConflict(response, resolver)
         case NotFound        => None
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => throw new FetchFailed("Unexpected response code '%s' on fetch".format(other))
+        case other           => throw new BucketOperationFailed("Fetch for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
       }
     }
   }
-
 
   def store(key: String, value: String): Future[Option[RiakValue]] = store(key, RiakValue(value))
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
@@ -109,17 +107,22 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
         case NoContent       => None
         case MultipleChoices => resolveConflict(response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => throw new FetchFailed("Unexpected response code '%s' on fetch".format(other))
+        case other           => throw new BucketOperationFailed("Store for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
         // case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
   }
 
   // TODO: rewrite to match how fetch has been implemented
-  def delete(key: String): Future[Nothing] = {
-    throw new NotImplementedError("Delete has not been implemented yet!")
-
-    //pipeline(Delete(url(key))).map(x => ())
+  def delete(key: String): Future[Unit] = {
+    pipeline(Delete(url(key))).map { response =>
+      response.status match {
+        case NoContent       => ()
+        case NotFound        => ()
+        case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
+        case other           => throw new BucketOperationFailed("Delete for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
+      }
+    }
   }
 
 
@@ -148,6 +151,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
 
   private def resolveConflict(response: HttpResponse, resolver: ConflictResolver): Option[RiakValue] = {
     import spray.http._
+    import spray.httpx.unmarshalling._
 
     response.entity.as[MultipartContent] match {
       case Left(error) => throw new ConflictResolutionFailed(error.toString)
@@ -157,6 +161,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
 
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // TODO: the resolved value needs to be stored back so the resolution sticks !!!!
+        //        we then need to get that value back and get the vclock from there  !!!!
 
         Some(value)
       }
@@ -244,7 +249,7 @@ object RiakValue {
 // Exceptions
 // ============================================================================
 
-case class FetchFailed(cause: String) extends RuntimeException(cause)
+case class BucketOperationFailed(cause: String) extends RuntimeException(cause)
 case class ConflictResolutionFailed(cause: String) extends RuntimeException(cause)
 case class ParametersInvalid(cause: String) extends RuntimeException(cause)
 
