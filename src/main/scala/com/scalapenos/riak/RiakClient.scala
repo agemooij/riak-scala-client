@@ -57,32 +57,22 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
 }
 
 
-
 // ============================================================================
 // Bucket
 // ============================================================================
 
-// TODO: Get rid of the T typing and provide unmarshalling at the RiakValue layer.
-//       The driver should be type-agnostic
-//       Fetch should return a Future[Option[RiakValue]]
-//       Store should return a ...
-//       Delete should return a ...
-//       Resolvers should aso be type agnostic
-//       RiakValue should have an as[T] method that uses the content type to
-//         lookup an unmarshaller and convert the raw String value to a T
-
 trait Bucket {
   // TODO: add Retry support, maybe at the bucket level
-  // TODO: move the Resolver to the bucket level too?
+  // TODO: move the ConflictResolver to the bucket level too?
 
-  def fetch(key: String)(implicit resolver: Resolver = LastValueWinsResolver): Future[Option[RiakValue]]
+  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
+
+  def fetch(key: String)(implicit resolver: ConflictResolver = LastValueWinsResolver): Future[Option[RiakValue]]
 
   // TODO: change this into any object that can be implicitly converted into a RiakValue
   def store(key: String, value: String): Future[Option[RiakValue]]
-
   // def store(key: String, value: RiakValue): Future[Option[RiakValue]]
   // def store[T: RiakValueMarshaller](key: String, value: T): Future[Option[RiakValue]]
-
 
   def delete(key: String): Future[Nothing]
 }
@@ -98,7 +88,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String) 
   // TODO: all error situations should be thrown as exceptions so that they cause the future to fail
   //       That way we can simplify the RiakResponse/RiakValue hierarchy
 
-  def fetch(key: String)(implicit resolver: Resolver = LastValueWinsResolver): Future[Option[RiakValue]] = {
+  def fetch(key: String)(implicit resolver: ConflictResolver = LastValueWinsResolver): Future[Option[RiakValue]] = {
     pipeline(Get(url(key))).map { response =>
       response.status match {
         case OK              => toRiakValue(response)
@@ -156,7 +146,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String) 
     }
   }
 
-  private def resolveConflict(response: HttpResponse, resolver: Resolver): Option[RiakValue] = {
+  private def resolveConflict(response: HttpResponse, resolver: ConflictResolver): Option[RiakValue] = {
     import spray.http._
 
     response.entity.as[MultipartContent] match {
@@ -181,11 +171,11 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String) 
 
 // TODO: Rename to ConflictResolver?
 
-trait Resolver {
+trait ConflictResolver {
   def resolve(values: Set[RiakValue]): RiakValue
 }
 
-case object LastValueWinsResolver extends Resolver {
+case object LastValueWinsResolver extends ConflictResolver {
   def resolve(values: Set[RiakValue]): RiakValue = {
     values.reduceLeft { (first, second) =>
       if (second.lastModified.isAfter(first.lastModified)) second
