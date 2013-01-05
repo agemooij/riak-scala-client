@@ -79,7 +79,10 @@ trait Bucket {
 
   // TODO: change this into any object that can be implicitly converted into a RiakValue
   def store(key: String, value: String): Future[Option[RiakValue]]
-  // TODO: add a version tat takes a RiakValue
+
+  // def store(key: String, value: RiakValue): Future[Option[RiakValue]]
+  // def store[T: RiakValueMarshaller](key: String, value: T): Future[Option[RiakValue]]
+
 
   def delete(key: String): Future[Nothing]
 }
@@ -192,10 +195,20 @@ case object LastValueWinsResolver extends Resolver {
 }
 
 
+// ============================================================================
+// RiakValue
+// ============================================================================
 
-// ============================================================================
-// Responses
-// ============================================================================
+// TODO: values should be byte arrays, with lots of handy stuff to submit
+//       Strings or anything else that can be converted to/from a byte array using
+//       a RiakValueMarshaller/RiakValueUnmarshaller
+
+// Should unmarshallers be RiakValue => T or Array[Byte] => T ?
+//   Probably the first, since it just adds some extra information
+
+// It's probably a good idea to define a VClock type so we can easily create
+// a common empty one that denotes the case when no vclock information is
+// available.
 
 final case class RiakValue(
   value: String,
@@ -207,6 +220,9 @@ final case class RiakValue(
   // meta: Seq[RiakMeta]
 ) {
 
+  // TODO: add as[T: RiakValueUnmarshaller] function linked to the ContentType
+
+  // TODO: add common manipulation functions
 }
 
 case class FetchFailed(cause: String) extends RuntimeException(cause)
