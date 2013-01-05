@@ -100,6 +100,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
   def store(key: String, value: String): Future[Option[RiakValue]] = store(key, RiakValue(value))
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
     // TODO: set vclock header
+    // TODO: Add a way to set parameters, like 'returnbody', etc.
 
     pipeline(Put(url(key) + "?returnbody=true", value)).map { response =>
       response.status match {
@@ -128,7 +129,9 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
 
   private val clientId = "%s".format(java.util.UUID.randomUUID())
 
-  private def pipeline = addHeader("X-Riak-ClientId", clientId) ~> sendReceive(httpConduit)
+  private def pipeline = {
+    addHeader("X-Riak-ClientId", clientId) ~> sendReceive(httpConduit)
+  }
 
   private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
 
