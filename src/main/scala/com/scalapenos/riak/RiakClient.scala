@@ -69,9 +69,9 @@ trait Bucket {
 
   def fetch(key: String)(implicit resolver: ConflictResolver = LastValueWinsResolver): Future[Option[RiakValue]]
 
+  def store(key: String, value: RiakValue): Future[Option[RiakValue]]
   // TODO: change this into any object that can be implicitly converted into a RiakValue
   def store(key: String, value: String): Future[Option[RiakValue]]
-  // def store(key: String, value: RiakValue): Future[Option[RiakValue]]
   // def store[T: RiakValueMarshaller](key: String, value: T): Future[Option[RiakValue]]
 
   def delete(key: String): Future[Nothing]
@@ -94,25 +94,40 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String) 
         case OK              => toRiakValue(response)
         case MultipleChoices => resolveConflict(response, resolver)
         case NotFound        => None
-        case BadRequest      => throw new FetchParametersInvalid("Does Riak even give us a reason for this?")
+        case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new FetchFailed("Unexpected response code '%s' on fetch".format(other))
       }
     }
   }
 
-  // TODO: rewrite to match how fetch has been implemented
-  def store(key: String, value: String): Future[Option[RiakValue]] = {
-    throw new NotImplementedError("Store has not been implemented yet!")
 
-    // import spray.httpx._
+  def store(key: String, value: String): Future[Option[RiakValue]] = store(key, RiakValue(value))
+  def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
+    import spray.httpx._
 
-    // pipeline(Put(url(key) + "?returnbody=true", value)).map { response =>
-    //   if (response.status.isSuccess)
-    //     response.entity.as[T] match {
-    //       case Right(value) => value
-    //       case Left(error) => throw new PipelineException(error.toString)
-    //   } else throw new UnsuccessfulResponseException(response.status)
+    // TODO: set vclock header
+
+    // TODO: Spray already sets the content type header based on what we pass in,
+    //       so there should be an implicit Spray Marshaller that takes a RiakValue and
+    //       turns it into an HttpBody with the correct ContentType and byte array
+    //
+    // implicit val RiakValueMarshaller = new Marshaller[RiakValue] {
+    //   def apply(value: RiakValue, ctx: MarshallingContext) {
+    //     ctx.marshalTo(HttpBody(value.contentType, value.bytes))
+    //   }
     // }
+
+    // TODO: as soon as we ave the riakValueMarshaller active, marshall the value instead of the contained string
+    pipeline(Put(url(key) + "?returnbody=true", value.value)).map { response =>
+      response.status match {
+        case OK              => toRiakValue(response)
+        case NoContent       => None
+        case MultipleChoices => resolveConflict(response, resolver)
+        case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
+        case other           => throw new FetchFailed("Unexpected response code '%s' on fetch".format(other))
+        // case PreconditionFailed => ... // needed when we support conditional request semantics
+      }
+    }
   }
 
   // TODO: rewrite to match how fetch has been implemented
@@ -216,5 +231,6 @@ final case class RiakValue(
 }
 
 case class FetchFailed(cause: String) extends RuntimeException(cause)
-case class FetchParametersInvalid(cause: String) extends RuntimeException(cause)
 case class ConflictResolutionFailed(cause: String) extends RuntimeException(cause)
+case class ParametersInvalid(cause: String) extends RuntimeException(cause)
+
