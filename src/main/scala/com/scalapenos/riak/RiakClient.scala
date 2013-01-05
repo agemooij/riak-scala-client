@@ -100,7 +100,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
   def store(key: String, value: String): Future[Option[RiakValue]] = store(key, RiakValue(value))
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
     // TODO: set vclock header
-    // TODO: Add a way to set parameters, like 'returnbody', etc.
+    // TODO: Add a nice, non-intrusive way to set query parameters, like 'returnbody', etc.
 
     pipeline(Put(url(key) + "?returnbody=true", value)).map { response =>
       response.status match {
@@ -114,7 +114,6 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
     }
   }
 
-  // TODO: rewrite to match how fetch has been implemented
   def delete(key: String): Future[Unit] = {
     pipeline(Delete(url(key))).map { response =>
       response.status match {
@@ -125,7 +124,6 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
       }
     }
   }
-
 
   private val clientId = "%s".format(java.util.UUID.randomUUID())
 
