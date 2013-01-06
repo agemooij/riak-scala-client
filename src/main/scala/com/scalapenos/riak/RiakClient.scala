@@ -1,11 +1,7 @@
 package com.scalapenos.riak
 
 import scala.concurrent.Future
-
 import akka.actor._
-
-import spray.http.ContentType
-
 import com.github.nscala_time.time.Imports._
 
 
@@ -31,17 +27,42 @@ class Riak(system: ExtendedActorSystem) extends Extension {
 
 
 // ============================================================================
-// RiakConnection
+// The API Definitions
+// ============================================================================
+
+trait ConflictResolver {
+  def resolve(values: Set[RiakValue]): RiakValue
+}
+
+trait RiakConnection {
+  import resolvers.LastValueWinsResolver
+
+  def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
+}
+
+abstract class Bucket(resolver: ConflictResolver) {
+  // TODO: add Retry support, maybe at the bucket level
+  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
+
+  def fetch(key: String): Future[Option[RiakValue]]
+
+  def store(key: String, value: RiakValue): Future[Option[RiakValue]]
+  // TODO: change this into any object that can be implicitly converted into a RiakValue
+  def store(key: String, value: String): Future[Option[RiakValue]]
+  // def store[T: RiakValueMarshaller](key: String, value: T): Future[Option[RiakValue]]
+
+  def delete(key: String): Future[Unit]
+}
+
+
+// ============================================================================
+// RiakConnectionImpl
 // ============================================================================
 
 // TODO: make the connection manage one single RiakConnectionActor, with its
 //       own supervisor strategy for better fault tolerance. Getting a handle
 //       on the bucket could be implemented using a reference to a child actor
 //       wrapped in another trait
-
-trait RiakConnection {
-  def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
-}
 
 case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: Int) extends RiakConnection {
   import spray.can.client.HttpClient
@@ -62,22 +83,8 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
 
 
 // ============================================================================
-// Bucket
+// BucketImpl
 // ============================================================================
-
-abstract class Bucket(resolver: ConflictResolver) {
-  // TODO: add Retry support, maybe at the bucket level
-  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
-
-  def fetch(key: String): Future[Option[RiakValue]]
-
-  def store(key: String, value: RiakValue): Future[Option[RiakValue]]
-  // TODO: change this into any object that can be implicitly converted into a RiakValue
-  def store(key: String, value: String): Future[Option[RiakValue]]
-  // def store[T: RiakValueMarshaller](key: String, value: T): Future[Option[RiakValue]]
-
-  def delete(key: String): Future[Unit]
-}
 
 case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, resolver: ConflictResolver) extends Bucket(resolver) {
   import system.dispatcher
@@ -169,88 +176,3 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
     }
   }
 }
-
-
-// ============================================================================
-// Resolving multiple fetch values
-// ============================================================================
-
-// TODO: Rename to ConflictResolver?
-
-trait ConflictResolver {
-  def resolve(values: Set[RiakValue]): RiakValue
-}
-
-case object LastValueWinsResolver extends ConflictResolver {
-  def resolve(values: Set[RiakValue]): RiakValue = {
-    values.reduceLeft { (first, second) =>
-      if (second.lastModified.isAfter(first.lastModified)) second
-      else first
-    }
-  }
-}
-
-
-// ============================================================================
-// RiakValue
-// ============================================================================
-
-// TODO: values should be byte arrays, with lots of handy stuff to submit
-//       Strings or anything else that can be converted to/from a byte array using
-//       a RiakValueMarshaller/RiakValueUnmarshaller
-
-// Should unmarshallers be RiakValue => T or Array[Byte] => T ?
-//   Probably the first, since it just adds some extra information
-
-// It's probably a good idea to define a VClock (implicit) value class so we can easily create
-// a common empty one that denotes the case when no vclock information is
-// available. The same goes for eTags.
-
-final case class RiakValue(
-  value: Array[Byte],
-  contentType: ContentType,
-  vclock: String,
-  etag: String,
-  lastModified: DateTime
-  // links: Seq[RiakLink]
-  // meta: Seq[RiakMeta]
-) {
-
-  def asString = new String(value, contentType.charset.nioCharset)
-
-  // TODO: add as[T: RiakValueUnmarshaller] function linked to the ContentType
-
-  // TODO: add common manipulation functions
-}
-
-object RiakValue {
-  def apply(value: String): RiakValue = {
-    val contentType = ContentType.`text/plain`
-
-    new RiakValue(
-      value.getBytes(contentType.charset.nioCharset),
-      contentType,
-      "",
-      "",
-      DateTime.now
-    )
-  }
-
-  import spray.http.HttpBody
-  import spray.httpx.marshalling._
-  implicit val RiakValueMarshaller: Marshaller[RiakValue] = new Marshaller[RiakValue] {
-    def apply(riakValue: RiakValue, ctx: MarshallingContext) {
-      ctx.marshalTo(HttpBody(riakValue.contentType, riakValue.value))
-    }
-  }
-}
-
-
-// ============================================================================
-// Exceptions
-// ============================================================================
-
-case class BucketOperationFailed(cause: String) extends RuntimeException(cause)
-case class ConflictResolutionFailed(cause: String) extends RuntimeException(cause)
-case class ParametersInvalid(cause: String) extends RuntimeException(cause)
-
