@@ -7,6 +7,19 @@ import com.github.nscala_time.time.Imports._
 package object riak {
 
   // ============================================================================
+  // Conflict Resolution
+  // ============================================================================
+
+  trait ConflictResolver {
+    def resolve(values: Set[RiakValue]): RiakValue
+  }
+
+  implicit def func2resolver(f: Set[RiakValue] => RiakValue): ConflictResolver = new ConflictResolver {
+    def resolve(values: Set[RiakValue]) = f(values)
+  }
+
+
+  // ============================================================================
   // Value Classes
   // ============================================================================
 

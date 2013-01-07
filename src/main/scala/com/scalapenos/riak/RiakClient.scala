@@ -30,10 +30,6 @@ class Riak(system: ExtendedActorSystem) extends Extension {
 // The API Definitions
 // ============================================================================
 
-trait ConflictResolver {
-  def resolve(values: Set[RiakValue]): RiakValue
-}
-
 trait RiakConnection {
   import resolvers.LastValueWinsResolver
 
