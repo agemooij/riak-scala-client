@@ -7,19 +7,12 @@
         </encoder>
     </appender>
 
-    <logger name="akka" level="INFO" />
-    <logger name="akka.actor.LocalActorRef" level="INFO" />
-
-    <logger name="akka.event" level="INFO" />
-    <logger name="akka.event.EventStream" level="INFO" />
-    <logger name="akka.event.slf4j" level="WARN" />
-
-    <logger name="spray" level="INFO" />
-    <logger name="spray.io.IOBridge" level="INFO" />
+    <logger name="akka" level="WARN" />
+    <logger name="spray" level="WARN" />
 
     <logger name="com.scalapenos.riak" level="DEBUG" />
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>
