@@ -10,7 +10,14 @@ package object riak {
   // Value Classes
   // ============================================================================
 
-  implicit class VClock(val value: String) extends AnyVal
+  implicit class Vclock(val value: String) extends AnyVal {
+    def isDefined = !isEmpty
+    def isEmpty = value.isEmpty
+  }
+
+  object Vclock {
+    val NotSpecified = new Vclock("")
+  }
 
 
   // ============================================================================
@@ -23,7 +30,7 @@ package object riak {
   final case class RiakValue(
     value: Array[Byte],
     contentType: ContentType,
-    vclock: VClock,
+    vclock: Vclock,
     etag: String,
     lastModified: DateTime
     // links: Seq[RiakLink]
@@ -44,7 +51,7 @@ package object riak {
       new RiakValue(
         value.getBytes(contentType.charset.nioCharset),
         contentType,
-        "",
+        Vclock.NotSpecified,
         "",
         DateTime.now
       )
