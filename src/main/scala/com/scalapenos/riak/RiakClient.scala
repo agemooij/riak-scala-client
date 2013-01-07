@@ -89,7 +89,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
   import spray.http.StatusCodes._
 
   def fetch(key: String): Future[Option[RiakValue]] = {
-    pipeline(Get(url(key))).map { response =>
+    basicHttpRequest(Get(url(key))).map { response =>
       response.status match {
         case OK              => toRiakValue(response)
         case MultipleChoices => resolveConflict(response, resolver)
@@ -102,10 +102,12 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
 
   def store(key: String, value: String): Future[Option[RiakValue]] = store(key, RiakValue(value))
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
-    // TODO: set vclock header
     // TODO: Add a nice, non-intrusive way to set query parameters, like 'returnbody', etc.
 
-    pipeline(Put(url(key) + "?returnbody=true", value)).map { response =>
+    val request = if (value.vclock.isDefined) addHeader("X-Riak-Vclock", value.vclock.toString) ~> basicHttpRequest
+                  else basicHttpRequest
+
+    request(Put(url(key) + "?returnbody=true", value)).map { response =>
       response.status match {
         case OK              => toRiakValue(response)
         case NoContent       => None
@@ -118,7 +120,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
   }
 
   def delete(key: String): Future[Unit] = {
-    pipeline(Delete(url(key))).map { response =>
+    basicHttpRequest(Delete(url(key))).map { response =>
       response.status match {
         case NoContent       => ()
         case NotFound        => ()
@@ -130,7 +132,9 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
 
   private val clientId = "%s".format(java.util.UUID.randomUUID())
 
-  private def pipeline = {
+  private def basicHttpRequest = {
+    // TODO: make the client id optional based on some config (Settings in reference.conf)
+
     addHeader("X-Riak-ClientId", clientId) ~> sendReceive(httpConduit)
   }
 
