@@ -87,6 +87,8 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
   import spray.client.HttpConduit._
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
   import spray.http.StatusCodes._
+  import spray.http.HttpHeaders.RawHeader
+  import utils.SprayClientExtras._
 
   def fetch(key: String): Future[Option[RiakValue]] = {
     basicHttpRequest(Get(url(key))).map { response =>
@@ -104,8 +106,8 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
     // TODO: Add a nice, non-intrusive way to set query parameters, like 'returnbody', etc.
 
-    val request = if (value.vclock.isDefined) addHeader("X-Riak-Vclock", value.vclock.toString) ~> basicHttpRequest
-                  else basicHttpRequest
+    val vclockHeader = value.vclock.toOption.map(vclock => RawHeader("X-Riak-Vclock", vclock.toString))
+    val request = addOptionalHeader(vclockHeader) ~> basicHttpRequest
 
     request(Put(url(key) + "?returnbody=true", value)).map { response =>
       response.status match {
