@@ -26,6 +26,7 @@ package object riak {
   implicit class Vclock(val value: String) extends AnyVal {
     def isDefined = !isEmpty
     def isEmpty = value.isEmpty
+    def toOption: Option[Vclock] = if (isDefined) Some(this) else None
   }
 
   object Vclock {
