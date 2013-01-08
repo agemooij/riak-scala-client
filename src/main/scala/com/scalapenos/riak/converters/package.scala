@@ -1,6 +1,7 @@
 package com.scalapenos.riak
 
 import annotation.implicitNotFound
+import scala.util._
 
 
 package object converters {
@@ -10,11 +11,11 @@ package object converters {
    */
   @implicitNotFound(msg = "Cannot find RiakValueReader or RiakValueConverter type class for ${T}")
   trait RiakValueReader[T] {
-    def read(value: RiakValue): T
+    def read(value: RiakValue): Try[T]
   }
 
   object RiakValueReader {
-    implicit def func2Reader[T](f: RiakValue => T): RiakValueReader[T] = new RiakValueReader[T] {
+    implicit def func2Reader[T](f: RiakValue => Try[T]): RiakValueReader[T] = new RiakValueReader[T] {
       def read(value: RiakValue) = f(value)
     }
   }
@@ -37,5 +38,12 @@ package object converters {
     * Provides the RiakValue deserialization and serialization for type T.
    */
   trait RiakValueConverter[T] extends RiakValueReader[T] with RiakValueWriter[T]
+
+
+  // ============================================================================
+  // Exceptions
+  // ============================================================================
+
+  case class ConversionFailedException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 
 }

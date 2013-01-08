@@ -47,6 +47,8 @@ abstract class Bucket(resolver: ConflictResolver) {
   def store(key: String, value: String): Future[Option[RiakValue]]
   // def store[T: RiakValueMarshaller](key: String, value: T): Future[Option[RiakValue]]
 
+  // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
+
   def delete(key: String): Future[Unit]
 }
 
@@ -98,6 +100,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
         case NotFound        => None
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed("Fetch for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
+        // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
   }
@@ -116,7 +119,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
         case MultipleChoices => resolveConflict(response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed("Store for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
-        // case PreconditionFailed => ... // needed when we support conditional request semantics
+        // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
   }

@@ -50,25 +50,29 @@ package object riak {
     // links: Seq[RiakLink]
     // meta: Seq[RiakMeta]
   ) {
+    import scala.util._
+    import converters._
 
     def asString = new String(value, contentType.charset.nioCharset)
 
-    // TODO: add as[T: RiakValueUnmarshaller] function linked to the ContentType
+    def as[T: RiakValueReader]: Try[T] = implicitly[RiakValueReader[T]].read(this)
 
     // TODO: add common manipulation functions
   }
 
   object RiakValue {
-    def apply(value: String): RiakValue = {
-      val contentType = ContentType.`text/plain`
-
-      new RiakValue(
+    def apply(value: String, contentType: ContentType, vclock: Vclock, etag: String, lastModified: DateTime): RiakValue = {
+      RiakValue(
         value.getBytes(contentType.charset.nioCharset),
         contentType,
-        Vclock.NotSpecified,
-        "",
-        DateTime.now
+        vclock,
+        etag,
+        lastModified
       )
+    }
+
+    def apply(value: String): RiakValue = {
+      apply(value, ContentType.`text/plain`, Vclock.NotSpecified, "", DateTime.now)
     }
 
     import spray.http.HttpBody
