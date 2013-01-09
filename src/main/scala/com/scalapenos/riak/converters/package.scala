@@ -6,6 +6,10 @@ import scala.util._
 
 package object converters {
 
+  // ============================================================================
+  // The main Converter API
+  // ============================================================================
+
   /**
     * Provides the RiakValue deserialization for type T.
    */
@@ -45,5 +49,6 @@ package object converters {
   // ============================================================================
 
   case class ConversionFailedException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
+
 
 }
