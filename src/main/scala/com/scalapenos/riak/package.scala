@@ -65,6 +65,10 @@ package object riak {
       apply(value, ContentType.`text/plain`, Vclock.NotSpecified, "", DateTime.now)
     }
 
+    def apply(value: String, contentType: ContentType): RiakValue = {
+      apply(value, contentType, Vclock.NotSpecified, "", DateTime.now)
+    }
+
     def apply(value: String, contentType: ContentType, vclock: Vclock, etag: String, lastModified: DateTime): RiakValue = {
       RiakValue(
         value.getBytes(contentType.charset.nioCharset),
