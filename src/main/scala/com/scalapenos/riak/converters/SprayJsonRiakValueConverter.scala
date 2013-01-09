@@ -10,7 +10,7 @@ import spray.http.MediaTypes._
 import spray.json._
 
 
-trait SprayJsonConverter {
+trait SprayJsonRiakValueConverter {
 
   // TODO: this is not as simple as it looked. Only RiakValue with a JSON contentType should be allowed
   //       Is there a type-based solution or should we use runtime detection and use Try[T] as the output of a read?
@@ -44,4 +44,4 @@ trait SprayJsonConverter {
   }
 }
 
-object SprayJsonConverter extends SprayJsonConverter
+object SprayJsonRiakValueConverter extends SprayJsonRiakValueConverter

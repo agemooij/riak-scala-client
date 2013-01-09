@@ -13,9 +13,9 @@ import com.github.nscala_time.time.Imports._
 /**
  * This test depends on a Riak node running on localhost:8098 !!
  */
-class SprayJsonConverterSpec extends Specification {
+class SprayJsonRiakValueConverterSpec extends Specification {
   import spray.json.DefaultJsonProtocol._
-  import SprayJsonConverter._
+  import SprayJsonRiakValueConverter._
 
   case class Thingy(name: String, number: Int)
   object Thingy {
