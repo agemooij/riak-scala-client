@@ -17,9 +17,8 @@ class RiakClientBasicInteractionsSpec extends AkkaActorSystemSpecification {
 
   "The riak driver" should {
     "be able to perform a simple get-put-get-delete-get CRUD flow" in {
-      val client = Riak(system)
-      val connection = client.connect()
-      val bucket = connection.bucket("test")
+      val client = RiakClient(system)
+      val bucket = client.bucket("test")
 
       val fetchBeforeStore = bucket.fetch("foo")
 

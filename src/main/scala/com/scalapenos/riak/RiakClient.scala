@@ -10,63 +10,23 @@ import converters._
 // Riak (the main entry point)
 // ============================================================================
 
-object Riak extends ExtensionId[Riak] with ExtensionIdProvider {
-  def lookup() = Riak
-  def createExtension(system: ExtendedActorSystem) = new Riak(system)
-}
-
-class Riak(system: ExtendedActorSystem) extends Extension {
-  def this() = this(ActorSystem("riak-scala-driver").asInstanceOf[ExtendedActorSystem])
-
-  def connect(): RiakConnection = connect("127.0.0.1", 8098)
-  def connect(host: String, port: Int): RiakConnection = RiakConnectionImpl(system, host, port)
-
-  // TODO: how to deal with:
-  //       - Shutting down the ActorSystem when we're done and we created the actor system to begin with)
-  //       - someone else shutting down the ActorSystem, leaving us in an invalid state
-}
-
-
-// ============================================================================
-// The API Definitions
-// ============================================================================
-
-trait RiakConnection {
+trait Riak {
   import resolvers.LastValueWinsResolver
 
   def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
 }
 
-abstract class Bucket(resolver: ConflictResolver) {
-  // TODO: add Retry support, maybe at the bucket level
-  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
-
-  def fetch(key: String): Future[Option[RiakValue]]
-
-  def store(key: String, value: RiakValue): Future[Option[RiakValue]]
-  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]]
-
-  // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
-  // def store(value: RiakValue): Future[String]
-  // def store[T: RiakValueWriter](value: T): Future[String]
-
-  def delete(key: String): Future[Unit]
-}
-
-
-// ============================================================================
-// RiakConnectionImpl
-// ============================================================================
-
-// TODO: make the connection manage one single RiakConnectionActor, with its
-//       own supervisor strategy for better fault tolerance. Getting a handle
-//       on the bucket could be implemented using a reference to a child actor
-//       wrapped in another trait
-
-case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: Int) extends RiakConnection {
+case class RiakClient(system: ActorSystem, host: String, port: Int) extends Riak {
   import spray.can.client.HttpClient
   import spray.client._
   import spray.io.IOExtension
+
+  // TODO: migrate to the new spray-client architecture (as of snapshot version 20130108)
+
+  // TODO: make the connection manage one single RiakConnectionActor, with its
+  //       own supervisor strategy for better fault tolerance. Getting a handle
+  //       on the bucket could be implemented using a reference to a child actor
+  //       wrapped in another trait
 
   private[this] val ioBridge = IOExtension(system).ioBridge()
   private[this] val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
@@ -80,12 +40,36 @@ case class RiakConnectionImpl(system: ExtendedActorSystem, host: String, port: I
   def bucket(name: String, resolver: ConflictResolver) = BucketImpl(system, httpConduit, name, resolver)
 }
 
+object RiakClient {
+  def apply(): RiakClient = apply(ActorSystem("riak-client"))
+  def apply(host: String, port: Int): RiakClient = RiakClient(ActorSystem("riak-client"), host, port)
+  def apply(system: ActorSystem): RiakClient = RiakClient(system, "127.0.0.1", 8098)
+}
+
 
 // ============================================================================
-// BucketImpl
+// Bucket
 // ============================================================================
 
-case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, resolver: ConflictResolver) extends Bucket(resolver) {
+trait Bucket {
+  // TODO: add Retry support, maybe at the bucket level
+  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
+
+  def resolver: ConflictResolver
+
+  def fetch(key: String): Future[Option[RiakValue]]
+
+  def store(key: String, value: RiakValue): Future[Option[RiakValue]]
+  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]]
+
+  // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
+  // def store(value: RiakValue): Future[String]
+  // def store[T: RiakValueWriter](value: T): Future[String]
+
+  def delete(key: String): Future[Unit]
+}
+
+case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, resolver: ConflictResolver) extends Bucket {
   import system.dispatcher
   import spray.client.HttpConduit._
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
