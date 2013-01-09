@@ -22,13 +22,13 @@ class SprayJsonRiakValueConverterSpec extends Specification {
     implicit val jsonFormat = jsonFormat2(Thingy.apply)
   }
 
-  val validJson = """{"name": "Answer", "number": 42}"""
+  val validJson = """{"name":"Answer","number":42}"""
   val invalidJson = """{"name": "Answer"}"""
 
-  "The SprayJsonConverter" should {
+  "SprayJsonConverter.read(RiakValue)" should {
     "correctly convert a RiakValue with ContentType `application/json` and valid JSON" in {
       val riakValue = RiakValue(validJson, ContentType.`application/json`, "vclock123", "etag123", DateTime.now)
-      val thingy = riakValue.as[Thingy]
+      val thingy = implicitly[RiakValueConverter[Thingy]].read(riakValue)
 
       thingy must beAnInstanceOf[Success[Thingy]]
       thingy.foreach{ t =>
@@ -39,7 +39,7 @@ class SprayJsonRiakValueConverterSpec extends Specification {
 
     "fail when converting a RiakValue with ContentType `application/json` but invalid JSON" in {
       val riakValue = RiakValue(invalidJson, ContentType.`application/json`, "vclock123", "etag123", DateTime.now)
-      val thingy = riakValue.as[Thingy]
+      val thingy = implicitly[RiakValueConverter[Thingy]].read(riakValue)
 
       thingy must beAnInstanceOf[Failure[Thingy]]
 
@@ -50,13 +50,23 @@ class SprayJsonRiakValueConverterSpec extends Specification {
 
     "fail when converting a RiakValue with an unsupported ContentType" in {
       val riakValue = RiakValue(validJson, ContentType.`text/plain`, "vclock123", "etag123", DateTime.now)
-      val thingy = riakValue.as[Thingy]
+      val thingy = implicitly[RiakValueConverter[Thingy]].read(riakValue)
 
       thingy must beAnInstanceOf[Failure[Thingy]]
 
       val exception = thingy.asInstanceOf[Failure[Thingy]].exception
 
       exception must beAnInstanceOf[ConversionFailedException]
+    }
+  }
+
+  "SprayJsonConverter.write(T)" should {
+    "correctly convert T to a RiakValue with ContentType `application/json`" in {
+      val thingy = new Thingy("Answer", 42)
+      val value = implicitly[RiakValueConverter[Thingy]].write(thingy)
+
+      value.asString must beEqualTo(validJson)
+      value.contentType must beEqualTo(ContentType.`application/json`)
     }
   }
 

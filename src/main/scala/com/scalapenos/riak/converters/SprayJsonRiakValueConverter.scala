@@ -39,7 +39,7 @@ trait SprayJsonRiakValueConverter {
     }
 
     def write(obj: T): RiakValue = {
-      throw new RuntimeException("Not implemented yet!")
+      RiakValue(implicitly[RootJsonFormat[T]].write(obj).compactPrint, ContentType.`application/json`)
     }
   }
 }
