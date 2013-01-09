@@ -61,6 +61,10 @@ package object riak {
   }
 
   object RiakValue {
+    def apply(value: String): RiakValue = {
+      apply(value, ContentType.`text/plain`, Vclock.NotSpecified, "", DateTime.now)
+    }
+
     def apply(value: String, contentType: ContentType, vclock: Vclock, etag: String, lastModified: DateTime): RiakValue = {
       RiakValue(
         value.getBytes(contentType.charset.nioCharset),
@@ -69,10 +73,6 @@ package object riak {
         etag,
         lastModified
       )
-    }
-
-    def apply(value: String): RiakValue = {
-      apply(value, ContentType.`text/plain`, Vclock.NotSpecified, "", DateTime.now)
     }
 
     import spray.http.HttpBody

@@ -4,6 +4,7 @@ import scala.concurrent.Future
 import akka.actor._
 import com.github.nscala_time.time.Imports._
 
+import converters._
 
 // ============================================================================
 // Riak (the main entry point)
@@ -43,9 +44,7 @@ abstract class Bucket(resolver: ConflictResolver) {
   def fetch(key: String): Future[Option[RiakValue]]
 
   def store(key: String, value: RiakValue): Future[Option[RiakValue]]
-  // TODO: change this into any object that can be implicitly converted into a RiakValue
-  def store(key: String, value: String): Future[Option[RiakValue]]
-  // def store[T: RiakValueMarshaller](key: String, value: T): Future[Option[RiakValue]]
+  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]]
 
   // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
 
@@ -105,7 +104,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
     }
   }
 
-  def store(key: String, value: String): Future[Option[RiakValue]] = store(key, RiakValue(value))
+  def store[T: RiakValueWriter](key: String, value: T) = store(key, implicitly[RiakValueWriter[T]].write(value))
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
     // TODO: Add a nice, non-intrusive way to set query parameters, like 'returnbody', etc.
 
