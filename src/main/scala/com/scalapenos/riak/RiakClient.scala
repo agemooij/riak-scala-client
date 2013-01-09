@@ -47,6 +47,8 @@ abstract class Bucket(resolver: ConflictResolver) {
   def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]]
 
   // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
+  // def store(value: RiakValue): Future[String]
+  // def store[T: RiakValueWriter](value: T): Future[String]
 
   def delete(key: String): Future[Unit]
 }
