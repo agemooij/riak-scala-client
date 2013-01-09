@@ -4,6 +4,7 @@ import scala.concurrent.Future
 import akka.actor._
 import com.github.nscala_time.time.Imports._
 
+import converters._
 
 // ============================================================================
 // Riak (the main entry point)
@@ -43,9 +44,9 @@ abstract class Bucket(resolver: ConflictResolver) {
   def fetch(key: String): Future[Option[RiakValue]]
 
   def store(key: String, value: RiakValue): Future[Option[RiakValue]]
-  // TODO: change this into any object that can be implicitly converted into a RiakValue
-  def store(key: String, value: String): Future[Option[RiakValue]]
-  // def store[T: RiakValueMarshaller](key: String, value: T): Future[Option[RiakValue]]
+  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]]
+
+  // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
 
   def delete(key: String): Future[Unit]
 }
@@ -98,11 +99,12 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
         case NotFound        => None
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed("Fetch for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
+        // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
   }
 
-  def store(key: String, value: String): Future[Option[RiakValue]] = store(key, RiakValue(value))
+  def store[T: RiakValueWriter](key: String, value: T) = store(key, implicitly[RiakValueWriter[T]].write(value))
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
     // TODO: Add a nice, non-intrusive way to set query parameters, like 'returnbody', etc.
 
@@ -116,7 +118,7 @@ case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, 
         case MultipleChoices => resolveConflict(response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed("Store for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
-        // case PreconditionFailed => ... // needed when we support conditional request semantics
+        // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
   }

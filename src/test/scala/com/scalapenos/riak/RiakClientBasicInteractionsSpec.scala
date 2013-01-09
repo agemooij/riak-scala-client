@@ -13,6 +13,8 @@ import akka.actor._
 class RiakClientBasicInteractionsSpec extends AkkaActorSystemSpecification {
   val timeout = 5 seconds
 
+  import converters.BasicRiakValueConverters._
+
   "The riak driver" should {
     "be able to perform a simple get-put-get-delete-get CRUD flow" in {
       val client = Riak(system)
