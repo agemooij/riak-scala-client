@@ -6,50 +6,21 @@ import com.github.nscala_time.time.Imports._
 
 import converters._
 
+
 // ============================================================================
-// Riak (the main entry point)
+// The Main API definitions
 // ============================================================================
 
-trait Riak {
+trait RiakClientOperations {
+  def connect(host: String, port: Int): RiakConnection
+  def connect(): RiakConnection = connect("localhost", 8098)
+}
+
+trait RiakConnection {
   import resolvers.LastValueWinsResolver
 
   def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
 }
-
-case class RiakClient(system: ActorSystem, host: String, port: Int) extends Riak {
-  import spray.can.client.HttpClient
-  import spray.client._
-  import spray.io.IOExtension
-
-  // TODO: migrate to the new spray-client architecture (as of snapshot version 20130108)
-
-  // TODO: make the connection manage one single RiakConnectionActor, with its
-  //       own supervisor strategy for better fault tolerance. Getting a handle
-  //       on the bucket could be implemented using a reference to a child actor
-  //       wrapped in another trait
-
-  private[this] val ioBridge = IOExtension(system).ioBridge()
-  private[this] val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
-  private[this] val httpConduit = system.actorOf(Props(new HttpConduit(
-    httpClient = httpClient,
-    host = host,
-    port = port,
-    dispatchStrategy = DispatchStrategies.Pipelined // TODO: read this from the settings
-  )))
-
-  def bucket(name: String, resolver: ConflictResolver) = BucketImpl(system, httpConduit, name, resolver)
-}
-
-object RiakClient {
-  def apply(): RiakClient = apply(ActorSystem("riak-client"))
-  def apply(host: String, port: Int): RiakClient = RiakClient(ActorSystem("riak-client"), host, port)
-  def apply(system: ActorSystem): RiakClient = RiakClient(system, "127.0.0.1", 8098)
-}
-
-
-// ============================================================================
-// Bucket
-// ============================================================================
 
 trait Bucket {
   // TODO: add Retry support, maybe at the bucket level
@@ -68,6 +39,77 @@ trait Bucket {
 
   def delete(key: String): Future[Unit]
 }
+
+
+// ============================================================================
+// RiakClient - The main entry point
+// ============================================================================
+
+case class RiakClient(system: ActorSystem) extends RiakClientOperations {
+  def connect(host: String, port: Int) = RiakExtension(system).connect(host, port)
+}
+
+object RiakClient {
+  def apply(): RiakClient = apply(ActorSystem("riak-client"))
+}
+
+
+// ============================================================================
+// RiakExtension - The root of the actor tree
+// ============================================================================
+
+object RiakExtension extends ExtensionId[RiakExtension] with ExtensionIdProvider {
+  def lookup() = RiakExtension
+  def createExtension(system: ExtendedActorSystem) = new RiakExtension(system)
+}
+
+class RiakExtension(system: ExtendedActorSystem) extends Extension with RiakClientOperations {
+  // TODO: how to deal with:
+  //       - Shutting down the ActorSystem when we're done and we created the actor system to begin with)
+  //       - someone else shutting down the ActorSystem, leaving us in an invalid state
+  // TODO: add system shutdown hook
+
+  // TODO: create new connection actor and wrap it in a RiakConnectionImpl
+
+  def connect(host: String, port: Int) = new RiakConnectionImpl(system, host, port)
+}
+
+
+// ============================================================================
+// RiakConnection - Actualy connection to the endpoint
+// ============================================================================
+
+private[riak] case class RiakConnectionImpl(system: ActorSystem, host: String, port: Int) extends RiakConnection {
+  // TODO: migrate to the new spray-client architecture (as of snapshot version 20130108)
+
+  // TODO: make the connection manage one single RiakConnectionActor, with its
+  //       own supervisor strategy for better fault tolerance. Getting a handle
+  //       on the bucket could be implemented using a reference to a child actor
+  //       wrapped in another trait
+
+  import spray.can.client.HttpClient
+  import spray.client._
+  import spray.io.IOExtension
+
+  private[this] val ioBridge = IOExtension(system).ioBridge()
+  private[this] val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
+  private[this] val httpConduit = system.actorOf(Props(new HttpConduit(
+    httpClient = httpClient,
+    host = host,
+    port = port,
+    dispatchStrategy = DispatchStrategies.Pipelined // TODO: read this from the settings
+  )))
+
+  def bucket(name: String, resolver: ConflictResolver) = BucketImpl(system, httpConduit, name, resolver)
+}
+
+
+
+
+
+// ============================================================================
+// Bucket
+// ============================================================================
 
 case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, resolver: ConflictResolver) extends Bucket {
   import system.dispatcher
