@@ -88,12 +88,15 @@ class RiakExtension(system: ExtendedActorSystem) extends Extension with RiakClie
 
   // TODO: create new connection actor and wrap it in a RiakConnectionImpl
 
+  // TODO: implement and expose a Settings class
+  // val settings = new RiakSettings(system.settings.config)
+
   def connect(host: String, port: Int) = new RiakConnectionImpl(system, host, port)
 }
 
 
 // ============================================================================
-// RiakConnection - Actualy connection to the endpoint
+// RiakConnection - Actually connection to the endpoint
 // ============================================================================
 
 private[riak] case class RiakConnectionImpl(system: ActorSystem, host: String, port: Int) extends RiakConnection {
