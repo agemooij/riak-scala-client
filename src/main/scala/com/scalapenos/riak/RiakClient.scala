@@ -27,43 +27,17 @@ import converters._
 // The Main API definitions
 // ============================================================================
 
-trait RiakClientOperations {
-  def connect(host: String, port: Int): RiakConnection
-  def connect(): RiakConnection = connect("localhost", 8098)
-}
-
-trait RiakConnection {
-  import resolvers.LastValueWinsResolver
-
-  def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
-}
-
-trait Bucket {
-  // TODO: add Retry support, maybe at the bucket level
-  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
-
-  def resolver: ConflictResolver
-
-  def fetch(key: String): Future[Option[RiakValue]]
-
-  def store(key: String, value: RiakValue): Future[Option[RiakValue]]
-  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]]
-
-  // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
-  // def store(value: RiakValue): Future[String]
-  // def store[T: RiakValueWriter](value: T): Future[String]
-
-  def delete(key: String): Future[Unit]
-}
 
 
 // ============================================================================
 // RiakClient - The main entry point
 // ============================================================================
 
-case class RiakClient(system: ActorSystem) extends RiakClientOperations {
-  def apply(host: String, port: Int): RiakConnection = connect(host, port)
+case class RiakClient(system: ActorSystem) {
   def connect(host: String, port: Int) = RiakExtension(system).connect(host, port)
+  def connect(): RiakConnection = connect("localhost", 8098)
+
+  def apply(host: String, port: Int): RiakConnection = connect(host, port)
 }
 
 object RiakClient {
@@ -80,7 +54,7 @@ object RiakExtension extends ExtensionId[RiakExtension] with ExtensionIdProvider
   def createExtension(system: ExtendedActorSystem) = new RiakExtension(system)
 }
 
-class RiakExtension(system: ExtendedActorSystem) extends Extension with RiakClientOperations {
+class RiakExtension(system: ExtendedActorSystem) extends Extension {
   // TODO: how to deal with:
   //       - Shutting down the ActorSystem when we're done and we created the actor system to begin with)
   //       - someone else shutting down the ActorSystem, leaving us in an invalid state
@@ -91,112 +65,139 @@ class RiakExtension(system: ExtendedActorSystem) extends Extension with RiakClie
   // TODO: implement and expose a Settings class
   // val settings = new RiakSettings(system.settings.config)
 
-  def connect(host: String, port: Int) = new RiakConnectionImpl(system, host, port)
+  val httpClient = RiakHttpClient(system: ActorSystem)
+
+  def connect(host: String, port: Int) = new RiakConnectionImpl(httpClient, host, port)
 }
 
 
 // ============================================================================
-// RiakConnection - Actually connection to the endpoint
+// RiakConnection
 // ============================================================================
 
-private[riak] case class RiakConnectionImpl(system: ActorSystem, host: String, port: Int) extends RiakConnection {
-  // TODO: migrate to the new spray-client architecture (as of snapshot version 20130108)
+trait RiakConnection {
+  import resolvers.LastValueWinsResolver
 
-  // TODO: make the connection manage one single RiakConnectionActor, with its
-  //       own supervisor strategy for better fault tolerance. Getting a handle
-  //       on the bucket could be implemented using a reference to a child actor
-  //       wrapped in another trait
-
-  import spray.can.client.HttpClient
-  import spray.client._
-  import spray.io.IOExtension
-
-  private[this] val ioBridge = IOExtension(system).ioBridge()
-  private[this] val httpClient = system.actorOf(Props(new HttpClient(ioBridge)))
-  private[this] val httpConduit = system.actorOf(Props(new HttpConduit(
-    httpClient = httpClient,
-    host = host,
-    port = port,
-    dispatchStrategy = DispatchStrategies.Pipelined // TODO: read this from the settings
-  )))
-
-  def bucket(name: String, resolver: ConflictResolver) = BucketImpl(system, httpConduit, name, resolver)
+  def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
 }
 
-
-
+private[riak] case class RiakConnectionImpl(httpClient: RiakHttpClient, host: String, port: Int) extends RiakConnection {
+  def bucket(name: String, resolver: ConflictResolver) = BucketImpl(httpClient, host, port, name, resolver)
+}
 
 
 // ============================================================================
 // Bucket
 // ============================================================================
 
-case class BucketImpl(system: ActorSystem, httpConduit: ActorRef, name: String, resolver: ConflictResolver) extends Bucket {
+trait Bucket {
+  // TODO: add Retry support, maybe at the bucket level
+  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
+
+  def resolver: ConflictResolver
+
+  def fetch(key: String): Future[Option[RiakValue]]
+
+  def store(key: String, value: RiakValue): Future[Option[RiakValue]]
+
+  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]] = {
+    store(key, implicitly[RiakValueWriter[T]].write(value))
+  }
+
+  // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
+  // def store(value: RiakValue): Future[String]
+  // def store[T: RiakValueWriter](value: T): Future[String]
+
+  def delete(key: String): Future[Unit]
+}
+
+private[riak] case class BucketImpl(httpClient: RiakHttpClient, host: String, port: Int, bucket: String, resolver: ConflictResolver) extends Bucket {
+  def fetch(key: String) = httpClient.fetch(host, port, bucket, key, resolver)
+
+  def store(key: String, value: RiakValue) = httpClient.store(host, port, bucket, key, value, resolver)
+
+  def delete(key: String) = httpClient.delete(host, port, bucket, key)
+}
+
+
+// ============================================================================
+// RiakHttpClient
+// ============================================================================
+
+import spray.httpx.RequestBuilding
+
+private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuilding {
+  // TODO: add Retry support, maybe at the bucket level
+  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
+
   import system.dispatcher
-  import spray.client.HttpConduit._
+  import spray.client.HttpClient
+  import spray.client.pipelining._
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
   import spray.http.StatusCodes._
-  import spray.http.HttpHeaders.RawHeader
+  import spray.http.HttpHeaders._
   import utils.SprayClientExtras._
 
-  def fetch(key: String): Future[Option[RiakValue]] = {
-    basicHttpRequest(Get(url(key))).map { response =>
+  private[this] val httpClient = system.actorOf(Props(new HttpClient), "riak-http-client")
+
+  def fetch(host: String, port: Int, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
+    httpRequest(Get(url(host, port, bucket, key))).map { response =>
       response.status match {
         case OK              => toRiakValue(response)
         case MultipleChoices => resolveConflict(response, resolver)
         case NotFound        => None
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => throw new BucketOperationFailed("Fetch for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
+        case other           => throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
   }
 
-  def store[T: RiakValueWriter](key: String, value: T) = store(key, implicitly[RiakValueWriter[T]].write(value))
-  def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
+  def store(host: String, port: Int, bucket: String, key: String, value: RiakValue, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     // TODO: Add a nice, non-intrusive way to set query parameters, like 'returnbody', etc.
 
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader("X-Riak-Vclock", vclock.toString))
-    val request = addOptionalHeader(vclockHeader) ~> basicHttpRequest
+    val request = addOptionalHeader(vclockHeader) ~> httpRequest
 
-    request(Put(url(key) + "?returnbody=true", value)).map { response =>
+    request(Put(url(host, port, bucket, key) + "?returnbody=true", value)).map { response =>
       response.status match {
         case OK              => toRiakValue(response)
         case NoContent       => None
         case MultipleChoices => resolveConflict(response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => throw new BucketOperationFailed("Store for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
+        case other           => throw new BucketOperationFailed(s"Store for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
   }
 
-  def delete(key: String): Future[Unit] = {
-    basicHttpRequest(Delete(url(key))).map { response =>
+  def delete(host: String, port: Int, bucket: String, key: String): Future[Unit] = {
+    httpRequest(Delete(url(host, port, bucket, key))).map { response =>
       response.status match {
         case NoContent       => ()
         case NotFound        => ()
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => throw new BucketOperationFailed("Delete for key '%s' in bucket '%s' produced an unexpected response code '%s'.".format(key, name, other))
+        case other           => throw new BucketOperationFailed(s"Delete for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
       }
     }
   }
 
+
+
+
   private val clientId = "%s".format(java.util.UUID.randomUUID())
 
-  private def basicHttpRequest = {
+  private def httpRequest = {
     // TODO: make the client id optional based on some config (Settings in reference.conf)
 
-    addHeader("X-Riak-ClientId", clientId) ~> sendReceive(httpConduit)
+    addHeader("X-Riak-ClientId", clientId) ~> sendReceive(httpClient)
   }
 
-  private def url(key: String) = "/buckets/%s/keys/%s".format(name, key)
+  private def url(host: String, port: Int, bucket: String, key: String) = s"http://$host:$port/buckets/$bucket/keys/$key"
 
   private def toRiakValue(response: HttpResponse): Option[RiakValue] = toRiakValue(response.entity, response.headers)
   private def toRiakValue(entity: HttpEntity, headers: List[HttpHeader]): Option[RiakValue] = {
     entity.toOption.flatMap { body =>
-      import spray.http.HttpHeaders._
-
       val vClockOption       = headers.find(_.is("x-riak-vclock")).map(_.value)
       val eTagOption         = headers.find(_.is("etag")).map(_.value)
       val lastModifiedOption = headers.find(_.is("last-modified"))
