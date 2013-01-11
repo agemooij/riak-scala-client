@@ -62,6 +62,7 @@ trait Bucket {
 // ============================================================================
 
 case class RiakClient(system: ActorSystem) extends RiakClientOperations {
+  def apply(host: String, port: Int): RiakConnection = connect(host, port)
   def connect(host: String, port: Int) = RiakExtension(system).connect(host, port)
 }
 
