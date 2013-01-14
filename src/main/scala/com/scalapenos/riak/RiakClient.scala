@@ -144,7 +144,7 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
     httpRequest(Get(url(host, port, bucket, key))).map { response =>
       response.status match {
         case OK              => toRiakValue(response)
-        case MultipleChoices => resolveConflict(response, resolver)
+        case MultipleChoices => resolveConflict(host, port, bucket, key, response, resolver)
         case NotFound        => None
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
@@ -163,7 +163,7 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
       response.status match {
         case OK              => toRiakValue(response)
         case NoContent       => None
-        case MultipleChoices => resolveConflict(response, resolver)
+        case MultipleChoices => resolveConflict(host, port, bucket, key, response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed(s"Store for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
@@ -181,8 +181,6 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
       }
     }
   }
-
-
 
 
   private val clientId = "%s".format(java.util.UUID.randomUUID())
@@ -210,7 +208,7 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
     }
   }
 
-  private def resolveConflict(response: HttpResponse, resolver: ConflictResolver): Option[RiakValue] = {
+  private def resolveConflict(host: String, port: Int, bucket: String, key: String, response: HttpResponse, resolver: ConflictResolver): Option[RiakValue] = {
     import spray.http._
     import spray.httpx.unmarshalling._
 
@@ -223,6 +221,9 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // TODO: the resolved value needs to be stored back so the resolution sticks !!!!
         //        we then need to get that value back and get the vclock from there  !!!!
+        // TODO: make sure that the body gets returned
+        // hm, how am I going to flatten this future??
+        //store(host, port, bucket, key, value)
 
         Some(value)
       }
