@@ -45,13 +45,13 @@ class RiakClientBasicInteractionsSpec extends AkkaActorSystemSpecification {
       val storedValue = Await.result(store, timeout)
 
       storedValue must beSome[RiakValue]
-      storedValue.get.asString must beEqualTo("bar")
+      storedValue.get.value must beEqualTo("bar")
 
       val fetchAfterStore = bucket.fetch("foo")
       val fetchedValue = Await.result(fetchAfterStore, timeout)
 
       fetchedValue must beSome[RiakValue]
-      fetchedValue.get.asString must beEqualTo("bar")
+      fetchedValue.get.value must beEqualTo("bar")
 
       val delete = bucket.delete("foo")
 

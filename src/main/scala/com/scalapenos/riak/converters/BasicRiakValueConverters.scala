@@ -23,7 +23,7 @@ import scala.util._
 trait BasicRiakValueConverters {
 
   implicit def stringRiakValueConverter = new RiakValueConverter[String] {
-    def read(value: RiakValue): Try[String] = Success(value.asString)
+    def read(riakValue: RiakValue): Try[String] = Success(riakValue.value)
     def write(obj: String): RiakValue = RiakValue(obj)
   }
 }

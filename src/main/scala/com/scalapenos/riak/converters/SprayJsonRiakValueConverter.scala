@@ -32,25 +32,22 @@ trait SprayJsonRiakValueConverter {
   //       Is there a type-based solution or should we use runtime detection and use Try[T] as the output of a read?
 
   implicit def converter[T: RootJsonFormat: ClassTag] = new RiakValueConverter[T] {
-    def read(value: RiakValue): Try[T] = {
-      def extract(value: RiakValue): Try[T] = {
-        val jsonFormat = implicitly[RootJsonFormat[T]]
+    def read(riakValue: RiakValue): Try[T] = {
+      riakValue.contentType match {
+        case ContentType(`application/json`, _) => {
+          val jsonFormat = implicitly[RootJsonFormat[T]]
 
-        Try(jsonFormat.read(value.asString.asJson)) match {
-          case s: Success[T] => s
-          case Failure(e) =>
-            Failure(ConversionFailedException(
-              "The JSON contained in the RiakValue cannot be used to produce an instance of %s".format(
-                implicitly[ClassTag[T]].runtimeClass.getSimpleName), e))
+          Try(jsonFormat.read(riakValue.value.asJson)) recoverWith {
+            case e => Failure(ConversionFailedException(
+                        "The JSON contained in the RiakValue cannot be used to produce an instance of %s".format(
+                          implicitly[ClassTag[T]].runtimeClass.getSimpleName), e))
+          }
         }
-      }
 
-      value.contentType match {
-        case ContentType(`application/json`, _) => extract(value)
         case _ => Failure(
           new ConversionFailedException(
             "The ContentType of the riakValue is `%s` instead of the `application/json` required by SprayJsonConverter".format(
-              value.contentType, implicitly[ClassTag[T]].runtimeClass)))
+              riakValue.contentType, implicitly[ClassTag[T]].runtimeClass)))
       }
     }
 

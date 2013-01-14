@@ -58,7 +58,7 @@ package object riak {
   // TODO: write a converter/deserializer/unmarshaller T => RiakValue
 
   final case class RiakValue(
-    value: Array[Byte],
+    value: String,
     contentType: ContentType,
     vclock: Vclock,
     etag: String,
@@ -68,8 +68,6 @@ package object riak {
   ) {
     import scala.util._
     import converters._
-
-    def asString = new String(value, contentType.charset.nioCharset)
 
     def as[T: RiakValueReader]: Try[T] = implicitly[RiakValueReader[T]].read(this)
 
@@ -85,21 +83,15 @@ package object riak {
       apply(value, contentType, Vclock.NotSpecified, "", DateTime.now)
     }
 
-    def apply(value: String, contentType: ContentType, vclock: Vclock, etag: String, lastModified: DateTime): RiakValue = {
-      RiakValue(
-        value.getBytes(contentType.charset.nioCharset),
-        contentType,
-        vclock,
-        etag,
-        lastModified
-      )
+    def apply(value: Array[Byte], contentType: ContentType, vclock: Vclock, etag: String, lastModified: DateTime): RiakValue = {
+      RiakValue(new String(value, contentType.charset.nioCharset), contentType, vclock, etag, lastModified)
     }
 
     import spray.http.HttpBody
     import spray.httpx.marshalling._
     implicit val RiakValueMarshaller: Marshaller[RiakValue] = new Marshaller[RiakValue] {
       def apply(riakValue: RiakValue, ctx: MarshallingContext) {
-        ctx.marshalTo(HttpBody(riakValue.contentType, riakValue.value))
+        ctx.marshalTo(HttpBody(riakValue.contentType, riakValue.value.getBytes(riakValue.contentType.charset.nioCharset)))
       }
     }
   }

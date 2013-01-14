@@ -79,10 +79,10 @@ class SprayJsonRiakValueConverterSpec extends Specification {
   "SprayJsonConverter.write(T)" should {
     "correctly convert T to a RiakValue with ContentType `application/json`" in {
       val thingy = new Thingy("Answer", 42)
-      val value = implicitly[RiakValueConverter[Thingy]].write(thingy)
+      val riakValue = implicitly[RiakValueConverter[Thingy]].write(thingy)
 
-      value.asString must beEqualTo(validJson)
-      value.contentType must beEqualTo(ContentType.`application/json`)
+      riakValue.value must beEqualTo(validJson)
+      riakValue.contentType must beEqualTo(ContentType.`application/json`)
     }
   }
 
