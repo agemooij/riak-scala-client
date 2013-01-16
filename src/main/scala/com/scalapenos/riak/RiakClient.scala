@@ -41,7 +41,9 @@ case class RiakClient(system: ActorSystem) {
 }
 
 object RiakClient {
-  def apply(): RiakClient = apply(ActorSystem("riak-client"))
+  lazy val system = ActorSystem("riak-client")
+
+  def apply(): RiakClient = apply(system)
 }
 
 
@@ -59,8 +61,6 @@ class RiakExtension(system: ExtendedActorSystem) extends Extension {
   //       - Shutting down the ActorSystem when we're done and we created the actor system to begin with)
   //       - someone else shutting down the ActorSystem, leaving us in an invalid state
   // TODO: add system shutdown hook
-
-  // TODO: create new connection actor and wrap it in a RiakConnectionImpl
 
   // TODO: implement and expose a Settings class
   // val settings = new RiakSettings(system.settings.config)
