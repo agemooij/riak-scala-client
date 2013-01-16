@@ -26,16 +26,16 @@ import akka.actor._
 /**
  * This test depends on a Riak node running on localhost:8098 !!
  */
-class RiakClientBasicInteractionsSpec extends AkkaActorSystemSpecification {
+class BasicInteractionsSpec extends AkkaActorSystemSpecification {
   val timeout = 5 seconds
 
   import converters.BasicRiakValueConverters._
 
-  "The riak driver" should {
+  "The riak client" should {
     "be able to perform a simple get-put-get-delete-get CRUD flow" in {
       val client = RiakClient(system)
       val connection = client.connect()
-      val bucket = connection.bucket("test")
+      val bucket = connection.bucket("test-basic-interaction")
 
       val fetchBeforeStore = bucket.fetch("foo")
 

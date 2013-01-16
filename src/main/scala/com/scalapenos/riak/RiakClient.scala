@@ -109,6 +109,10 @@ trait Bucket {
   // def store[T: RiakValueWriter](value: T): Future[String]
 
   def delete(key: String): Future[Unit]
+
+  // TODO: implement support for reading and writing bucket properties
+  // def properties: Future[BucketProperties]
+  // def properties_=(props: BucketProperties): Future[Unit]
 }
 
 private[riak] case class BucketImpl(httpClient: RiakHttpClient, host: String, port: Int, bucket: String, resolver: ConflictResolver) extends Bucket {
@@ -166,7 +170,7 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
         case NoContent       => successful(None)
         case MultipleChoices => resolveConflict(host, port, bucket, key, response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => throw new BucketOperationFailed(s"Store for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
+        case other           => throw new BucketOperationFailed(s"Store for of value '$value' for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
@@ -189,7 +193,9 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
   private def httpRequest = {
     // TODO: make the client id optional based on some config (Settings in reference.conf)
 
-    addHeader("X-Riak-ClientId", clientId) ~> sendReceive(httpClient)
+    addHeader("X-Riak-ClientId", clientId) ~>
+    addHeader("Accept", "*/*, multipart/mixed") ~>
+    sendReceive(httpClient)
   }
 
   private def url(host: String, port: Int, bucket: String, key: String) = s"http://$host:$port/buckets/$bucket/keys/$key"
@@ -213,10 +219,12 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
     import spray.http._
     import spray.httpx.unmarshalling._
 
+    val vclockHeader = response.headers.find(_.is("x-riak-vclock")).toList
+
     response.entity.as[MultipartContent] match {
       case Left(error) => throw new ConflictResolutionFailed(error.toString)
       case Right(multipartContent) => {
-        val values = multipartContent.parts.flatMap(part => toRiakValue(part.entity, part.headers)).toSet
+        val values = multipartContent.parts.flatMap(part => toRiakValue(part.entity, vclockHeader ++ part.headers)).toSet
         val value = resolver.resolve(values)
 
         // Store the resolved value back to Riak and return the resulting RiakValue

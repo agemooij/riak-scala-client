@@ -43,6 +43,7 @@ package object riak {
     def isDefined = !isEmpty
     def isEmpty = value.isEmpty
     def toOption: Option[Vclock] = if (isDefined) Some(this) else None
+    override def toString = value
   }
 
   object Vclock {
