@@ -125,6 +125,7 @@ private[riak] case class BucketImpl(httpClient: RiakHttpClient, host: String, po
 // ============================================================================
 
 import spray.httpx.RequestBuilding
+import scala.concurrent.Future._
 
 private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuilding {
   // TODO: add Retry support, maybe at the bucket level
@@ -141,11 +142,11 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
   private[this] val httpClient = system.actorOf(Props(new HttpClient), "riak-http-client")
 
   def fetch(host: String, port: Int, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
-    httpRequest(Get(url(host, port, bucket, key))).map { response =>
+    httpRequest(Get(url(host, port, bucket, key))).flatMap { response =>
       response.status match {
-        case OK              => toRiakValue(response)
+        case OK              => successful(toRiakValue(response))
+        case NotFound        => successful(None)
         case MultipleChoices => resolveConflict(host, port, bucket, key, response, resolver)
-        case NotFound        => None
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
@@ -159,10 +160,10 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader("X-Riak-Vclock", vclock.toString))
     val request = addOptionalHeader(vclockHeader) ~> httpRequest
 
-    request(Put(url(host, port, bucket, key) + "?returnbody=true", value)).map { response =>
+    request(Put(url(host, port, bucket, key) + "?returnbody=true", value)).flatMap { response =>
       response.status match {
-        case OK              => toRiakValue(response)
-        case NoContent       => None
+        case OK              => successful(toRiakValue(response))
+        case NoContent       => successful(None)
         case MultipleChoices => resolveConflict(host, port, bucket, key, response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed(s"Store for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
@@ -208,7 +209,7 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
     }
   }
 
-  private def resolveConflict(host: String, port: Int, bucket: String, key: String, response: HttpResponse, resolver: ConflictResolver): Option[RiakValue] = {
+  private def resolveConflict(host: String, port: Int, bucket: String, key: String, response: HttpResponse, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     import spray.http._
     import spray.httpx.unmarshalling._
 
@@ -218,14 +219,9 @@ private[riak] case class RiakHttpClient(system: ActorSystem) extends RequestBuil
         val values = multipartContent.parts.flatMap(part => toRiakValue(part.entity, part.headers)).toSet
         val value = resolver.resolve(values)
 
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // TODO: the resolved value needs to be stored back so the resolution sticks !!!!
-        //        we then need to get that value back and get the vclock from there  !!!!
-        // TODO: make sure that the body gets returned
-        // hm, how am I going to flatten this future??
-        //store(host, port, bucket, key, value)
-
-        Some(value)
+        // Store the resolved value back to Riak and return the resulting RiakValue
+        // TODO: make sure that this one returns the body (when we make that configurable)
+        store(host, port, bucket, key, value, resolver)
       }
     }
   }
