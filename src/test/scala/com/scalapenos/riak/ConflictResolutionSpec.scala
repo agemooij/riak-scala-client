@@ -36,9 +36,7 @@ class ConflictResolutionSpec extends AkkaActorSystemSpecification {
     "write the resolved value back to Riak and return the new value with the appropriate vector clock" in {
       val resolver = new ConflictResolver {
         def resolve(values: Set[RiakValue]) = {
-          println("=====> " + values.map(_.value))
-
-          values.find(v => v.value == "foo").getOrElse(values.head)
+          values.find(v => v.value == "foo").getOrElse(failTest("The resolver should always find a the value 'foo'."))
         }
       }
 
