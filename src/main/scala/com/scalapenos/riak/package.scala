@@ -55,9 +55,6 @@ package object riak {
   // RiakValue
   // ============================================================================
 
-  // TODO: write a converter/serializer/marshaller RiakValue => T
-  // TODO: write a converter/deserializer/unmarshaller T => RiakValue
-
   final case class RiakValue(
     value: String,
     contentType: ContentType,
@@ -76,6 +73,9 @@ package object riak {
   }
 
   object RiakValue {
+    import spray.http.HttpBody
+    import spray.httpx.marshalling._
+
     def apply(value: String): RiakValue = {
       apply(value, ContentType.`text/plain`, Vclock.NotSpecified, "", DateTime.now)
     }
@@ -88,8 +88,6 @@ package object riak {
       RiakValue(new String(value, contentType.charset.nioCharset), contentType, vclock, etag, lastModified)
     }
 
-    import spray.http.HttpBody
-    import spray.httpx.marshalling._
     implicit val RiakValueMarshaller: Marshaller[RiakValue] = new Marshaller[RiakValue] {
       def apply(riakValue: RiakValue, ctx: MarshallingContext) {
         ctx.marshalTo(HttpBody(riakValue.contentType, riakValue.value.getBytes(riakValue.contentType.charset.nioCharset)))
