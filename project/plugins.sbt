@@ -1,11 +1,11 @@
 resolvers ++= Seq(
   Classpaths.typesafeResolver,
-  "scct-github-repository" at "http://mtkopone.github.com/scct/maven-repo"
+  Resolver.url("scalasbt", new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
 )
 
-addSbtPlugin("com.typesafe.startscript" % "xsbt-start-script-plugin" % "0.5.3")
+addSbtPlugin("com.jsuereth" % "xsbt-gpg-plugin" % "0.6")
 
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.0")
+addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.1")
 
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.2.0")
 
