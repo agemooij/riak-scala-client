@@ -56,13 +56,14 @@ private[riak] object RiakServerInfo {
 // RiakHttpClient
 //
 // TODO: add Retry support, maybe at the bucket level
-// TODO: use URL-escaping to make sure all keys (and bucket names) are valid
+// TODO: use URL-escaping to make sure all keys and bucket names are valid
 // ============================================================================
 
-private[riak] case class RiakHttpClient(system: ActorSystem) {
+private[riak] class RiakHttpClient(system: ActorSystem) {
   import system.dispatcher
 
-  private[this] val httpClient = system.actorOf(Props(new HttpClient()), "riak-http-client")
+  private val httpClient = system.actorOf(Props(new HttpClient()), "riak-http-client")
+  private val settings = RiakClientExtension(system).settings
 
 
   def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
@@ -109,11 +110,10 @@ private[riak] case class RiakHttpClient(system: ActorSystem) {
 
 
   private lazy val clientId = java.util.UUID.randomUUID().toString
+  private val clientIdHeader = if (settings.AddClientIdHeader) Some(RawHeader(`X-Riak-ClientId`, clientId)) else None
 
   private def httpRequest = {
-    // TODO: make the client id optional based on some config (Settings in reference.conf)
-
-    addHeader(`X-Riak-ClientId`, clientId) ~>
+    addOptionalHeader(clientIdHeader) ~>
     addHeader("Accept", "*/*, multipart/mixed") ~>
     sendReceive(httpClient)
   }
