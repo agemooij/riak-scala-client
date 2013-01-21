@@ -28,9 +28,9 @@ import converters._
 
 case class RiakClient(system: ActorSystem) {
   def connect(): RiakConnection = connect("localhost", 8098)
-  def connect(host: String, port: Int): RiakConnection = RiakExtension(system).connect(host, port)
-  def connect(url: String): RiakConnection = RiakExtension(system).connect(url)
-  def connect(url: java.net.URL): RiakConnection = RiakExtension(system).connect(url)
+  def connect(host: String, port: Int): RiakConnection = RiakClientExtension(system).connect(host, port)
+  def connect(url: String): RiakConnection = RiakClientExtension(system).connect(url)
+  def connect(url: java.net.URL): RiakConnection = RiakClientExtension(system).connect(url)
 
   def apply(host: String, port: Int): RiakConnection = connect(host, port)
   def apply(url: String): RiakConnection = connect(url)
@@ -45,24 +45,17 @@ object RiakClient {
 
 
 // ============================================================================
-// RiakExtension - The root of the actor tree
+// RiakClientExtension - The root of the actor tree
 // ============================================================================
 
-object RiakExtension extends ExtensionId[RiakExtension] with ExtensionIdProvider {
-  def lookup() = RiakExtension
-  def createExtension(system: ExtendedActorSystem) = new RiakExtension(system)
+object RiakClientExtension extends ExtensionId[RiakClientExtension] with ExtensionIdProvider {
+  def lookup() = RiakClientExtension
+  def createExtension(system: ExtendedActorSystem) = new RiakClientExtension(system)
 }
 
-class RiakExtension(system: ExtendedActorSystem) extends Extension {
-  // TODO: how to deal with:
-  //       - Shutting down the ActorSystem when we're done and we created the actor system to begin with)
-  //       - someone else shutting down the ActorSystem, leaving us in an invalid state
-  // TODO: add system shutdown hook
-
-  // TODO: implement and expose a Settings class
-  // val settings = new RiakSettings(system.settings.config)
-
-  lazy val httpClient = RiakHttpClient(system: ActorSystem)
+class RiakClientExtension(system: ExtendedActorSystem) extends Extension {
+  private[riak] val settings = new RiakClientSettings(system.settings.config)
+  private[riak] lazy val httpClient = new RiakHttpClient(system: ActorSystem)
 
   def connect(url: String): RiakConnection = connect(RiakServerInfo(url))
   def connect(url: java.net.URL): RiakConnection = connect(RiakServerInfo(url))
@@ -80,10 +73,6 @@ trait RiakConnection {
   import resolvers.LastValueWinsResolver
 
   def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
-}
-
-private[riak] case class HttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
-  def bucket(name: String, resolver: ConflictResolver) = HttpBucket(httpClient, server, name, resolver)
 }
 
 
@@ -116,7 +105,16 @@ trait Bucket {
   // def properties_=(props: BucketProperties): Future[Unit]
 }
 
-private[riak] case class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, resolver: ConflictResolver) extends Bucket {
+
+// ============================================================================
+// Private Implementations
+// ============================================================================
+
+private[riak] class HttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
+  def bucket(name: String, resolver: ConflictResolver) = new HttpBucket(httpClient, server, name, resolver)
+}
+
+private[riak] class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends Bucket {
   def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
 
   def store(key: String, value: RiakValue) = httpClient.store(server, bucket, key, value, resolver)
