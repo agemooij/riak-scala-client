@@ -27,10 +27,14 @@ import converters._
 // ============================================================================
 
 case class RiakClient(system: ActorSystem) {
-  def connect(host: String, port: Int) = RiakExtension(system).connect(host, port)
   def connect(): RiakConnection = connect("localhost", 8098)
+  def connect(host: String, port: Int): RiakConnection = RiakExtension(system).connect(host, port)
+  def connect(url: String): RiakConnection = RiakExtension(system).connect(url)
+  def connect(url: java.net.URL): RiakConnection = RiakExtension(system).connect(url)
 
   def apply(host: String, port: Int): RiakConnection = connect(host, port)
+  def apply(url: String): RiakConnection = connect(url)
+  def apply(url: java.net.URL): RiakConnection = connect(url)
 }
 
 object RiakClient {
@@ -58,9 +62,13 @@ class RiakExtension(system: ExtendedActorSystem) extends Extension {
   // TODO: implement and expose a Settings class
   // val settings = new RiakSettings(system.settings.config)
 
-  val httpClient = RiakHttpClient(system: ActorSystem)
+  lazy val httpClient = RiakHttpClient(system: ActorSystem)
 
-  def connect(host: String, port: Int) = new RiakConnectionImpl(httpClient, host, port)
+  def connect(url: String): RiakConnection = connect(RiakServerInfo(url))
+  def connect(url: java.net.URL): RiakConnection = connect(RiakServerInfo(url))
+  def connect(host: String, port: Int): RiakConnection = connect(RiakServerInfo(host, port))
+
+  private def connect(server: RiakServerInfo): RiakConnection = new HttpConnection(httpClient, server)
 }
 
 
@@ -74,8 +82,8 @@ trait RiakConnection {
   def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
 }
 
-private[riak] case class RiakConnectionImpl(httpClient: RiakHttpClient, host: String, port: Int) extends RiakConnection {
-  def bucket(name: String, resolver: ConflictResolver) = BucketImpl(httpClient, host, port, name, resolver)
+private[riak] case class HttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
+  def bucket(name: String, resolver: ConflictResolver) = HttpBucket(httpClient, server, name, resolver)
 }
 
 
@@ -108,10 +116,10 @@ trait Bucket {
   // def properties_=(props: BucketProperties): Future[Unit]
 }
 
-private[riak] case class BucketImpl(httpClient: RiakHttpClient, host: String, port: Int, bucket: String, resolver: ConflictResolver) extends Bucket {
-  def fetch(key: String) = httpClient.fetch(host, port, bucket, key, resolver)
+private[riak] case class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, resolver: ConflictResolver) extends Bucket {
+  def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
 
-  def store(key: String, value: RiakValue) = httpClient.store(host, port, bucket, key, value, resolver)
+  def store(key: String, value: RiakValue) = httpClient.store(server, bucket, key, value, resolver)
 
-  def delete(key: String) = httpClient.delete(host, port, bucket, key)
+  def delete(key: String) = httpClient.delete(server, bucket, key)
 }

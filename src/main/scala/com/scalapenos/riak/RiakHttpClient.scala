@@ -33,6 +33,26 @@ import utils.SprayClientExtras._
 
 
 // ============================================================================
+// RiakServerInfo - a nice way to encode the Riak server properties
+// ============================================================================
+
+private[riak] class RiakServerInfo(val host: String, val port: Int, val pathPrefix: String = "", val useSSL: Boolean = false)
+
+private[riak] object RiakServerInfo {
+  import java.net.URL
+
+  def apply(url: String): RiakServerInfo = apply(new URL(url))
+  def apply(url: URL): RiakServerInfo = apply(
+    url.getHost,
+    if (url.getPort != -1) url.getPort else url.getDefaultPort,
+    url.getPath,
+    url.getProtocol == "https")
+
+  def apply(host: String, port: Int, pathPrefix: String = "", useSSL: Boolean = false): RiakServerInfo = new RiakServerInfo(host, port, pathPrefix.dropWhile(_ == '/'), useSSL)
+}
+
+
+// ============================================================================
 // RiakHttpClient
 //
 // TODO: add Retry support, maybe at the bucket level
@@ -42,15 +62,15 @@ import utils.SprayClientExtras._
 private[riak] case class RiakHttpClient(system: ActorSystem) {
   import system.dispatcher
 
-  private[this] val httpClient = system.actorOf(Props(new HttpClient), "riak-http-client")
+  private[this] val httpClient = system.actorOf(Props(new HttpClient()), "riak-http-client")
 
 
-  def fetch(host: String, port: Int, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
-    httpRequest(Get(url(host, port, bucket, key))).flatMap { response =>
+  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
+    httpRequest(Get(url(server, bucket, key))).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response))
         case NotFound        => successful(None)
-        case MultipleChoices => resolveConflict(host, port, bucket, key, response, resolver)
+        case MultipleChoices => resolveConflict(server, bucket, key, response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
@@ -58,17 +78,17 @@ private[riak] case class RiakHttpClient(system: ActorSystem) {
     }
   }
 
-  def store(host: String, port: Int, bucket: String, key: String, value: RiakValue, resolver: ConflictResolver): Future[Option[RiakValue]] = {
+  def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     // TODO: Add a nice, non-intrusive way to set query parameters, like 'returnbody', etc.
 
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock.toString))
     val request = addOptionalHeader(vclockHeader) ~> httpRequest
 
-    request(Put(url(host, port, bucket, key) + "?returnbody=true", value)).flatMap { response =>
+    request(Put(url(server, bucket, key) + "?returnbody=true", value)).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response))
         case NoContent       => successful(None)
-        case MultipleChoices => resolveConflict(host, port, bucket, key, response, resolver)
+        case MultipleChoices => resolveConflict(server, bucket, key, response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
         case other           => throw new BucketOperationFailed(s"Store for of value '$value' for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
@@ -76,8 +96,8 @@ private[riak] case class RiakHttpClient(system: ActorSystem) {
     }
   }
 
-  def delete(host: String, port: Int, bucket: String, key: String): Future[Unit] = {
-    httpRequest(Delete(url(host, port, bucket, key))).map { response =>
+  def delete(server: RiakServerInfo, bucket: String, key: String): Future[Unit] = {
+    httpRequest(Delete(url(server, bucket, key))).map { response =>
       response.status match {
         case NoContent       => ()
         case NotFound        => ()
@@ -98,7 +118,12 @@ private[riak] case class RiakHttpClient(system: ActorSystem) {
     sendReceive(httpClient)
   }
 
-  private def url(host: String, port: Int, bucket: String, key: String) = s"http://$host:$port/buckets/$bucket/keys/$key"
+  private def url(server: RiakServerInfo, bucket: String, key: String): String = {
+    val protocol = if (server.useSSL) "https" else "http"
+    val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
+
+    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/$bucket/keys/$key"
+  }
 
   private def toRiakValue(response: HttpResponse): Option[RiakValue] = toRiakValue(response.entity, response.headers)
   private def toRiakValue(entity: HttpEntity, headers: List[HttpHeader]): Option[RiakValue] = {
@@ -117,7 +142,7 @@ private[riak] case class RiakHttpClient(system: ActorSystem) {
     }
   }
 
-  private def resolveConflict(host: String, port: Int, bucket: String, key: String, response: HttpResponse, resolver: ConflictResolver): Future[Option[RiakValue]] = {
+  private def resolveConflict(server: RiakServerInfo, bucket: String, key: String, response: HttpResponse, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     import spray.http._
     import spray.httpx.unmarshalling._
 
@@ -131,7 +156,7 @@ private[riak] case class RiakHttpClient(system: ActorSystem) {
 
         // Store the resolved value back to Riak and return the resulting RiakValue
         // TODO: make sure that this one returns the body (when we make that configurable)
-        store(host, port, bucket, key, value, resolver)
+        store(server, bucket, key, value, resolver)
       }
     }
   }
