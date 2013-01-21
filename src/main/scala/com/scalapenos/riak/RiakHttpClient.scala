@@ -146,7 +146,7 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     import spray.http._
     import spray.httpx.unmarshalling._
 
-    val vclockHeader = response.headers.find(_.is("x-riak-vclock")).toList
+    val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
     response.entity.as[MultipartContent] match {
       case Left(error) => throw new ConflictResolutionFailed(error.toString)
