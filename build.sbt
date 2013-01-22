@@ -2,7 +2,9 @@ name := "riak-scala-client"
 
 version := "0.1-SNAPSHOT"
 
-organization := "Scalapenos"
+organization := "com.scalapenos"
+
+organizationHomepage := Some(url("http://scalapenos.com/"))
 
 scalaVersion := "2.10.0"
 
@@ -20,8 +22,7 @@ scalacOptions := Seq("-encoding", "utf8",
 resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repositories/releases",
                   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
                   "Spray Repository"    at "http://repo.spray.io/",
-                  "Spray Nightlies"     at "http://nightlies.spray.io/"
-                 )
+                  "Spray Nightlies"     at "http://nightlies.spray.io/")
 
 libraryDependencies ++= {
   val akkaVersion  = "2.1.0"
@@ -39,8 +40,38 @@ libraryDependencies ++= {
   )
 }
 
+initialCommands in console += {
+  Iterator("com.scalapenos.riak._", "akka.actor._").map("import "+).mkString("\n")
+}
 
+
+// ============================================================================
 // Sonatype Deployment
+// ============================================================================
+
+licenses := Seq("The Apache Software License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+
+homepage := Some(url("https://github.com/agemooij/riak-scala-client"))
+
+publishArtifact in Test := false
+
+publishMavenStyle := true
+
+pomIncludeRepository := { x => false }
+
+pomExtra := (
+  <scm>
+    <url>git@github.com:agemooij/riak-scala-client.git</url>
+    <connection>scm:git@github.com:agemooij/riak-scala-client.git</connection>
+  </scm>
+  <developers>
+    <developer>
+      <id>agemooij</id>
+      <name>Age Mooij</name>
+      <url>http://github.com/agemooij</url>
+    </developer>
+  </developers>
+)
 
 publishTo <<= version { v =>
   val nexus = "http://oss.sonatype.org/"
