@@ -22,8 +22,6 @@ object RiakHttpHeaders {
   val `X-Riak-Vclock`   = "X-Riak-Vclock"
 }
 
-
-
 object StandardHttpHeaders {
 
 }
