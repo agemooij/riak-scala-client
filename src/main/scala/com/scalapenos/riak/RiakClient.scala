@@ -80,29 +80,52 @@ trait RiakConnection {
 // Bucket
 // ============================================================================
 
-trait Bucket {
+trait Bucket extends BasicRiakValueConverters {
   // TODO: add Retry support, maybe at the bucket level
   // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
 
+  /**
+   * Buckets need to
+   */
   def resolver: ConflictResolver
 
+  /**
+   *
+   */
   def fetch(key: String): Future[Option[RiakValue]]
 
-  def store(key: String, value: RiakValue): Future[Option[RiakValue]]
+  /**
+   *
+   */
+  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]
 
-  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]] = {
-    store(key, implicitly[RiakValueWriter[T]].write(value))
+  /**
+   *
+   */
+  def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
+    store(key, value, false)
+  }
+
+  /**
+   *
+   */
+  def store[T: RiakValueWriter](key: String, value: T, returnBody: Boolean = false): Future[Option[RiakValue]] = {
+    store(key, implicitly[RiakValueWriter[T]].write(value), returnBody)
   }
 
   // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
   // def store(value: RiakValue): Future[String]
   // def store[T: RiakValueWriter](value: T): Future[String]
 
+  /**
+   *
+   */
   def delete(key: String): Future[Unit]
 
+
   // TODO: implement support for reading and writing bucket properties
-  // def properties: Future[BucketProperties]
-  // def properties_=(props: BucketProperties): Future[Unit]
+  // def allowMulti: Future[Boolean]
+  // def allowMulti_=(allow: Boolean): Future[Unit]
 }
 
 
@@ -117,7 +140,7 @@ private[riak] class HttpConnection(httpClient: RiakHttpClient, server: RiakServe
 private[riak] class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends Bucket {
   def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
 
-  def store(key: String, value: RiakValue) = httpClient.store(server, bucket, key, value, resolver)
+  def store(key: String, value: RiakValue, returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
 
   def delete(key: String) = httpClient.delete(server, bucket, key)
 }

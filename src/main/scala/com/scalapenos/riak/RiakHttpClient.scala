@@ -79,13 +79,11 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     }
   }
 
-  def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: ConflictResolver): Future[Option[RiakValue]] = {
-    // TODO: Add a nice, non-intrusive way to set query parameters, like 'returnbody', etc.
-
+  def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, returnBody: Boolean, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock.toString))
     val request = addOptionalHeader(vclockHeader) ~> httpRequest
 
-    request(Put(url(server, bucket, key) + "?returnbody=true", value)).flatMap { response =>
+    request(Put(url(server, bucket, key, StoreQueryParameters(returnBody)), value)).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response))
         case NoContent       => successful(None)
@@ -109,6 +107,10 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
   }
 
 
+  // ==========================================================================
+  // Request building
+  // ==========================================================================
+
   private lazy val clientId = java.util.UUID.randomUUID().toString
   private val clientIdHeader = if (settings.AddClientIdHeader) Some(RawHeader(`X-Riak-ClientId`, clientId)) else None
 
@@ -118,12 +120,34 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     sendReceive(httpClient)
   }
 
-  private def url(server: RiakServerInfo, bucket: String, key: String): String = {
+
+  // ==========================================================================
+  // URL building and Query Parameters
+  // ==========================================================================
+
+  private sealed trait QueryParameters {
+    def queryString: String
+  }
+
+  private case object NoQueryParameters extends QueryParameters {
+    def queryString = ""
+  }
+
+  private case class StoreQueryParameters(returnBody: Boolean = false) extends QueryParameters {
+    def queryString = s"?returnbody=$returnBody"
+  }
+
+  private def url(server: RiakServerInfo, bucket: String, key: String, parameters: QueryParameters = NoQueryParameters): String = {
     val protocol = if (server.useSSL) "https" else "http"
     val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
 
-    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/$bucket/keys/$key"
+    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/$bucket/keys/${key}${parameters.queryString}"
   }
+
+
+  // ==========================================================================
+  // Response => RiakValue
+  // ==========================================================================
 
   private def toRiakValue(response: HttpResponse): Option[RiakValue] = toRiakValue(response.entity, response.headers)
   private def toRiakValue(entity: HttpEntity, headers: List[HttpHeader]): Option[RiakValue] = {
@@ -142,6 +166,11 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     }
   }
 
+
+  // ==========================================================================
+  // Conflict Resolution
+  // ==========================================================================
+
   private def resolveConflict(server: RiakServerInfo, bucket: String, key: String, response: HttpResponse, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     import spray.http._
     import spray.httpx.unmarshalling._
@@ -155,8 +184,7 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
         val value = resolver.resolve(values)
 
         // Store the resolved value back to Riak and return the resulting RiakValue
-        // TODO: make sure that this one returns the body (when we make that configurable)
-        store(server, bucket, key, value, resolver)
+        store(server, bucket, key, value, true, resolver)
       }
     }
   }

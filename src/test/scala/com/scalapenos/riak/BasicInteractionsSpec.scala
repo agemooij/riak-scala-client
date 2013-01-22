@@ -41,7 +41,7 @@ class BasicInteractionsSpec extends AkkaActorSystemSpecification {
 
       Await.result(fetchBeforeStore, timeout) must beNone
 
-      val store = bucket.store("foo", "bar")
+      val store = bucket.store("foo", "bar", true)
       val storedValue = Await.result(store, timeout)
 
       storedValue must beSome[RiakValue]
