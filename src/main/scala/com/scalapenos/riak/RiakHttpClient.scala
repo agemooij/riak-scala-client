@@ -125,6 +125,10 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
   // URL building and Query Parameters
   // ==========================================================================
 
+  import java.net.URLEncoder
+
+  private def encode(in: String) = URLEncoder.encode(in, "UTF-8")
+
   private sealed trait QueryParameters {
     def queryString: String
   }
@@ -141,7 +145,7 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     val protocol = if (server.useSSL) "https" else "http"
     val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
 
-    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/$bucket/keys/${key}${parameters.queryString}"
+    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/keys/${encode(key)}${parameters.queryString}"
   }
 
 
