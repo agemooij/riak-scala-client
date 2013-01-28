@@ -72,7 +72,7 @@ class RiakClientExtension(system: ExtendedActorSystem) extends Extension {
 trait RiakConnection {
   import resolvers.LastValueWinsResolver
 
-  def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): Bucket
+  def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): RiakBucket
 }
 
 
@@ -80,12 +80,13 @@ trait RiakConnection {
 // Bucket
 // ============================================================================
 
-trait Bucket extends BasicRiakValueConverters {
+trait RiakBucket extends BasicRiakValueConverters {
   // TODO: add Retry support, maybe at the bucket level
   // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
 
   /**
-   * Buckets need to
+   * Every bucket has a default ConflictResolver that will be used when resolving
+   * conflicts during fetches and stores (when returnBody is true).
    */
   def resolver: ConflictResolver
 
@@ -124,9 +125,30 @@ trait Bucket extends BasicRiakValueConverters {
 
 
   // TODO: implement support for reading and writing bucket properties
-  // def allowMulti: Future[Boolean]
-  // def allowMulti_=(allow: Boolean): Future[Unit]
+  // def allow_mult: Future[Boolean]
+  // def allow_mult_=(allow: Boolean): Future[Unit]
+
+
+  /* Writable bucket properties:
+
+  {
+    "props": {
+      "n_val": 3,
+      "allow_mult": true,
+      "last_write_wins": false,
+      "precommit": [],
+      "postcommit": [],
+      "r": "quorum",
+      "w": "quorum",
+      "dw": "quorum",
+      "rw": "quorum",
+      "backend": ""
+    }
+  }
+
+  */
 }
+
 
 
 // ============================================================================
@@ -137,7 +159,7 @@ private[riak] class HttpConnection(httpClient: RiakHttpClient, server: RiakServe
   def bucket(name: String, resolver: ConflictResolver) = new HttpBucket(httpClient, server, name, resolver)
 }
 
-private[riak] class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends Bucket {
+private[riak] class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
   def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
 
   def store(key: String, value: RiakValue, returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
