@@ -33,7 +33,7 @@ libraryDependencies ++= {
     "io.spray"                %   "spray-client"           % sprayVersion,
     "io.spray"                %%  "spray-json"             % "1.2.3",
     "com.github.nscala-time"  %%  "nscala-time"            % "0.2.0",
-    "ch.qos.logback"          %   "logback-classic"        % "1.0.9"        % "runtime",
+    "ch.qos.logback"          %   "logback-classic"        % "1.0.9"        % "provided",
     "com.typesafe.akka"       %%  "akka-testkit"           % akkaVersion    % "test",
     "io.spray"                %   "spray-testkit"          % sprayVersion   % "test",
     "org.specs2"              %%  "specs2"                 % "1.13"         % "test"
