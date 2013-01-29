@@ -37,12 +37,10 @@ final case class RiakValue(
   def mapValue(newValue: String, newContentType: ContentType): RiakValue = copy(value = newValue, contentType = newContentType)
   def mapValue(newValue: String): RiakValue = copy(value = newValue)
 
-  def flatMapValue(other: RiakValue): RiakValue = mapValue(value = other.value, contentType = other.contentType)
+  def flatMapValue(other: RiakValue): RiakValue = copy(value = other.value, contentType = other.contentType)
   def flatMapValue[T: RiakValueWriter](newValue: T): RiakValue = {
     // TODO: Is there a more optimal (single-step) way? This creates too many temporary objects
-    val v = implicitly[RiakValueWriter[T]].write(newValue)
-
-    flatMapValue(v.value, v.contentType)
+    flatMapValue(implicitly[RiakValueWriter[T]].write(newValue))
   }
 
   // TODO: add more common manipulation functions
