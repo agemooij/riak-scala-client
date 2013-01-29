@@ -80,6 +80,9 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
   }
 
   def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, returnBody: Boolean, resolver: ConflictResolver): Future[Option[RiakValue]] = {
+    // TODO: add the Last-Modified value from the RiakValue as a header
+    // TODO: add the eTag value from the RiakValue as a header if it is non-empty
+
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock.toString))
     val request = addOptionalHeader(vclockHeader) ~> httpRequest
 
