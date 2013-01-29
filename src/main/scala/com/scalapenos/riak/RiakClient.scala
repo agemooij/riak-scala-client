@@ -114,6 +114,14 @@ trait RiakBucket extends BasicRiakValueConverters {
     store(key, implicitly[RiakValueWriter[T]].write(value), returnBody)
   }
 
+  // TODO: add support for storeWithLatestVclock(…) for doing read-modify-write, like this:
+  // fetch(key).flatMap { result => result match {
+  //   case Some(riakValue) => store(userId, riakValue.withNewValue(value), returnBody)
+  //   case None            => store(userId, route, returnBody)
+  // }}
+
+
+
   // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
   // def store(value: RiakValue): Future[String]
   // def store[T: RiakValueWriter](value: T): Future[String]
