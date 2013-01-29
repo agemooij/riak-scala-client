@@ -34,16 +34,18 @@ final case class RiakValue(
 
   def as[T: RiakValueReader]: Try[T] = implicitly[RiakValueReader[T]].read(this)
 
-  def withNewValue(newValue: String, newContentType: ContentType): RiakValue = copy(value = newValue, contentType = newContentType)
-  def withNewValue(newValue: String): RiakValue = withNewValue(newValue, contentType)
-  def withNewValue[T: RiakValueWriter](newValue: T): RiakValue = {
-    // TODO: we need to do this in a more optimal way. This creates too many temporary objects.
+  def mapValue(newValue: String, newContentType: ContentType): RiakValue = copy(value = newValue, contentType = newContentType)
+  def mapValue(newValue: String): RiakValue = copy(value = newValue)
+
+  def flatMapValue(other: RiakValue): RiakValue = mapValue(value = other.value, contentType = other.contentType)
+  def flatMapValue[T: RiakValueWriter](newValue: T): RiakValue = {
+    // TODO: Is there a more optimal (single-step) way? This creates too many temporary objects
     val v = implicitly[RiakValueWriter[T]].write(newValue)
 
-    withNewValue(v.value, v.contentType)
+    flatMapValue(v.value, v.contentType)
   }
 
-  // TODO: add common manipulation functions
+  // TODO: add more common manipulation functions
 }
 
 object RiakValue {
