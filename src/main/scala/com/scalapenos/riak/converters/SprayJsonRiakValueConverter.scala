@@ -28,9 +28,6 @@ import spray.json._
 
 trait SprayJsonRiakValueConverter {
 
-  // TODO: this is not as simple as it looked. Only RiakValue with a JSON contentType should be allowed
-  //       Is there a type-based solution or should we use runtime detection and use Try[T] as the output of a read?
-
   implicit def converter[T: RootJsonFormat: ClassTag] = new RiakValueConverter[T] {
     def read(riakValue: RiakValue): Try[T] = {
       riakValue.contentType match {
@@ -51,7 +48,7 @@ trait SprayJsonRiakValueConverter {
       }
     }
 
-    def write(obj: T): RiakValue = {
+    def write(obj: T, vclock: VClock): RiakValue = {
       RiakValue(implicitly[RootJsonFormat[T]].write(obj).compactPrint, ContentType.`application/json`)
     }
   }

@@ -114,7 +114,7 @@ trait RiakBucket extends BasicRiakValueConverters {
     store(key, implicitly[RiakValueWriter[T]].write(value), returnBody)
   }
 
-  // TODO: add support for storeWithLatestVclock(…) for doing read-modify-write, like this:
+  // TODO: add support for storeWithLatestVClock(…) for doing read-modify-write, like this:v
   // fetch(key).flatMap { result => result match {
   //   case Some(riakValue) => store(userId, riakValue.withNewValue(value), returnBody)
   //   case None            => store(userId, route, returnBody)

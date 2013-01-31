@@ -16,6 +16,8 @@
 
 package com.scalapenos
 
+import scala.util._
+
 
 package object riak {
 
@@ -33,18 +35,29 @@ package object riak {
 
 
   // ============================================================================
-  // Value Classes
+  // VClocks Support
   // ============================================================================
 
-  implicit class Vclock(val value: String) extends AnyVal {
+  implicit class VClock(val value: String) extends AnyVal {
     def isDefined = !isEmpty
     def isEmpty = value.isEmpty
-    def toOption: Option[Vclock] = if (isDefined) Some(this) else None
+    def toOption: Option[VClock] = if (isDefined) Some(this) else None
     override def toString = value
   }
 
-  object Vclock {
-    val NotSpecified = new Vclock("")
+  object VClock {
+    val NotSpecified = new VClock("")
+  }
+
+  case class VClocked[T](value: T, vclock: VClock) {
+    def map(newValue: T) = copy(value = newValue)
+    def map[X](f: T => X) = VClocked(f(value), vclock)
+
+    def toRiakValue(implicit writer: RiakValueWriter[T]) = implicitly[RiakValueWriter[T]].write(value, vclock)
+  }
+
+  object VClocked {
+    def apply[T: RiakValueReader](riakValue: RiakValue): Try[VClocked[T]] = riakValue.as[T].map(VClocked(_, riakValue.vclock))
   }
 
 

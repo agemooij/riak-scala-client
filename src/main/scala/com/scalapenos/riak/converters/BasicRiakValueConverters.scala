@@ -23,12 +23,12 @@ import scala.util._
 trait BasicRiakValueConverters {
   implicit def identityRiakValueConverter = new RiakValueConverter[RiakValue] {
     def read(riakValue: RiakValue): Try[RiakValue] = Success(riakValue)
-    def write(riakValue: RiakValue): RiakValue = riakValue
+    def write(riakValue: RiakValue, vclock: VClock) = riakValue
   }
 
   implicit def stringRiakValueConverter = new RiakValueConverter[String] {
     def read(riakValue: RiakValue): Try[String] = Success(riakValue.value)
-    def write(obj: String): RiakValue = RiakValue(obj)
+    def write(obj: String, vclock: VClock): RiakValue = RiakValue(obj, vclock)
   }
 }
 

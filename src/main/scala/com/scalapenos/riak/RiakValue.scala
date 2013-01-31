@@ -23,7 +23,7 @@ import com.github.nscala_time.time.Imports._
 final case class RiakValue(
   value: String,
   contentType: ContentType,
-  vclock: Vclock,
+  vclock: VClock,
   etag: String,
   lastModified: DateTime
   // links: Seq[RiakLink]
@@ -50,17 +50,30 @@ object RiakValue {
   import spray.http.HttpBody
   import spray.httpx.marshalling._
 
+  // use the magnet pattern so we can have overloads that would break due to type-erasure
+
   def apply(value: String): RiakValue = {
-    apply(value, ContentType.`text/plain`, Vclock.NotSpecified, "", DateTime.now)
+    apply(value, VClock.NotSpecified)
+  }
+
+  def apply(value: String, vclock: VClock): RiakValue = {
+    apply(value, ContentType.`text/plain`, vclock)
   }
 
   def apply(value: String, contentType: ContentType): RiakValue = {
-    apply(value, contentType, Vclock.NotSpecified, "", DateTime.now)
+    apply(value, contentType, VClock.NotSpecified)
   }
 
-  def apply(value: Array[Byte], contentType: ContentType, vclock: Vclock, etag: String, lastModified: DateTime): RiakValue = {
+  def apply(value: String, contentType: ContentType, vclock: VClock): RiakValue = {
+    apply(value, contentType, vclock, "", DateTime.now)
+  }
+
+  def apply(value: Array[Byte], contentType: ContentType, vclock: VClock, etag: String, lastModified: DateTime): RiakValue = {
     RiakValue(new String(value, contentType.charset.nioCharset), contentType, vclock, etag, lastModified)
   }
+
+  def apply[T: RiakValueWriter](value: T): RiakValue = implicitly[RiakValueWriter[T]].write(value)
+  def apply[T: RiakValueWriter](value: T, vclock: VClock): RiakValue = implicitly[RiakValueWriter[T]].write(value, vclock)
 
   /**
    * Spray Marshaller for turning RiakValue instances into HttpEntity instances so they can be sent to Riak.
