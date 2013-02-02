@@ -50,8 +50,7 @@ package object riak {
   }
 
   case class VClocked[T](value: T, vclock: VClock) {
-    def map(newValue: T) = copy(value = newValue)
-    def map[X](f: T => X) = VClocked(f(value), vclock)
+    def map(f: T => T): VClocked[T] = VClocked(f(value), vclock)
 
     def toRiakValue(implicit writer: RiakValueWriter[T]) = implicitly[RiakValueWriter[T]].write(value, vclock)
   }
