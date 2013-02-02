@@ -28,3 +28,4 @@ project/plugins/project/
 *.sublime-workspace
 /.env
 atlassian-ide-plugin.xml
+/.sublime/

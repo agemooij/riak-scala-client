@@ -98,3 +98,14 @@ credentials ++= {
     case _ => Nil
   }
 }
+
+
+// ============================================================================
+// Sublime SBT config
+// ============================================================================
+
+sublimeExternalSourceDirectoryParent <<= baseDirectory { base =>
+  base / ".sublime"
+}
+
+sublimeTransitive := true
