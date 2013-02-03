@@ -19,6 +19,16 @@ package com.scalapenos.riak
 import spray.http.ContentType
 import com.github.nscala_time.time.Imports._
 
+/*
+TODO:
+
+Add indexes to RiakValue
+Allows converters to define their own indexes
+
+How to detect whether indexes are available?
+
+Make converters stackable/delegatable so you could for instance use the standard spray json converter AND add extra indexes
+*/
 
 final case class RiakValue(
   value: String,

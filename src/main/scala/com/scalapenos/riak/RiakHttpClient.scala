@@ -83,6 +83,8 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     // TODO: add the Last-Modified value from the RiakValue as a header
     // TODO: add the eTag value from the RiakValue as a header if it is non-empty
 
+    // TODO: add any indexes defined on the RiakValue as index headers
+
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock.toString))
     val request = addOptionalHeader(vclockHeader) ~> httpRequest
 
