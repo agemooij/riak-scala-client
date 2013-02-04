@@ -95,10 +95,6 @@ trait RiakBucket extends BasicRiakValueConverters {
    */
   def fetch(key: String): Future[Option[RiakValue]]
 
-  /**
-   *
-   */
-  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]
 
   /**
    *
@@ -110,22 +106,47 @@ trait RiakBucket extends BasicRiakValueConverters {
   /**
    *
    */
-  def store[T: RiakValueWriter](key: String, value: T, returnBody: Boolean = false): Future[Option[RiakValue]] = {
+  def store[T: RiakValueWriter](key: String, vclocked: VClocked[T]): Future[Option[RiakValue]] = {
+    store(key, vclocked, false)
+  }
+
+  /**
+   *
+   */
+  def store[T: RiakValueWriter](key: String, vclocked: VClocked[T], returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, implicitly[RiakValueWriter[T]].write(vclocked.value, vclocked.vclock), returnBody)
+  }
+
+  /**
+   *
+   */
+  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]] = {
+    store(key, value, false)
+  }
+
+  /**
+   *
+   */
+  def store[T: RiakValueWriter](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
+    // This can be used for new values or values without an associated vclock (for reasons unknown)
+    // We should make that explicit somehow by
+
+    // TODO: always do a fetch-and-store when no vclock info is available.
+
+    // TODO: add support for storeWithLatestVClock(…) for doing read-modify-write, like this:v
+    // fetch(key).flatMap { result => result match {
+    //   case Some(riakValue) => store(userId, riakValue.withNewValue(value), returnBody)
+    //   case None            => store(userId, route, returnBody)
+    // }}
+
     store(key, implicitly[RiakValueWriter[T]].write(value), returnBody)
   }
 
   /**
    *
    */
-  // def store[T: RiakValueWriter](key: String, vclocked: VClocked[T], returnBody: Boolean = false): Future[Option[RiakValue]] = {
-  //   store(key, implicitly[RiakValueWriter[T]].write(vclocked.value, vclocked.vclock), returnBody)
-  // }
+  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]
 
-  // TODO: add support for storeWithLatestVClock(…) for doing read-modify-write, like this:v
-  // fetch(key).flatMap { result => result match {
-  //   case Some(riakValue) => store(userId, riakValue.withNewValue(value), returnBody)
-  //   case None            => store(userId, route, returnBody)
-  // }}
 
 
 
