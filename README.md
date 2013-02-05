@@ -1,15 +1,38 @@
 
-The intention of this new project is to become the default Scala Riak client.
-It should support at least all the functionality of the Java driver while
-providing an idiomatic, non-blocking Scala API.
+A fast, non-blocking idiomatic Scala client library for interacting with Riak.
+
+
+## Current Status
+
+This project is very new and still under heavy construction. The aim is to support
+most, if not all, features exposed by the Riak HTTP API.
+
+A first public release to the Sonatype/Central repositories is scheduled for February 2013.
+
+So far, the following Riak API features are supported:
+
+- Fetch
+- Store
+- Delete
+- Automatic conversion between raw RiakValues and Scala (case) classes using type classes
+- Customizable and strongly typed conflict resolution on all fetches (and Stores when returnbody=true)
+- A VClocked[T] box type for retaining the vclock after conversion to Scala (case) classes
+- auto-retry
+
+
+These Riak features are currently missing:
+
+- 2i exact matches
+- 2i ranges
+- link walking
+- Map Reduce
 
 
 ## Design goals
 
 - It should provide an idiomatic Scala client API
 - It should be non-blocking (i.e. all calls are handled asynchronously and result in Futures)
-- The API should be decoupled from any other library, so no Play2 or Scalaz iteratees as part
-  of the exposed API
+- Easy Integration with Akka
 
 The initial focus will be on supporting the Riak HTTP API. Protobuf support might be added
 later but it has a low priority at the moment.
@@ -18,6 +41,9 @@ later but it has a low priority at the moment.
 ## Design and Implementation
 
 The _riak-scala-client_ is based on [Akka] 2.1 and and [Spray] client 1.1.
+
+The client is implemented as an Akka extension, making it very easy to use
+from Akka-based applications and non-Akka applications alike.
 
 
 ## License
