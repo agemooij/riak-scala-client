@@ -46,6 +46,12 @@ The client is implemented as an Akka extension, making it very easy to use
 from Akka-based applications and non-Akka applications alike.
 
 
+## Why such a boring name?
+
+It seems all the cool names (scalariak, riakka, riaktor, etc.) have been taken already.
+If you come up with a cooler name, please let us know and eternal fame will be yours!
+
+
 ## License
 
 The _riak-scala-client_ is licensed under [APL 2.0].
