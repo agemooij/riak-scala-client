@@ -34,8 +34,12 @@ trait RiakValueReader[T] {
  */
 @implicitNotFound(msg = "Cannot find RiakValueWriter or RiakValueConverter type class for ${T}")
 trait RiakValueWriter[T] {
-  def write(obj: T): RiakValue = write(obj, VClock.NotSpecified)
-  def write(obj: T, vclock: VClock): RiakValue
+  def contentType: ContentType
+  def serialize(t: T): String
+  // def indexes(t: T): Set[RiakIndex]
+
+  final def write(t: T): RiakValue = RiakValue(serialize(t), contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now)
+  final def write(meta: RiakMeta[T]): RiakValue = RiakValue(serialize(meta.data), contentType, meta.vclock, meta.etag, DateTime.now)
 }
 
 /**

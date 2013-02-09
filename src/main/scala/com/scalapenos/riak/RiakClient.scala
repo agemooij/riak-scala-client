@@ -84,6 +84,8 @@ trait RiakBucket extends BasicRiakValueConverters {
   // TODO: add Retry support, maybe at the bucket level
   // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
 
+  // Why not typed buckets next to raw buckets?
+
   /**
    * Every bucket has a default ConflictResolver that will be used when resolving
    * conflicts during fetches and stores (when returnBody is true).
@@ -99,23 +101,33 @@ trait RiakBucket extends BasicRiakValueConverters {
   /**
    *
    */
+  // def fetch(index: String, value: String): Future[Option[RiakValue]]
+  // def fetch(index: String, value: Int): Future[Option[RiakValue]]
+
+  // def fetch(index: String, lowerBound: String, upperBound: String): Future[Seq[RiakValue]]
+  // def fetch(index: String, lowerBound: Int, upperBound: Int): Future[Seq[RiakValue]]
+
+
+  /**
+   *
+   */
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
     store(key, value, false)
   }
 
-  /**
-   *
-   */
-  def store[T: RiakValueWriter](key: String, vclocked: VClocked[T]): Future[Option[RiakValue]] = {
-    store(key, vclocked, false)
-  }
+  // /**
+  //  *
+  //  */
+  // def store[T: RiakValueWriter](key: String, vclocked: VClocked[T]): Future[Option[RiakValue]] = {
+  //   store(key, vclocked, false)
+  // }
 
-  /**
-   *
-   */
-  def store[T: RiakValueWriter](key: String, vclocked: VClocked[T], returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, implicitly[RiakValueWriter[T]].write(vclocked.value, vclocked.vclock), returnBody)
-  }
+  // /**
+  //  *
+  //  */
+  // def store[T: RiakValueWriter](key: String, vclocked: VClocked[T], returnBody: Boolean): Future[Option[RiakValue]] = {
+  //   store(key, implicitly[RiakValueWriter[T]].write(vclocked.value, vclocked.vclock), returnBody)
+  // }
 
   /**
    *

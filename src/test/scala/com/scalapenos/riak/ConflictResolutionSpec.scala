@@ -23,41 +23,39 @@ import scala.util._
 
 import akka.actor._
 
+import spray.util._
+
 
 /**
  * This test depends on a Riak node running on localhost:8098 !!
  */
 class ConflictResolutionSpec extends AkkaActorSystemSpecification {
-  val timeout = 5 seconds
-
   import converters.BasicRiakValueConverters._
 
   "When resolving conflicts with a custom resolver during fetch, the client" should {
     "write the resolved value back to Riak and return the new value with the appropriate vector clock" in {
       val resolver = new ConflictResolver {
         def resolve(values: Set[RiakValue]) = {
-          values.find(v => v.value == "foo").getOrElse(failTest("The resolver should always find a the value 'foo'."))
+          values.find(v => v.data == "foo").getOrElse(failTest("The resolver should always find the value 'foo'."))
         }
       }
 
       val bucket = RiakClient(system).connect().bucket(name = "test-conflict-resolution", resolver = resolver)
 
-      val stored1 = Await.result(bucket.store("foo", "bar"), timeout)
-      val stored2 = Await.result(bucket.store("foo", "foo"), timeout)
-      val stored3 = Await.result(bucket.store("foo", "baz"), timeout)
+      val stored1 = bucket.store("foo", "bar").await
+      val stored2 = bucket.store("foo", "foo").await
+      val stored3 = bucket.store("foo", "baz").await
 
-      val fetched = Await.result(bucket.fetch("foo"), timeout)
+      val fetched = bucket.fetch("foo").await
 
       fetched must beSome[RiakValue]
-      fetched.get.value must beEqualTo("foo")
+      fetched.get.data must beEqualTo("foo")
 
+      bucket.delete("foo").await
 
+      val fetchAfterDelete = bucket.fetch("foo").await
 
-      val delete = Await.result(bucket.delete("foo"), timeout)
-
-      val fetchAfterDelete = bucket.fetch("foo")
-
-      Await.result(fetchAfterDelete, timeout) must beNone
+      fetchAfterDelete must beNone
     }
   }
 

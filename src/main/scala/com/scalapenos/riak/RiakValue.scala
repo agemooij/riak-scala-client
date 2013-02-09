@@ -16,81 +16,125 @@
 
 package com.scalapenos.riak
 
-import spray.http.ContentType
-import com.github.nscala_time.time.Imports._
-
 /*
+
+
+New Design:
+
+     RiakMetadata
+          |
+     ------------
+     |          |
+RiakEntity   RiakValue[T]
+
+
+- RiakEntity is the raw data, without any conversions
+- RiakValue[T] is the raw data converted to a typed value but retaining the meta-data
+
+RiakMetadata contains:
+ - content type
+ - vclock
+ - etag
+ - last modified date
+ - secondary indexes (RiakIndex)
+ - links (RiakLink)
+
+
+
 TODO:
 
 Add indexes to RiakValue
 Allows converters to define their own indexes
 
-How to detect whether indexes are available?
+How to detect whether indexes are available (i.e. whether the Riak backend is leveldb)?
 
 Make converters stackable/delegatable so you could for instance use the standard spray json converter AND add extra indexes
 */
 
-final case class RiakValue(
-  value: String,
+
+sealed trait RiakIndex[T] {
+  def name: String
+  def value: T
+}
+
+object RiakIndex {
+  def apply(name: String, value: String) = RiakStringIndex(name, value)
+  def apply(name: String, value: Int) = RiakIntIndex(name, value)
+}
+
+final case class RiakStringIndex(name: String, value: String) extends RiakIndex[String]
+final case class RiakIntIndex(name: String, value: Int) extends RiakIndex[Int]
+
+
+
+// ============================================================================
+// RiakMeta
+// ============================================================================
+
+final case class RiakMeta[T](
+  data: T,
   contentType: ContentType,
   vclock: VClock,
-  etag: String,
+  etag: ETag,
   lastModified: DateTime
-  // links: Seq[RiakLink]
-  // meta: Seq[RiakMeta]
+) {
+
+  def map(f: T => T): RiakMeta[T] = RiakMeta(f(data), contentType, vclock, etag, lastModified)
+  def toRiakValue(implicit writer: RiakValueWriter[T]): RiakValue = implicitly[RiakValueWriter[T]].write(this)
+
+}
+
+object RiakMeta {
+  // def apply[T](data: T, contentType: ContentType): RiakMeta[T] = apply(value, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now)
+}
+
+
+// ============================================================================
+// RiakValue
+// ============================================================================
+
+final case class RiakValue(
+  data: String,
+  contentType: ContentType,
+  vclock: VClock,
+  etag: ETag,
+  lastModified: DateTime
+  // indexes: Set[RiakIndex]
 ) {
   import scala.util._
   import converters._
 
   def as[T: RiakValueReader]: Try[T] = implicitly[RiakValueReader[T]].read(this)
 
-  def mapValue(newValue: String, newContentType: ContentType): RiakValue = copy(value = newValue, contentType = newContentType)
-  def mapValue(newValue: String): RiakValue = copy(value = newValue)
-
-  def flatMapValue(other: RiakValue): RiakValue = copy(value = other.value, contentType = other.contentType)
-  def flatMapValue[T: RiakValueWriter](newValue: T): RiakValue = {
-    // TODO: Is there a more optimal (single-step) way? This creates too many temporary objects
-    flatMapValue(implicitly[RiakValueWriter[T]].write(newValue))
-  }
-
-  // TODO: add more common manipulation functions
+  def asMeta[T: RiakValueReader]: Try[RiakMeta[T]] =
+    implicitly[RiakValueReader[T]].read(this)
+                                  .map(data => RiakMeta(data, contentType, vclock, etag, lastModified))
 }
 
 object RiakValue {
-  import spray.http.HttpBody
-  import spray.httpx.marshalling._
-
   // use the magnet pattern so we can have overloads that would break due to type-erasure
 
-  def apply(value: String): RiakValue = {
-    apply(value, VClock.NotSpecified)
-  }
+  // def apply(value: String): RiakValue = {
+  //   apply(value, VClock.NotSpecified)
+  // }
 
-  def apply(value: String, vclock: VClock): RiakValue = {
-    apply(value, ContentType.`text/plain`, vclock)
-  }
+  // def apply(value: String, vclock: VClock): RiakValue = {
+  //   apply(value, ContentType.`text/plain`, vclock)
+  // }
 
-  def apply(value: String, contentType: ContentType): RiakValue = {
-    apply(value, contentType, VClock.NotSpecified)
-  }
+  // def apply(value: String, contentType: ContentType): RiakValue = {
+  //   apply(value, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now)
+  // }
 
-  def apply(value: String, contentType: ContentType, vclock: VClock): RiakValue = {
-    apply(value, contentType, vclock, "", DateTime.now)
-  }
+  // def apply(value: String, contentType: ContentType, vclock: VClock): RiakValue = {
+  //   apply(value, contentType, vclock, "", DateTime.now)
+  // }
 
-  def apply(value: Array[Byte], contentType: ContentType, vclock: VClock, etag: String, lastModified: DateTime): RiakValue = {
-    RiakValue(new String(value, contentType.charset.nioCharset), contentType, vclock, etag, lastModified)
-  }
+  // def apply(value: Array[Byte], contentType: ContentType, vclock: VClock, etag: String, lastModified: DateTime): RiakValue = {
+  //   RiakValue(new String(value, contentType.charset.nioCharset), contentType, vclock, etag, lastModified)
+  // }
 
-  def apply[T: RiakValueWriter](value: T): RiakValue = implicitly[RiakValueWriter[T]].write(value)
-  def apply[T: RiakValueWriter](value: T, vclock: VClock): RiakValue = implicitly[RiakValueWriter[T]].write(value, vclock)
+  // def apply[T: RiakValueWriter](value: T): RiakValue = implicitly[RiakValueWriter[T]].write(value)
+  // def apply[T: RiakValueWriter](value: T, vclock: VClock): RiakValue = implicitly[RiakValueWriter[T]].write(value, vclock)
 
-  /**
-   * Spray Marshaller for turning RiakValue instances into HttpEntity instances so they can be sent to Riak.
-   */
-  implicit val RiakValueMarshaller: Marshaller[RiakValue] = new Marshaller[RiakValue] {
-    def apply(riakValue: RiakValue, ctx: MarshallingContext) {
-      ctx.marshalTo(HttpBody(riakValue.contentType, riakValue.value.getBytes(riakValue.contentType.charset.nioCharset)))
-    }
-  }
 }

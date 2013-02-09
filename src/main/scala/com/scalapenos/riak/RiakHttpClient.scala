@@ -59,8 +59,24 @@ private[riak] object RiakServerInfo {
 // TODO: use URL-escaping to make sure all keys and bucket names are valid
 // ============================================================================
 
+private[riak] object RiakHttpClient {
+  import spray.http.HttpBody
+  import spray.httpx.marshalling._
+
+  /**
+   * Spray Marshaller for turning RiakValue instances into HttpEntity instances so they can be sent to Riak.
+   */
+  implicit val RiakValueMarshaller: Marshaller[RiakValue] = new Marshaller[RiakValue] {
+    def apply(riakValue: RiakValue, ctx: MarshallingContext) {
+      ctx.marshalTo(HttpBody(riakValue.contentType, riakValue.data.getBytes(riakValue.contentType.charset.nioCharset)))
+    }
+  }
+}
+
+
 private[riak] class RiakHttpClient(system: ActorSystem) {
   import system.dispatcher
+  import RiakHttpClient._
 
   private val httpClient = system.actorOf(Props(new HttpClient()), "riak-http-client")
   private val settings = RiakClientExtension(system).settings
@@ -171,7 +187,7 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
       // TODO: make sure the DateTime is always in the Zulu zone
 
       for (vClock <- vClockOption; eTag <- eTagOption; lastModified <- lastModifiedOption)
-      yield RiakValue(body.buffer, body.contentType, vClock, eTag, lastModified)
+      yield RiakValue(new String(body.buffer, body.contentType.charset.nioCharset), body.contentType, vClock, eTag, lastModified)
     }
   }
 
