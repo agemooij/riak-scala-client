@@ -4,6 +4,8 @@ A fast, non-blocking idiomatic Scala client library for interacting with Riak.
 
 ## Current Status
 
+***Preparing for a first public release***
+
 This project is very new and still under heavy construction. The aim is to support
 most, if not all, features exposed by the Riak HTTP API.
 
@@ -16,14 +18,14 @@ So far, the following Riak API features are supported:
 - Delete
 - Automatic conversion between raw RiakValues and Scala (case) classes using type classes
 - Customizable and strongly typed conflict resolution on all fetches (and Stores when returnbody=true)
-- A VClocked[T] box type for retaining the vclock after conversion to Scala (case) classes
-- auto-retry
+- A VClocked[T] box type for retaining the vclock after conversion to Scala (case) classes. We are investigating to take this further into a full type RiakMeta[T] box, including all the Riak meta data (eTag, links, indexes, meta headers, content type, etc.)
+- auto-retry (a standard feature of the underlying spray-client library)
 
 
-These Riak features are currently missing:
+These Riak features are currently missing and/or under construction:
 
-- 2i exact matches
-- 2i ranges
+- Secondary Indexes (2i): exact matches
+- Secondary Indexes (2i): ranges
 - link walking
 - Map Reduce
 
