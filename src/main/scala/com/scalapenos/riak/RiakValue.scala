@@ -106,7 +106,7 @@ final case class RiakValue(
 
   def as[T: RiakValueReader]: Try[T] = implicitly[RiakValueReader[T]].read(this)
 
-  def asMeta[T: RiakValueReader]: Try[RiakMeta[T]] =
+  def toMeta[T: RiakValueReader]: Try[RiakMeta[T]] =
     implicitly[RiakValueReader[T]].read(this)
                                   .map(data => RiakMeta(data, contentType, vclock, etag, lastModified))
 }
