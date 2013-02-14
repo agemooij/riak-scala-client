@@ -72,6 +72,8 @@ class RiakClientExtension(system: ExtendedActorSystem) extends Extension {
 trait RiakConnection {
   import resolvers.LastValueWinsResolver
 
+  // TODO: ping and stats
+
   def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): RiakBucket
 }
 
