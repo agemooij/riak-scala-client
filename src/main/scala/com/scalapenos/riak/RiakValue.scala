@@ -18,29 +18,6 @@ package com.scalapenos.riak
 
 /*
 
-
-New Design:
-
-     RiakMetadata
-          |
-     ------------
-     |          |
-RiakEntity   RiakValue[T]
-
-
-- RiakEntity is the raw data, without any conversions
-- RiakValue[T] is the raw data converted to a typed value but retaining the meta-data
-
-RiakMetadata contains:
- - content type
- - vclock
- - etag
- - last modified date
- - secondary indexes (RiakIndex)
- - links (RiakLink)
-
-
-
 TODO:
 
 Add indexes to RiakValue
