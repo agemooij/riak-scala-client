@@ -51,6 +51,8 @@ class SprayJsonRiakValueConverter[T: RootJsonFormat: ClassTag] extends RiakValue
 
 }
 
-object SprayJsonRiakValueConverter {
+object SprayJsonRiakValueConverter extends SprayJsonRiakValueConverterLowPriorityImplicits
+
+trait SprayJsonRiakValueConverterLowPriorityImplicits {
   implicit def sprayJsonRiakValueConverter[T: RootJsonFormat: ClassTag] = new SprayJsonRiakValueConverter[T]
 }
