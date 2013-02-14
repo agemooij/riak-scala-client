@@ -115,19 +115,19 @@ trait RiakBucket extends BasicRiakValueConverters {
     store(key, value, false)
   }
 
-  // /**
-  //  *
-  //  */
-  // def store[T: RiakValueWriter](key: String, vclocked: VClocked[T]): Future[Option[RiakValue]] = {
-  //   store(key, vclocked, false)
-  // }
+  /**
+   *
+   */
+  def store[T: RiakValueWriter](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
+    store(key, meta, false)
+  }
 
-  // /**
-  //  *
-  //  */
-  // def store[T: RiakValueWriter](key: String, vclocked: VClocked[T], returnBody: Boolean): Future[Option[RiakValue]] = {
-  //   store(key, implicitly[RiakValueWriter[T]].write(vclocked.value, vclocked.vclock), returnBody)
-  // }
+  /**
+   *
+   */
+  def store[T: RiakValueWriter](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, implicitly[RiakValueWriter[T]].write(meta), returnBody)
+  }
 
   /**
    *
