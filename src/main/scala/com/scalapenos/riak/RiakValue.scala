@@ -16,33 +16,6 @@
 
 package com.scalapenos.riak
 
-/*
-
-TODO:
-
-Add indexes to RiakValue
-Allows converters to define their own indexes
-
-How to detect whether indexes are available (i.e. whether the Riak backend is leveldb)?
-
-Make converters stackable/delegatable so you could for instance use the standard spray json converter AND add extra indexes
-*/
-
-
-sealed trait RiakIndex[T] {
-  def name: String
-  def value: T
-}
-
-object RiakIndex {
-  def apply(name: String, value: String) = RiakStringIndex(name, value)
-  def apply(name: String, value: Int) = RiakIntIndex(name, value)
-}
-
-final case class RiakStringIndex(name: String, value: String) extends RiakIndex[String]
-final case class RiakIntIndex(name: String, value: Int) extends RiakIndex[Int]
-
-
 
 // ============================================================================
 // RiakMeta
