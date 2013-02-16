@@ -46,7 +46,7 @@ package object riak {
 
 
   // ============================================================================
-  // VClocks Support
+  // VClock/ETag Support
   // ============================================================================
 
   implicit class VClock(val value: String) extends AnyVal {
