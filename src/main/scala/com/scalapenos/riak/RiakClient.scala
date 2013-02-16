@@ -106,8 +106,8 @@ trait RiakBucket extends BasicRiakValueConverters {
   // def fetch(index: String, value: String): Future[Option[RiakValue]]
   // def fetch(index: String, value: Int): Future[Option[RiakValue]]
 
-  // def fetch(index: String, lowerBound: String, upperBound: String): Future[Seq[RiakValue]]
-  // def fetch(index: String, lowerBound: Int, upperBound: Int): Future[Seq[RiakValue]]
+  // def fetch(index: String, lowerBound: String, upperBound: String): Future[List[RiakValue]]
+  // def fetch(index: String, lowerBound: Int, upperBound: Int): Future[List[RiakValue]]
 
 
   /**
@@ -159,8 +159,15 @@ trait RiakBucket extends BasicRiakValueConverters {
   /**
    *
    */
-  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]
+  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]// = {
+  //   store(key, value, Set.empty[RiakIndex], returnBody)
+  // }
 
+
+  /**
+   *
+   */
+  // def store(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean): Future[Option[RiakValue]]
 
 
 
