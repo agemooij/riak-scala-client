@@ -16,10 +16,19 @@
 
 package com.scalapenos
 
-import scala.util._
-
 
 package object riak {
+
+  // ============================================================================
+  // Type Aliases
+  // ============================================================================
+
+  type ContentType = spray.http.ContentType
+  val ContentType = spray.http.ContentType
+
+  type DateTime = org.joda.time.DateTime
+  val DateTime  = com.github.nscala_time.time.StaticDateTime
+
 
   // ============================================================================
   // Conflict Resolution
@@ -35,28 +44,36 @@ package object riak {
 
 
   // ============================================================================
-  // VClocks Support
+  // VClock/ETag Support
   // ============================================================================
 
   implicit class VClock(val value: String) extends AnyVal {
     def isDefined = !isEmpty
-    def isEmpty = value.isEmpty
+    def isEmpty = value.trim.isEmpty
     def toOption: Option[VClock] = if (isDefined) Some(this) else None
+
     override def toString = value
   }
 
   object VClock {
     val NotSpecified = new VClock("")
+
+    implicit def vclockToString(vclock: VClock): String = vclock.toString
   }
 
-  case class VClocked[T](value: T, vclock: VClock) {
-    def map(f: T => T): VClocked[T] = VClocked(f(value), vclock)
 
-    def toRiakValue(implicit writer: RiakValueWriter[T]) = implicitly[RiakValueWriter[T]].write(value, vclock)
+  implicit class ETag(val value: String) extends AnyVal {
+    def isDefined = !isEmpty
+    def isEmpty = value.trim.isEmpty
+    def toOption: Option[ETag] = if (isDefined) Some(this) else None
+
+    override def toString = value
   }
 
-  object VClocked {
-    def apply[T: RiakValueReader](riakValue: RiakValue): Try[VClocked[T]] = riakValue.as[T].map(VClocked(_, riakValue.vclock))
+  object ETag {
+    val NotSpecified = ETag("")
+
+    implicit def etagToString(etag: ETag): String = etag.toString
   }
 
 

@@ -16,10 +16,7 @@
 
 package com.scalapenos.riak
 
-import scala.concurrent.Future
 import akka.actor._
-
-import converters._
 
 
 // ============================================================================
@@ -72,6 +69,8 @@ class RiakClientExtension(system: ExtendedActorSystem) extends Extension {
 trait RiakConnection {
   import resolvers.LastValueWinsResolver
 
+  // TODO: ping and stats
+
   def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): RiakBucket
 }
 
@@ -80,9 +79,9 @@ trait RiakConnection {
 // Bucket
 // ============================================================================
 
-trait RiakBucket extends BasicRiakValueConverters {
-  // TODO: add Retry support, maybe at the bucket level
-  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
+trait RiakBucket {
+  import scala.concurrent.Future
+  import RiakSerializerSupport._
 
   /**
    * Every bucket has a default ConflictResolver that will be used when resolving
@@ -95,6 +94,45 @@ trait RiakBucket extends BasicRiakValueConverters {
    */
   def fetch(key: String): Future[Option[RiakValue]]
 
+  /**
+   *
+   */
+  // def fetch(index: String, value: String): Future[Option[RiakValue]]
+  // def fetch(index: String, value: Int): Future[Option[RiakValue]]
+
+  // def fetch(index: String, lowerBound: String, upperBound: String): Future[List[RiakValue]]
+  // def fetch(index: String, lowerBound: Int, upperBound: Int): Future[List[RiakValue]]
+
+
+
+  /**
+   *
+   */
+  def store[T: RiakSerializer](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
+    store(key, meta, false)
+  }
+
+  /**
+   *
+   */
+  def store[T: RiakSerializer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, toRiakValue(meta), returnBody)
+  }
+
+  /**
+   *
+   */
+  def store[T: RiakSerializer](key: String, value: T): Future[Option[RiakValue]] = {
+    store(key, value, false)
+  }
+
+  /**
+   *
+   */
+  def store[T: RiakSerializer](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, toRiakValue(value), returnBody)
+  }
+
 
   /**
    *
@@ -106,53 +144,16 @@ trait RiakBucket extends BasicRiakValueConverters {
   /**
    *
    */
-  def store[T: RiakValueWriter](key: String, vclocked: VClocked[T]): Future[Option[RiakValue]] = {
-    store(key, vclocked, false)
-  }
+  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]// = {
+  //   store(key, value, Set.empty[RiakIndex], returnBody)
+  // }
+
 
   /**
    *
    */
-  def store[T: RiakValueWriter](key: String, vclocked: VClocked[T], returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, implicitly[RiakValueWriter[T]].write(vclocked.value, vclocked.vclock), returnBody)
-  }
+  // def store(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean): Future[Option[RiakValue]]
 
-  /**
-   *
-   */
-  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]] = {
-    store(key, value, false)
-  }
-
-  /**
-   *
-   */
-  def store[T: RiakValueWriter](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
-    // This can be used for new values or values without an associated vclock (for reasons unknown)
-    // We should make that explicit somehow by
-
-    // TODO: always do a fetch-and-store when no vclock info is available.
-
-    // TODO: add support for storeWithLatestVClock(…) for doing read-modify-write, like this:v
-    // fetch(key).flatMap { result => result match {
-    //   case Some(riakValue) => store(userId, riakValue.withNewValue(value), returnBody)
-    //   case None            => store(userId, route, returnBody)
-    // }}
-
-    store(key, implicitly[RiakValueWriter[T]].write(value), returnBody)
-  }
-
-  /**
-   *
-   */
-  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]
-
-
-
-
-  // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
-  // def store(value: RiakValue): Future[String]
-  // def store[T: RiakValueWriter](value: T): Future[String]
 
   /**
    *

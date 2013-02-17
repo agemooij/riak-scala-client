@@ -22,14 +22,14 @@ import scala.util._
 
 import akka.actor._
 
+import spray.util._
+
 
 /**
  * This test depends on a Riak node running on localhost:8098 !!
  */
 class BasicInteractionsSpec extends AkkaActorSystemSpecification {
-  val timeout = 5 seconds
-
-  import converters.BasicRiakValueConverters._
+  import DefaultRiakSerializationSupport._
 
   "The riak client" should {
     "be able to perform a simple get-put-get-delete-get CRUD flow" in {
@@ -39,27 +39,23 @@ class BasicInteractionsSpec extends AkkaActorSystemSpecification {
 
       val fetchBeforeStore = bucket.fetch("foo")
 
-      Await.result(fetchBeforeStore, timeout) must beNone
+      fetchBeforeStore.await must beNone
 
-      val store = bucket.store("foo", "bar", true)
-      val storedValue = Await.result(store, timeout)
+      val storedValue = bucket.store("foo", "bar", true).await
 
       storedValue must beSome[RiakValue]
-      storedValue.get.value must beEqualTo("bar")
+      storedValue.get.data must beEqualTo("bar")
 
-      val fetchAfterStore = bucket.fetch("foo")
-      val fetchedValue = Await.result(fetchAfterStore, timeout)
+      val fetchAfterStore = bucket.fetch("foo").await
 
-      fetchedValue must beSome[RiakValue]
-      fetchedValue.get.value must beEqualTo("bar")
+      fetchAfterStore must beSome[RiakValue]
+      fetchAfterStore.get.data must beEqualTo("bar")
 
-      val delete = bucket.delete("foo")
+      bucket.delete("foo").await must beEqualTo(())
 
-      Await.result(delete, timeout) must beEqualTo(())
+      val fetchAfterDelete = bucket.fetch("foo").await
 
-      val fetchAfterDelete = bucket.fetch("foo")
-
-      Await.result(fetchAfterDelete, timeout) must beNone
+      fetchAfterDelete must beNone
     }
   }
 
