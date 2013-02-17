@@ -42,9 +42,6 @@ trait RiakDeserializer[T] {
 // Utils for working with (De)Serializers
 // ============================================================================
 
-case class UnsupportedContentTypeException(expected: ContentType, actual: ContentType)
-  extends RuntimeException(s"Unexpected ContentType during deserialization: expected $expected but got $actual.") with NoStackTrace
-
 object RiakSerializerSupport {
   def toRiakValue[T: RiakSerializer](data: T): RiakValue = {
     val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(data)
@@ -64,6 +61,12 @@ object RiakDeserializerSupport {
     implicitly[RiakDeserializer[T]].deserialize(value.data, value.contentType)
   }
 }
+
+case class RiakDeserializationException(data: String, targetType: String, cause: Throwable)
+  extends RuntimeException(s"Unable to deserialize data to target type '$targetType'. Reason: '${cause.getMessage}'. Data: '$data'.", cause)
+
+case class RiakUnsupportedContentTypeException(expected: ContentType, actual: ContentType)
+  extends RuntimeException(s"Unexpected ContentType during deserialization: expected $expected but got $actual.") with NoStackTrace
 
 
 // ============================================================================
