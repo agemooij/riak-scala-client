@@ -103,59 +103,32 @@ trait RiakBucket {
   // def fetch(index: String, lowerBound: String, upperBound: String): Future[List[RiakValue]]
   // def fetch(index: String, lowerBound: Int, upperBound: Int): Future[List[RiakValue]]
 
-
-  case class StoreArguments(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean)
-
-  sealed trait StoreArgumentsMagnet {
-    def arguments: StoreArguments
-  }
-
-  object StoreArgumentsMagnet {
-    val defaultIndexes = Set.empty[RiakIndex]
-    val defaultReturnBody = false
-
-    implicit def fromKeyAndTWithSerializer[T: RiakSerializer](tuple: (String, T)) = new StoreArgumentsMagnet {
-      def arguments = StoreArguments(tuple._1, toRiakValue(tuple._2), defaultIndexes, defaultReturnBody)
-    }
-
-    implicit def fromKeyAndTWithSerializerAndIndexer[T: RiakSerializer: RiakIndexer](tuple: (String, T)) = new StoreArgumentsMagnet {
-      def arguments = StoreArguments(tuple._1, toRiakValue(tuple._2), implicitly[RiakIndexer[T]].index(tuple._2), defaultReturnBody)
-    }
-  }
-
-  def store2(magnet: StoreArgumentsMagnet): Future[Option[RiakValue]] = {
-    val args = magnet.arguments
-
-    store(args.key, args.value, args.indexes, args.returnBody)
-  }
-
-
   /**
    *
    */
-  def store[T: RiakSerializer](key: String, value: T): Future[Option[RiakValue]] = {
+  def store[T: RiakSerializer: RiakIndexer](key: String, value: T): Future[Option[RiakValue]] = {
     store(key, value, false)
   }
 
   /**
    *
    */
-  def store[T: RiakSerializer](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, toRiakValue(value), returnBody)
+  def store[T: RiakSerializer: RiakIndexer](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, toRiakValue(value), implicitly[RiakIndexer[T]].index(value), returnBody)
   }
 
   /**
    *
    */
-  def store[T: RiakSerializer](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
+  def store[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
     store(key, meta, false)
   }
 
   /**
    *
    */
-  def store[T: RiakSerializer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, toRiakValue(meta), returnBody)
+  def store[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, toRiakValue(meta), implicitly[RiakIndexer[T]].index(meta.data), returnBody)
   }
 
 
@@ -163,7 +136,7 @@ trait RiakBucket {
    *
    */
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
-    store(key, value, false)
+    store(key, value, Set.empty[RiakIndex], false)
   }
 
   /**
@@ -173,6 +146,12 @@ trait RiakBucket {
     store(key, value, Set.empty[RiakIndex], returnBody)
   }
 
+  /**
+   *
+   */
+  def store(key: String, value: RiakValue, indexes: Set[RiakIndex]): Future[Option[RiakValue]] = {
+    store(key, value, indexes, false)
+  }
 
   /**
    *
