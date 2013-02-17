@@ -16,10 +16,7 @@
 
 package com.scalapenos.riak
 
-import scala.concurrent.Future
 import akka.actor._
-
-import converters._
 
 
 // ============================================================================
@@ -82,11 +79,9 @@ trait RiakConnection {
 // Bucket
 // ============================================================================
 
-trait RiakBucket extends BasicRiakValueConverters {
-  // TODO: add Retry support, maybe at the bucket level
-  // TODO: use URL-escaping to make sure all keys (and bucket names) are valid
-
-  // Why not typed buckets next to raw buckets?
+trait RiakBucket {
+  import scala.concurrent.Future
+  import RiakSerializerSupport._
 
   /**
    * Every bucket has a default ConflictResolver that will be used when resolving
@@ -99,7 +94,6 @@ trait RiakBucket extends BasicRiakValueConverters {
    */
   def fetch(key: String): Future[Option[RiakValue]]
 
-
   /**
    *
    */
@@ -110,50 +104,41 @@ trait RiakBucket extends BasicRiakValueConverters {
   // def fetch(index: String, lowerBound: Int, upperBound: Int): Future[List[RiakValue]]
 
 
-  /**
-   *
-   */
-  def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
-    store(key, value, false)
-  }
 
   /**
    *
    */
-  def store[T: RiakValueWriter](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
+  def store[T: RiakSerializer](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
     store(key, meta, false)
   }
 
   /**
    *
    */
-  def store[T: RiakValueWriter](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, implicitly[RiakValueWriter[T]].write(meta), returnBody)
+  def store[T: RiakSerializer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, toRiakValue(meta), returnBody)
   }
 
   /**
    *
    */
-  def store[T: RiakValueWriter](key: String, value: T): Future[Option[RiakValue]] = {
+  def store[T: RiakSerializer](key: String, value: T): Future[Option[RiakValue]] = {
     store(key, value, false)
   }
 
   /**
    *
    */
-  def store[T: RiakValueWriter](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
-    // This can be used for new values or values without an associated vclock (for reasons unknown)
-    // We should make that explicit somehow by
+  def store[T: RiakSerializer](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, toRiakValue(value), returnBody)
+  }
 
-    // TODO: always do a fetch-and-store when no vclock info is available.
 
-    // TODO: add support for storeWithLatestVClock(…) for doing read-modify-write, like this:v
-    // fetch(key).flatMap { result => result match {
-    //   case Some(riakValue) => store(userId, riakValue.withNewValue(value), returnBody)
-    //   case None            => store(userId, route, returnBody)
-    // }}
-
-    store(key, implicitly[RiakValueWriter[T]].write(value), returnBody)
+  /**
+   *
+   */
+  def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
+    store(key, value, false)
   }
 
   /**
@@ -169,11 +154,6 @@ trait RiakBucket extends BasicRiakValueConverters {
    */
   // def store(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean): Future[Option[RiakValue]]
 
-
-
-  // TODO: add support for storing without a key, putting the generated key into the RiakValue which it should then always produce.
-  // def store(value: RiakValue): Future[String]
-  // def store[T: RiakValueWriter](value: T): Future[String]
 
   /**
    *

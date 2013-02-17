@@ -28,14 +28,9 @@ final case class RiakMeta[T](
   etag: ETag,
   lastModified: DateTime
 ) {
-
   def map(f: T => T): RiakMeta[T] = RiakMeta(f(data), contentType, vclock, etag, lastModified)
-  def toRiakValue(implicit writer: RiakValueWriter[T]): RiakValue = implicitly[RiakValueWriter[T]].write(this)
 
-}
-
-object RiakMeta {
-  // def apply[T](data: T, contentType: ContentType): RiakMeta[T] = apply(value, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now)
+  def toRiakValue(implicit serializer: RiakSerializer[T]): RiakValue = RiakSerializerSupport.toRiakValue(this)(serializer)
 }
 
 
@@ -51,18 +46,14 @@ final case class RiakValue(
   lastModified: DateTime
   // indexes: Set[RiakIndex]
 ) {
-  import scala.util._
-  import converters._
+  import scala.util.Try
 
-  def as[T: RiakValueReader]: Try[T] = implicitly[RiakValueReader[T]].read(this)
-
-  def toMeta[T: RiakValueReader]: Try[RiakMeta[T]] =
-    implicitly[RiakValueReader[T]].read(this)
-                                  .map(data => RiakMeta(data, contentType, vclock, etag, lastModified))
+  def as[T: RiakDeserializer]: Try[T] = RiakDeserializerSupport.deserialize[T](this)
+  def toMeta[T: RiakDeserializer]: Try[RiakMeta[T]] = as[T].map(data => RiakMeta(data, contentType, vclock, etag, lastModified))
 }
 
 object RiakValue {
-  // use the magnet pattern so we can have overloads that would break due to type-erasure
+  // use the magnet pattern so we can have overloads that would break due to type-erasure?
 
   // def apply(value: String): RiakValue = {
   //   apply(value, VClock.NotSpecified)
@@ -72,8 +63,8 @@ object RiakValue {
   //   apply(value, ContentType.`text/plain`, vclock)
   // }
 
-  // def apply(value: String, contentType: ContentType): RiakValue = {
-  //   apply(value, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now)
+  // def apply(data: String, contentType: ContentType): RiakValue = {
+  //   apply(data, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now)
   // }
 
   // def apply(value: String, contentType: ContentType, vclock: VClock): RiakValue = {
