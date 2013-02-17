@@ -104,20 +104,31 @@ trait RiakBucket {
   // def fetch(index: String, lowerBound: Int, upperBound: Int): Future[List[RiakValue]]
 
 
+  case class StoreArguments(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean)
 
-  /**
-   *
-   */
-  def store[T: RiakSerializer](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
-    store(key, meta, false)
+  sealed trait StoreArgumentsMagnet {
+    def arguments: StoreArguments
   }
 
-  /**
-   *
-   */
-  def store[T: RiakSerializer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, toRiakValue(meta), returnBody)
+  object StoreArgumentsMagnet {
+    val defaultIndexes = Set.empty[RiakIndex]
+    val defaultReturnBody = false
+
+    implicit def fromKeyAndTWithSerializer[T: RiakSerializer](tuple: (String, T)) = new StoreArgumentsMagnet {
+      def arguments = StoreArguments(tuple._1, toRiakValue(tuple._2), defaultIndexes, defaultReturnBody)
+    }
+
+    implicit def fromKeyAndTWithSerializerAndIndexer[T: RiakSerializer: RiakIndexer](tuple: (String, T)) = new StoreArgumentsMagnet {
+      def arguments = StoreArguments(tuple._1, toRiakValue(tuple._2), implicitly[RiakIndexer[T]].index(tuple._2), defaultReturnBody)
+    }
   }
+
+  def store2(magnet: StoreArgumentsMagnet): Future[Option[RiakValue]] = {
+    val args = magnet.arguments
+
+    store(args.key, args.value, args.indexes, args.returnBody)
+  }
+
 
   /**
    *
@@ -133,6 +144,20 @@ trait RiakBucket {
     store(key, toRiakValue(value), returnBody)
   }
 
+  /**
+   *
+   */
+  def store[T: RiakSerializer](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
+    store(key, meta, false)
+  }
+
+  /**
+   *
+   */
+  def store[T: RiakSerializer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, toRiakValue(meta), returnBody)
+  }
+
 
   /**
    *
@@ -144,15 +169,15 @@ trait RiakBucket {
   /**
    *
    */
-  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]// = {
-  //   store(key, value, Set.empty[RiakIndex], returnBody)
-  // }
+  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, value, Set.empty[RiakIndex], returnBody)
+  }
 
 
   /**
    *
    */
-  // def store(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean): Future[Option[RiakValue]]
+  def store(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean): Future[Option[RiakValue]]
 
 
   /**
@@ -199,7 +224,7 @@ private[riak] class HttpConnection(httpClient: RiakHttpClient, server: RiakServe
 private[riak] class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
   def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
 
-  def store(key: String, value: RiakValue, returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
+  def store(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
 
   def delete(key: String) = httpClient.delete(server, bucket, key)
 }

@@ -47,3 +47,11 @@ final case class RiakStringIndex(name: String, value: String) extends RiakIndex 
 final case class RiakIntIndex(name: String, value: Int) extends RiakIndex {
   type Type = Int
 }
+
+
+import annotation.implicitNotFound
+
+@implicitNotFound(msg = "Cannot find RiakIndex type class for ${T}")
+trait RiakIndexer[T] {
+  def index(t: T): Set[RiakIndex]
+}
