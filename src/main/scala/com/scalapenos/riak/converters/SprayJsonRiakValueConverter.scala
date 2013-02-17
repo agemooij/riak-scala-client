@@ -26,33 +26,33 @@ import spray.http.MediaTypes._
 import spray.json._
 
 
-class SprayJsonRiakValueConverter[T: RootJsonFormat: ClassTag] extends RiakValueConverter[T] {
-  def contentType = ContentType.`application/json`
-  def serialize(t: T) = implicitly[RootJsonFormat[T]].write(t).compactPrint
+// class SprayJsonRiakValueConverter[T: RootJsonFormat: ClassTag] extends RiakValueConverter[T] {
+//   def contentType = ContentType.`application/json`
+//   def serialize(t: T) = implicitly[RootJsonFormat[T]].write(t).compactPrint
 
-  def read(riakValue: RiakValue): Try[T] = {
-    riakValue.contentType match {
-      case ContentType(`application/json`, _) => {
-        val jsonFormat = implicitly[RootJsonFormat[T]]
+//   def read(riakValue: RiakValue): Try[T] = {
+//     riakValue.contentType match {
+//       case ContentType(`application/json`, _) => {
+//         val jsonFormat = implicitly[RootJsonFormat[T]]
 
-        Try(jsonFormat.read(riakValue.data.asJson)) recoverWith {
-          case e => Failure(ConversionFailedException(
-                      "The JSON contained in the RiakValue cannot be used to produce an instance of %s".format(
-                        implicitly[ClassTag[T]].runtimeClass.getSimpleName), e))
-        }
-      }
+//         Try(jsonFormat.read(riakValue.data.asJson)) recoverWith {
+//           case e => Failure(ConversionFailedException(
+//                       "The JSON contained in the RiakValue cannot be used to produce an instance of %s".format(
+//                         implicitly[ClassTag[T]].runtimeClass.getSimpleName), e))
+//         }
+//       }
 
-      case _ => Failure(
-        new ConversionFailedException(
-          "The ContentType of the RiakValue is `%s` instead of the `application/json` required by SprayJsonConverter".format(
-            riakValue.contentType, implicitly[ClassTag[T]].runtimeClass)))
-    }
-  }
+//       case _ => Failure(
+//         new ConversionFailedException(
+//           "The ContentType of the RiakValue is `%s` instead of the `application/json` required by SprayJsonConverter".format(
+//             riakValue.contentType, implicitly[ClassTag[T]].runtimeClass)))
+//     }
+//   }
 
-}
+// }
 
-object SprayJsonRiakValueConverter extends SprayJsonRiakValueConverterLowPriorityImplicits
+// object SprayJsonRiakValueConverter extends SprayJsonRiakValueConverterLowPriorityImplicits
 
-trait SprayJsonRiakValueConverterLowPriorityImplicits {
-  implicit def sprayJsonRiakValueConverter[T: RootJsonFormat: ClassTag] = new SprayJsonRiakValueConverter[T]
-}
+// trait SprayJsonRiakValueConverterLowPriorityImplicits {
+//   implicit def sprayJsonRiakValueConverter[T: RootJsonFormat: ClassTag] = new SprayJsonRiakValueConverter[T]
+// }
