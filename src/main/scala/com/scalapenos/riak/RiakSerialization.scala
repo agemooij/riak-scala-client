@@ -29,6 +29,8 @@ trait RiakSerializer[T] {
   def serialize(t: T): (String, ContentType)
 }
 
+object RiakSerializer extends LowPriorityDefaultRiakSerializerImplicits
+
 /**
   * Provides the RiakValue deserialization for type T.
  */
@@ -36,6 +38,8 @@ trait RiakSerializer[T] {
 trait RiakDeserializer[T] {
   def deserialize(data: String, contentType: ContentType): Try[T]
 }
+
+object RiakDeserializer extends LowPriorityDefaultRiakDeserializerImplicits
 
 
 // ============================================================================
@@ -73,13 +77,7 @@ case class RiakUnsupportedContentTypeException(expected: ContentType, actual: Co
 // Lowest priority implicit (de)serializers to/from String
 // ============================================================================
 
-object DefaultRiakSerializationSupport extends DefaultRiakSerializationSupport
-
-trait DefaultRiakSerializationSupport extends DefaultRiakSerializationLowPriorityImplicits
-
-trait DefaultRiakSerializationLowPriorityImplicits {
-  import scala.util._
-
+trait LowPriorityDefaultRiakSerializerImplicits {
   implicit def toStringSerializer[T] = new RiakSerializer[T] {
     def serialize(t: T): (String, ContentType) = (t.toString, ContentType.`text/plain`)
   }
@@ -87,6 +85,10 @@ trait DefaultRiakSerializationLowPriorityImplicits {
   implicit def stringSerializer = new RiakSerializer[String] {
     def serialize(s: String): (String, ContentType) = (s, ContentType.`text/plain`)
   }
+}
+
+trait LowPriorityDefaultRiakDeserializerImplicits {
+  import scala.util._
 
   implicit def toStringDeserializer = new RiakDeserializer[String] {
     def deserialize(data: String, contentType: ContentType): Try[String] = Success(data)

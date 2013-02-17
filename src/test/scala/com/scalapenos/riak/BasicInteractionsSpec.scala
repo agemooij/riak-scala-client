@@ -29,8 +29,6 @@ import spray.util._
  * This test depends on a Riak node running on localhost:8098 !!
  */
 class BasicInteractionsSpec extends AkkaActorSystemSpecification {
-  import DefaultRiakSerializationSupport._
-
   "The riak client" should {
     "be able to perform a simple get-put-get-delete-get CRUD flow" in {
       val client = RiakClient(system)

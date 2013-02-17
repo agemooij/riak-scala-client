@@ -30,7 +30,6 @@ import spray.util._
  * This test depends on a Riak node running on localhost:8098 !!
  */
 class ConflictResolutionSpec extends AkkaActorSystemSpecification {
-  import DefaultRiakSerializationSupport._
 
   "When resolving conflicts with a custom resolver during fetch, the client" should {
     "write the resolved value back to Riak and return the new value with the appropriate vector clock" in {
