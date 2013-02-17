@@ -16,8 +16,6 @@
 
 package com.scalapenos
 
-import scala.util._
-import com.github.nscala_time.time.Imports._
 
 package object riak {
 

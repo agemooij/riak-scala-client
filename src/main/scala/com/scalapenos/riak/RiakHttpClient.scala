@@ -27,7 +27,6 @@ import spray.http.{HttpEntity, HttpHeader, HttpResponse}
 import spray.http.StatusCodes._
 import spray.http.HttpHeaders._
 
-import converters._
 import RiakHttpHeaders._
 import utils.SprayClientExtras._
 
