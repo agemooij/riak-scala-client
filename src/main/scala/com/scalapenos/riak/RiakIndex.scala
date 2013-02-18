@@ -28,15 +28,15 @@ sealed trait RiakIndex {
 
 object RiakIndex {
   def apply(name: String, value: String) = RiakStringIndex(name, value)
-  def apply(name: String, value: Int) = RiakIntIndex(name, value)
+  def apply(name: String, value: Long) = RiakLongIndex(name, value)
 }
 
 final case class RiakStringIndex(name: String, value: String) extends RiakIndex {
   type Type = String
 }
 
-final case class RiakIntIndex(name: String, value: Int) extends RiakIndex {
-  type Type = Int
+final case class RiakLongIndex(name: String, value: Long) extends RiakIndex {
+  type Type = Long
 }
 
 
