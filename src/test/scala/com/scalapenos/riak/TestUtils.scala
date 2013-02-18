@@ -27,4 +27,18 @@ trait AkkaActorSystemSpecification extends Specification with NoTimeConversions 
   private def actorSystemNameFrom(clazz: Class[_]) = clazz.getName.replace('.', '-').filter(_ != '$')
 }
 
+trait RiakClientSpecification extends AkkaActorSystemSpecification with Before {
+  var client: RiakClient = _
+  var connection: RiakConnection = _
 
+  def before {
+    client = RiakClient(system)
+    connection = client.connect()
+  }
+}
+
+trait RandomKeySupport {
+  import java.util.UUID._
+
+  def randomKey = randomUUID().toString
+}
