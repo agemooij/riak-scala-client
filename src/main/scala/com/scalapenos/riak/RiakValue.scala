@@ -67,30 +67,4 @@ object RiakValue {
 
     RiakValue(dataAsString, contentType, meta.vclock, meta.etag, DateTime.now, indexes)
   }
-
-  // use the magnet pattern so we can have overloads that would break due to type-erasure?
-
-  // def apply(value: String): RiakValue = {
-  //   apply(value, VClock.NotSpecified)
-  // }
-
-  // def apply(value: String, vclock: VClock): RiakValue = {
-  //   apply(value, ContentType.`text/plain`, vclock)
-  // }
-
-  // def apply(data: String, contentType: ContentType): RiakValue = {
-  //   apply(data, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now)
-  // }
-
-  // def apply(value: String, contentType: ContentType, vclock: VClock): RiakValue = {
-  //   apply(value, contentType, vclock, "", DateTime.now)
-  // }
-
-  // def apply(value: Array[Byte], contentType: ContentType, vclock: VClock, etag: String, lastModified: DateTime): RiakValue = {
-  //   RiakValue(new String(value, contentType.charset.nioCharset), contentType, vclock, etag, lastModified)
-  // }
-
-  // def apply[T: RiakValueWriter](value: T): RiakValue = implicitly[RiakValueWriter[T]].write(value)
-  // def apply[T: RiakValueWriter](value: T, vclock: VClock): RiakValue = implicitly[RiakValueWriter[T]].write(value, vclock)
-
 }
