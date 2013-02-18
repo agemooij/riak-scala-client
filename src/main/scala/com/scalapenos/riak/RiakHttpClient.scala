@@ -16,20 +16,6 @@
 
 package com.scalapenos.riak
 
-import scala.concurrent.Future
-import scala.concurrent.Future._
-
-import akka.actor._
-
-import spray.client.HttpClient
-import spray.client.pipelining._
-import spray.http.{HttpEntity, HttpHeader, HttpResponse}
-import spray.http.StatusCodes._
-import spray.http.HttpHeaders._
-
-import RiakHttpHeaders._
-import utils.SprayClientExtras._
-
 
 // ============================================================================
 // RiakServerInfo - a nice way to encode the Riak server properties
@@ -55,8 +41,9 @@ private[riak] object RiakServerInfo {
 // RiakHttpClient
 //
 // TODO: add Retry support, maybe at the bucket level
-// TODO: use URL-escaping to make sure all keys and bucket names are valid
 // ============================================================================
+
+import akka.actor._
 
 private[riak] object RiakHttpClient {
   import spray.http.HttpBody
@@ -72,13 +59,27 @@ private[riak] object RiakHttpClient {
   }
 }
 
-
 private[riak] class RiakHttpClient(system: ActorSystem) {
-  import system.dispatcher
+  import scala.concurrent.Future
+  import scala.concurrent.Future._
+
+  import spray.client.HttpClient
+  import spray.client.pipelining._
+  import spray.http.{HttpEntity, HttpHeader, HttpResponse}
+  import spray.http.StatusCodes._
+  import spray.http.HttpHeaders._
+
+  import org.slf4j.LoggerFactory
+
+  import utils.SprayClientExtras._
+  import RiakHttpHeaders._
   import RiakHttpClient._
+
+  import system.dispatcher
 
   private val httpClient = system.actorOf(Props(new HttpClient()), "riak-http-client")
   private val settings = RiakClientExtension(system).settings
+  private val log = LoggerFactory.getLogger(getClass)
 
 
   def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
