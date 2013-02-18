@@ -81,7 +81,6 @@ trait RiakConnection {
 
 trait RiakBucket {
   import scala.concurrent.Future
-  import RiakSerializerSupport._
 
   /**
    * Every bucket has a default ConflictResolver that will be used when resolving
@@ -114,7 +113,7 @@ trait RiakBucket {
    *
    */
   def store[T: RiakSerializer: RiakIndexer](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, toRiakValue(value), implicitly[RiakIndexer[T]].index(value), returnBody)
+    store(key, RiakValue(value), returnBody)
   }
 
   /**
@@ -128,34 +127,20 @@ trait RiakBucket {
    *
    */
   def store[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, toRiakValue(meta), implicitly[RiakIndexer[T]].index(meta.data), returnBody)
+    store(key, RiakValue(meta), returnBody)
   }
 
   /**
    *
    */
   def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
-    store(key, value, Set.empty[RiakIndex], false)
+    store(key, value, false)
   }
 
   /**
    *
    */
-  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, value, Set.empty[RiakIndex], returnBody)
-  }
-
-  /**
-   *
-   */
-  def store(key: String, value: RiakValue, indexes: Set[RiakIndex]): Future[Option[RiakValue]] = {
-    store(key, value, indexes, false)
-  }
-
-  /**
-   *
-   */
-  def store(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean): Future[Option[RiakValue]]
+  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]
 
 
   /**
@@ -202,7 +187,7 @@ private[riak] class HttpConnection(httpClient: RiakHttpClient, server: RiakServe
 private[riak] class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
   def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
 
-  def store(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
+  def store(key: String, value: RiakValue, returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
 
   def delete(key: String) = httpClient.delete(server, bucket, key)
 }

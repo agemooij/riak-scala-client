@@ -21,16 +21,17 @@ package com.scalapenos.riak
 // RiakMeta
 // ============================================================================
 
-final case class RiakMeta[T](
+final case class RiakMeta[T: RiakSerializer: RiakIndexer](
   data: T,
   contentType: ContentType,
   vclock: VClock,
   etag: ETag,
-  lastModified: DateTime
+  lastModified: DateTime,
+  indexes: Set[RiakIndex] = Set.empty[RiakIndex]
 ) {
   def map(f: T => T): RiakMeta[T] = RiakMeta(f(data), contentType, vclock, etag, lastModified)
 
-  def toRiakValue(implicit serializer: RiakSerializer[T]): RiakValue = RiakSerializerSupport.toRiakValue(this)(serializer)
+  def toRiakValue = RiakValue(this)
 }
 
 
@@ -43,16 +44,30 @@ final case class RiakValue(
   contentType: ContentType,
   vclock: VClock,
   etag: ETag,
-  lastModified: DateTime
-  // indexes: Set[RiakIndex]
+  lastModified: DateTime,
+  indexes: Set[RiakIndex] = Set.empty[RiakIndex]
 ) {
   import scala.util.Try
 
-  def as[T: RiakDeserializer]: Try[T] = RiakDeserializerSupport.deserialize[T](this)
+  def as[T: RiakDeserializer]: Try[T] = implicitly[RiakDeserializer[T]].deserialize(data, contentType)
   def toMeta[T: RiakDeserializer]: Try[RiakMeta[T]] = as[T].map(data => RiakMeta(data, contentType, vclock, etag, lastModified))
 }
 
 object RiakValue {
+  def apply[T: RiakSerializer: RiakIndexer](data: T): RiakValue = {
+    val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(data)
+    val indexes = implicitly[RiakIndexer[T]].index(data)
+
+    RiakValue(dataAsString, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now, indexes)
+  }
+
+  def apply[T: RiakSerializer: RiakIndexer](meta: RiakMeta[T]): RiakValue = {
+    val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(meta.data)
+    val indexes = meta.indexes ++ implicitly[RiakIndexer[T]].index(meta.data)
+
+    RiakValue(dataAsString, contentType, meta.vclock, meta.etag, DateTime.now, indexes)
+  }
+
   // use the magnet pattern so we can have overloads that would break due to type-erasure?
 
   // def apply(value: String): RiakValue = {

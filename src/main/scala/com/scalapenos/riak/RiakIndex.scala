@@ -17,17 +17,8 @@
 package com.scalapenos.riak
 
 /*
-
-TODO:
-
-Add indexes to RiakValue
-Allows converters to define their own indexes
-
-How to detect whether indexes are available (i.e. whether the Riak backend is leveldb)?
-
-Make converters stackable/delegatable so you could for instance use the standard spray json converter AND add extra indexes
+  TODO: How to detect whether indexes are available (i.e. whether the Riak backend is leveldb)?
 */
-
 
 sealed trait RiakIndex {
   type Type

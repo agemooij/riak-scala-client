@@ -185,8 +185,11 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
 
       // TODO: make sure the DateTime is always in the Zulu zone
 
+      // TODO: map the index headers
+      val indexes = Set.empty[RiakIndex]
+
       for (vClock <- vClockOption; eTag <- eTagOption; lastModified <- lastModifiedOption)
-      yield RiakValue(new String(body.buffer, body.contentType.charset.nioCharset), body.contentType, vClock, eTag, lastModified)
+      yield RiakValue(new String(body.buffer, body.contentType.charset.nioCharset), body.contentType, vClock, eTag, lastModified, indexes)
     }
   }
 
