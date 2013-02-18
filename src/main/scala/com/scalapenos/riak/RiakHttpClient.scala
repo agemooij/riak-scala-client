@@ -100,9 +100,21 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     // TODO: add the eTag value from the RiakValue as a header if it is non-empty
 
     // TODO: add any indexes defined on the RiakValue as index headers
+    def toIndexHeader(index: RiakIndex): HttpHeader = {
+      index match {
+        case RiakLongIndex(indexName, indexValue)   => RawHeader(indexHeaderPrefix + indexName + intIndexSuffix, indexValue.toString)
+        case RiakStringIndex(indexName, indexValue) => RawHeader(indexHeaderPrefix + indexName + binIndexSuffix, indexValue)
+      }
+    }
 
-    val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock.toString))
-    val request = addOptionalHeader(vclockHeader) ~> httpRequest
+    val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock))
+    val etagHeader = value.etag.toOption.map(etag => RawHeader(`ETag`, etag))
+    val indexHeaders = value.indexes.map(toIndexHeader(_)).toList
+
+    val request = addOptionalHeader(vclockHeader) ~>
+                  addOptionalHeader(etagHeader) ~>
+                  addHeaders(indexHeaders) ~>
+                  httpRequest
 
     request(Put(url(server, bucket, key, StoreQueryParameters(returnBody)), value)).flatMap { response =>
       response.status match {
@@ -176,22 +188,34 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
 
   private def toRiakValue(response: HttpResponse): Option[RiakValue] = toRiakValue(response.entity, response.headers)
   private def toRiakValue(entity: HttpEntity, headers: List[HttpHeader]): Option[RiakValue] = {
-    import com.github.nscala_time.time.Imports._
-
     entity.toOption.flatMap { body =>
       val vClockOption       = headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).map(_.value)
       val eTagOption         = headers.find(_.is("etag")).map(_.value)
       val lastModifiedOption = headers.find(_.is("last-modified"))
                                       .map(h => new DateTime(h.asInstanceOf[`Last-Modified`].date.clicks))
+      val indexes            = toRiakIndexes(headers)
 
       // TODO: make sure the DateTime is always in the Zulu zone
-
-      // TODO: map the index headers
-      val indexes = Set.empty[RiakIndex]
 
       for (vClock <- vClockOption; eTag <- eTagOption; lastModified <- lastModifiedOption)
       yield RiakValue(new String(body.buffer, body.contentType.charset.nioCharset), body.contentType, vClock, eTag, lastModified, indexes)
     }
+  }
+
+  private def toRiakIndexes(headers: List[HttpHeader]): Set[RiakIndex] = {
+    val IndexNameAndType = (indexHeaderPrefix + "(.+)_(bin|int)$").r
+
+    def toRiakIndex(header: HttpHeader): Set[RiakIndex] = {
+      header.lowercaseName match {
+        case IndexNameAndType(name, "int") => header.value.split(',').map(value => RiakIndex(name, value.trim.toLong)).toSet
+        case IndexNameAndType(name, "bin") => header.value.split(',').map(value => RiakIndex(name, value.trim)).toSet
+        case _                             => Set.empty[RiakIndex]
+      }
+    }
+
+    headers.filter(_.lowercaseName.startsWith(indexHeaderPrefix))
+           .flatMap(toRiakIndex(_))
+           .toSet
   }
 
 
