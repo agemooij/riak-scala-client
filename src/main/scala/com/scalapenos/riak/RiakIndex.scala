@@ -56,7 +56,9 @@ trait RiakIndexer[T] {
   def index(t: T): Set[RiakIndex]
 }
 
-object RiakIndexer {
+object RiakIndexer extends LowPriorityDefaultRiakIndexerImplicits
+
+trait LowPriorityDefaultRiakIndexerImplicits {
   implicit def defaultNoIndexes[T] = new RiakIndexer[T] {
     def index(t: T) = Set.empty[RiakIndex]
   }

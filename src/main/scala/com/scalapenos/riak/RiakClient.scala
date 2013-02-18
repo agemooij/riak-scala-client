@@ -131,7 +131,6 @@ trait RiakBucket {
     store(key, toRiakValue(meta), implicitly[RiakIndexer[T]].index(meta.data), returnBody)
   }
 
-
   /**
    *
    */
