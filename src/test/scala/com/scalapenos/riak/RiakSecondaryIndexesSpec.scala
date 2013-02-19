@@ -26,7 +26,6 @@ import akka.actor._
 
 import spray.util._
 
-
 /**
  * This test depends on a Riak node running on localhost:8098 !!
  */
@@ -40,134 +39,71 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
   //       - different names, same values
 
 
-  case class ClassWithOneIntIndex(foo: String)
-  object ClassWithOneIntIndex {
-    implicit def serializer1 = new RiakSerializer[ClassWithOneIntIndex] {
-      def serialize(iv: ClassWithOneIntIndex): (String, ContentType) = (iv.foo, ContentType.`text/plain`)
-    }
-
-    implicit def deserializer1 = new RiakDeserializer[ClassWithOneIntIndex] {
-      def deserialize(data: String, contentType: ContentType): Try[ClassWithOneIntIndex] = Success(apply(data))
-    }
-
-    implicit def indexer1 = new RiakIndexer[ClassWithOneIntIndex] {
-      def index(v: ClassWithOneIntIndex) = Set(RiakIndex("foos", 1))
-    }
-  }
-
-  case class ClassWithOneStringIndex(foo: String)
-  object ClassWithOneStringIndex {
-    implicit def serializer2 = new RiakSerializer[ClassWithOneStringIndex] {
-      def serialize(iv: ClassWithOneStringIndex): (String, ContentType) = (iv.foo, ContentType.`text/plain`)
-    }
-
-    implicit def deserializer2 = new RiakDeserializer[ClassWithOneStringIndex] {
-      def deserialize(data: String, contentType: ContentType): Try[ClassWithOneStringIndex] = Success(apply(data))
-    }
-
-    implicit def indexer2 = new RiakIndexer[ClassWithOneStringIndex] {
-      def index(v: ClassWithOneStringIndex) = Set(RiakIndex("foos", v.foo))
-    }
-  }
+  import test.TestClassesWithIndexes._
 
   "A RiakBucket" should {
-    "support storing and returning a value with one secondary index (Int)" in {
-      val bucket = connection.bucket("riak-index-tests")
-      val key = randomKey
-      val value = ClassWithOneIntIndex("bar")
+    "support storing and returning a value with one secondary index (Int)" in new
+      StoreAndReturnBody[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", Set(RiakIndex("foos", 1))) {}
 
-      bucket.fetch(key).await must beNone
+    "support storing and returning a value with one secondary index (String)" in new
+      StoreAndReturnBody[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", Set(RiakIndex("foos", "bar"))) {}
 
-      val storedValue = bucket.store(key, value, true).await
+    "support storing and then fetching a value with one secondary index (Int)" in new
+      StoreAndFetch[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", Set(RiakIndex("foos", 1))) {}
 
-      storedValue must beSome[RiakValue]
-      storedValue.get.data must beEqualTo("bar")
-      storedValue.get.indexes must have size(1)
-      storedValue.get.indexes.head must beEqualTo(RiakIndex("foos", 1))
-
-      val meta = storedValue.get.toMeta[ClassWithOneIntIndex]
-
-      meta must beAnInstanceOf[Success[RiakMeta[ClassWithOneIntIndex]]]
-      meta.get.indexes must have size(1)
-      meta.get.indexes.head must beEqualTo(RiakIndex("foos", 1))
-
-      bucket.delete(key).await must beEqualTo(())
-      bucket.fetch(key).await must beNone
-    }
-
-    "support storing and then fetching a value with one secondary index (Int)" in {
-      val bucket = connection.bucket("riak-index-tests")
-      val key = randomKey
-      val value = ClassWithOneIntIndex("bar")
-
-      bucket.fetch(key).await must beNone
-      bucket.store(key, value).await
-
-      val fetchedValue = bucket.fetch(key).await
-
-      fetchedValue must beSome[RiakValue]
-      fetchedValue.get.data must beEqualTo("bar")
-      fetchedValue.get.indexes must have size(1)
-      fetchedValue.get.indexes.head must beEqualTo(RiakIndex("foos", 1))
-
-      val meta = fetchedValue.get.toMeta[ClassWithOneIntIndex]
-
-      meta must beAnInstanceOf[Success[RiakMeta[ClassWithOneIntIndex]]]
-      meta.get.indexes must have size(1)
-      meta.get.indexes.head must beEqualTo(RiakIndex("foos", 1))
-
-      bucket.delete(key).await must beEqualTo(())
-      bucket.fetch(key).await must beNone
-    }
-
-    "support storing and returning a value with one secondary index (String)" in {
-      val bucket = connection.bucket("riak-index-tests")
-      val key = randomKey
-      val value = ClassWithOneStringIndex("bar")
-
-      bucket.fetch(key).await must beNone
-
-      val storedValue = bucket.store(key, value, true).await
-
-      storedValue must beSome[RiakValue]
-      storedValue.get.data must beEqualTo("bar")
-      storedValue.get.indexes must have size(1)
-      storedValue.get.indexes.head must beEqualTo(RiakIndex("foos", "bar"))
-
-      val meta = storedValue.get.toMeta[ClassWithOneStringIndex]
-
-      meta must beAnInstanceOf[Success[RiakMeta[ClassWithOneStringIndex]]]
-      meta.get.indexes must have size(1)
-      meta.get.indexes.head must beEqualTo(RiakIndex("foos", "bar"))
-
-      bucket.delete(key).await must beEqualTo(())
-      bucket.fetch(key).await must beNone
-    }
-
-    "support storing and then fetching a value with one secondary index (String)" in {
-      val bucket = connection.bucket("riak-index-tests")
-      val key = randomKey
-      val value = ClassWithOneStringIndex("bar")
-
-      bucket.fetch(key).await must beNone
-      bucket.store(key, value).await
-
-      val fetchedValue = bucket.fetch(key).await
-
-      fetchedValue must beSome[RiakValue]
-      fetchedValue.get.data must beEqualTo("bar")
-      fetchedValue.get.indexes must have size(1)
-      fetchedValue.get.indexes.head must beEqualTo(RiakIndex("foos", "bar"))
-
-      val meta = fetchedValue.get.toMeta[ClassWithOneStringIndex]
-
-      meta must beAnInstanceOf[Success[RiakMeta[ClassWithOneStringIndex]]]
-      meta.get.indexes must have size(1)
-      meta.get.indexes.head must beEqualTo(RiakIndex("foos", "bar"))
-
-      bucket.delete(key).await must beEqualTo(())
-      bucket.fetch(key).await must beNone
-    }
+    "support storing and then fetching a value with one secondary index (String)" in new
+      StoreAndFetch[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", Set(RiakIndex("foos", "bar"))) {}
   }
 
+
+  // ==========================================================================
+  // Misc Helpers
+  // ==========================================================================
+
+  import org.specs2.specification.Scope
+
+  abstract class StoreAndReturnBody[T: RiakSerializer: RiakIndexer](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
+    val bucket = connection.bucket("riak-index-tests")
+    val key = randomKey
+    val value = constructor
+
+    bucket.fetch(key).await must beNone
+
+    val storedValue = bucket.store(key, value, true).await
+
+    storedValue must beSome[RiakValue]
+    storedValue.get.data must beEqualTo(expectedData)
+    storedValue.get.indexes must beEqualTo(expectedIndexes)
+
+    val meta = storedValue.get.toMeta[ClassWithOneStringIndex]
+
+    meta must beAnInstanceOf[Success[RiakMeta[ClassWithOneStringIndex]]]
+    meta.get.indexes must beEqualTo(expectedIndexes)
+
+    bucket.delete(key).await must beEqualTo(())
+    bucket.fetch(key).await must beNone
+  }
+
+  abstract class StoreAndFetch[T: RiakSerializer: RiakIndexer](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
+    val bucket = connection.bucket("riak-index-tests")
+    val key = randomKey
+    val value = constructor
+
+    bucket.fetch(key).await must beNone
+    bucket.store(key, value).await
+
+    val fetchedValue = bucket.fetch(key).await
+
+    fetchedValue must beSome[RiakValue]
+    fetchedValue.get.data must beEqualTo(expectedData)
+    fetchedValue.get.indexes must beEqualTo(expectedIndexes)
+
+    val meta = fetchedValue.get.toMeta[ClassWithOneStringIndex]
+
+    meta must beAnInstanceOf[Success[RiakMeta[ClassWithOneStringIndex]]]
+    meta.get.indexes must beEqualTo(expectedIndexes)
+
+    bucket.delete(key).await must beEqualTo(())
+    bucket.fetch(key).await must beNone
+  }
 }
