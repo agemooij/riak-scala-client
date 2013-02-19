@@ -32,27 +32,43 @@ import spray.util._
 class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySupport {
 
   // TODO: skip this test if the localhost backend does not support secondary indexes
-  // TODO: get rid of all the duplication
   // TODO: tests for multiple indexes
   //       - mixed types
   //       - same name but different value
   //       - different names, same values
 
 
-  import test.TestClassesWithIndexes._
+  import RiakSecondaryIndexesTestData._
 
   "A RiakBucket" should {
-    "support storing and returning a value with one secondary index (Int)" in new
-      StoreAndReturnBody[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", Set(RiakIndex("foos", 1))) {}
+    "support storing and returning a value with one secondary Int index" in new
+      StoreAndReturnBody[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", ClassWithOneIntIndex.indexes) {}
 
-    "support storing and returning a value with one secondary index (String)" in new
-      StoreAndReturnBody[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", Set(RiakIndex("foos", "bar"))) {}
+    "support storing and then fetching a value with one secondary Int index" in new
+      StoreAndFetch[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", ClassWithOneIntIndex.indexes) {}
 
-    "support storing and then fetching a value with one secondary index (Int)" in new
-      StoreAndFetch[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", Set(RiakIndex("foos", 1))) {}
+    "support storing and returning a value with one secondary String index" in new
+      StoreAndReturnBody[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", ClassWithOneStringIndex.indexes) {}
 
-    "support storing and then fetching a value with one secondary index (String)" in new
-      StoreAndFetch[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", Set(RiakIndex("foos", "bar"))) {}
+    "support storing and then fetching a value with one secondary String index" in new
+      StoreAndFetch[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", ClassWithOneStringIndex.indexes) {}
+
+    "support storing and returning a value with two secondary Int indexes" in new
+      StoreAndReturnBody[ClassWithTwoIntIndexes](ClassWithTwoIntIndexes("bar"), "bar", ClassWithTwoIntIndexes.indexes) {}
+
+    "support storing and returning a value with two secondary Int indexes with the same index name" in new
+      StoreAndReturnBody[ClassWithTwoIntIndexesWithTheSameName](ClassWithTwoIntIndexesWithTheSameName("bar"),
+                                                                "bar",
+                                                                ClassWithTwoIntIndexesWithTheSameName.indexes) {}
+
+    "support storing and returning a value with multiple mixed indexes, including double names" in new
+      StoreAndReturnBody[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
+
+    "support storing and returning a value with String indexes that contain one or more commas" in new
+      StoreAndReturnBody[ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces](
+        ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces("bar"),
+        "bar",
+        ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces.indexes) {}
   }
 
 
