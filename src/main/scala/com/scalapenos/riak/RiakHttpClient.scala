@@ -100,13 +100,6 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     // TODO: add the eTag value from the RiakValue as a header if it is non-empty
 
     // TODO: add any indexes defined on the RiakValue as index headers
-    def toIndexHeader(index: RiakIndex): HttpHeader = {
-      index match {
-        case RiakLongIndex(indexName, indexValue)   => RawHeader(indexHeaderPrefix + indexName + intIndexSuffix, indexValue.toString)
-        case RiakStringIndex(indexName, indexValue) => RawHeader(indexHeaderPrefix + indexName + binIndexSuffix, indexValue)
-      }
-    }
-
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock))
     val etagHeader = value.etag.toOption.map(etag => RawHeader(`ETag`, etag))
     val indexHeaders = value.indexes.map(toIndexHeader(_)).toList
@@ -158,9 +151,8 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
   // URL building and Query Parameters
   // ==========================================================================
 
-  import java.net.URLEncoder
-
-  private def encode(in: String) = URLEncoder.encode(in, "UTF-8")
+  private def encode(in: String) = java.net.URLEncoder.encode(in, "UTF-8")
+  private def decode(in: String) = java.net.URLDecoder.decode(in, "UTF-8")
 
   private sealed trait QueryParameters {
     def queryString: String
@@ -202,13 +194,24 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     }
   }
 
+  // ==========================================================================
+  // HttpHeader <=> RiakIndex
+  // ==========================================================================
+
+  private def toIndexHeader(index: RiakIndex): HttpHeader = {
+    index match {
+      case RiakLongIndex(indexName, indexValue)   => RawHeader(indexHeaderPrefix + indexName + intIndexSuffix, indexValue.toString)
+      case RiakStringIndex(indexName, indexValue) => RawHeader(indexHeaderPrefix + indexName + binIndexSuffix, encode(indexValue))
+    }
+  }
+
   private def toRiakIndexes(headers: List[HttpHeader]): Set[RiakIndex] = {
     val IndexNameAndType = (indexHeaderPrefix + "(.+)_(bin|int)$").r
 
     def toRiakIndex(header: HttpHeader): Set[RiakIndex] = {
       header.lowercaseName match {
         case IndexNameAndType(name, "int") => header.value.split(',').map(value => RiakIndex(name, value.trim.toLong)).toSet
-        case IndexNameAndType(name, "bin") => header.value.split(',').map(value => RiakIndex(name, value.trim)).toSet
+        case IndexNameAndType(name, "bin") => header.value.split(',').map(value => RiakIndex(name, decode(value.trim))).toSet
         case _                             => Set.empty[RiakIndex]
       }
     }
