@@ -93,10 +93,10 @@ object RiakSecondaryIndexesTestData {
     val indexes: Set[RiakIndex] = Set(
       RiakIndex("foos", 1),
       RiakIndex("foos", 2),
-      RiakIndex("foos", "string foos"),
-      RiakIndex("foos", "string bars"),
+      RiakIndex("foos", "foos"),
+      RiakIndex("foos", "bars"),
       RiakIndex("bars", 42),
-      RiakIndex("foobars", "running out of names here...")
+      RiakIndex("foobars", "bacon")
     )
 
 
