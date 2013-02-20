@@ -100,8 +100,6 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
   }
 
   def fetch(server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: ConflictResolver): Future[List[RiakValue]] = {
-    println("===========> url: " + url(server, bucket, index))
-
     httpRequest(Get(url(server, bucket, index))).flatMap { response =>
       response.status match {
         case OK              => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
@@ -259,8 +257,6 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
       import spray.json._
 
       val keys = body.asString.asJson.convertTo[RiakIndexQueryResponse].keys
-
-      println("========> Found keys: " + keys)
 
       traverse(keys)(fetch(server, bucket, _, resolver)).map(_.flatten)
     }.getOrElse(successful(Nil))
