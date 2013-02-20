@@ -23,7 +23,10 @@ package com.scalapenos.riak
 sealed trait RiakIndex {
   type Type
   def name: String
+  def suffix: String
   def value: Type
+
+  def fullName = s"${name}_${suffix}"
 }
 
 object RiakIndex {
@@ -33,10 +36,12 @@ object RiakIndex {
 
 final case class RiakStringIndex(name: String, value: String) extends RiakIndex {
   type Type = String
+  def suffix = "bin"
 }
 
 final case class RiakLongIndex(name: String, value: Long) extends RiakIndex {
   type Type = Long
+  def suffix = "int"
 }
 
 
