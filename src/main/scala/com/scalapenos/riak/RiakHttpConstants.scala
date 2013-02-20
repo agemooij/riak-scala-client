@@ -23,7 +23,5 @@ object RiakHttpHeaders {
   val `ETag`            = "ETag"
 
   val indexHeaderPrefix = "x-riak-index-"
-  val intIndexSuffix    = "_int"
-  val binIndexSuffix    = "_bin"
 }
 

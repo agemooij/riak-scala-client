@@ -44,13 +44,13 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
     "support storing and returning a value with one secondary Int index" in new
       StoreAndReturnBody[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", ClassWithOneIntIndex.indexes) {}
 
-    "support storing and then fetching a value with one secondary Int index" in new
+    "support storing a value with one secondary Int index and then fetching it by key" in new
       StoreAndFetch[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", ClassWithOneIntIndex.indexes) {}
 
     "support storing and returning a value with one secondary String index" in new
       StoreAndReturnBody[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", ClassWithOneStringIndex.indexes) {}
 
-    "support storing and then fetching a value with one secondary String index" in new
+    "support storing a value with one secondary String index and then fetching it by key" in new
       StoreAndFetch[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", ClassWithOneStringIndex.indexes) {}
 
     "support storing and returning a value with two secondary Int indexes" in new
@@ -69,6 +69,9 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
         ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces("bar"),
         "bar",
         ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces.indexes) {}
+
+    "support storing a value with multiple mixed indexes and then fetching it using each index" in new
+      StoreAndFetchByIndexes[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
   }
 
 
@@ -91,11 +94,6 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
     storedValue.get.data must beEqualTo(expectedData)
     storedValue.get.indexes must beEqualTo(expectedIndexes)
 
-    val meta = storedValue.get.toMeta[ClassWithOneStringIndex]
-
-    meta must beAnInstanceOf[Success[RiakMeta[ClassWithOneStringIndex]]]
-    meta.get.indexes must beEqualTo(expectedIndexes)
-
     bucket.delete(key).await must beEqualTo(())
     bucket.fetch(key).await must beNone
   }
@@ -114,10 +112,25 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
     fetchedValue.get.data must beEqualTo(expectedData)
     fetchedValue.get.indexes must beEqualTo(expectedIndexes)
 
-    val meta = fetchedValue.get.toMeta[ClassWithOneStringIndex]
+    bucket.delete(key).await must beEqualTo(())
+    bucket.fetch(key).await must beNone
+  }
 
-    meta must beAnInstanceOf[Success[RiakMeta[ClassWithOneStringIndex]]]
-    meta.get.indexes must beEqualTo(expectedIndexes)
+  abstract class StoreAndFetchByIndexes[T: RiakSerializer: RiakIndexer](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
+    val bucket = connection.bucket("riak-index-fetching-tests")
+    val key = randomKey
+    val value = constructor
+
+    bucket.fetch(key).await must beNone
+    bucket.store(key, value).await
+
+    expectedIndexes.foreach { expectedIndex =>
+      val fetchedValues = bucket.fetch(expectedIndex).await
+
+      fetchedValues must have size(1)
+      fetchedValues.head.data must beEqualTo(expectedData)
+      fetchedValues.head.indexes must beEqualTo(expectedIndexes)
+    }
 
     bucket.delete(key).await must beEqualTo(())
     bucket.fetch(key).await must beNone

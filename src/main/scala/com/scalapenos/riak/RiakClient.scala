@@ -96,8 +96,9 @@ trait RiakBucket {
   /**
    *
    */
-  // def fetch(index: String, value: String): Future[Option[RiakValue]]
-  // def fetch(index: String, value: Int): Future[Option[RiakValue]]
+  def fetch(index: String, value: String): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
+  def fetch(index: String, value: Int): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
+  def fetch(index: RiakIndex): Future[List[RiakValue]]
 
   // def fetch(index: String, lowerBound: String, upperBound: String): Future[List[RiakValue]]
   // def fetch(index: String, lowerBound: Int, upperBound: Int): Future[List[RiakValue]]
@@ -186,6 +187,7 @@ private[riak] class HttpConnection(httpClient: RiakHttpClient, server: RiakServe
 
 private[riak] class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
   def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
+  def fetch(index: RiakIndex) = httpClient.fetch(server, bucket, index, resolver)
 
   def store(key: String, value: RiakValue, returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
 

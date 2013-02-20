@@ -82,6 +82,10 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
   private val log = LoggerFactory.getLogger(getClass)
 
 
+  // ==========================================================================
+  // Main HTTP Request Implementations
+  // ==========================================================================
+
   def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     httpRequest(Get(url(server, bucket, key))).flatMap { response =>
       response.status match {
@@ -95,11 +99,21 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     }
   }
 
+  def fetch(server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: ConflictResolver): Future[List[RiakValue]] = {
+    println("===========> url: " + url(server, bucket, index))
+
+    httpRequest(Get(url(server, bucket, index))).flatMap { response =>
+      response.status match {
+        case OK              => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
+        case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
+        case other           => throw new BucketOperationFailed(s"Fetch for index '$index' in bucket '$bucket' produced an unexpected response code '$other'.")
+      }
+    }
+  }
+
   def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, returnBody: Boolean, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     // TODO: add the Last-Modified value from the RiakValue as a header
-    // TODO: add the eTag value from the RiakValue as a header if it is non-empty
 
-    // TODO: add any indexes defined on the RiakValue as index headers
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock))
     val etagHeader = value.etag.toOption.map(etag => RawHeader(`ETag`, etag))
     val indexHeaders = value.indexes.map(toIndexHeader(_)).toList
@@ -173,6 +187,17 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/keys/${encode(key)}${parameters.queryString}"
   }
 
+  private def url(server: RiakServerInfo, bucket: String, index: RiakIndex): String = {
+    val protocol = if (server.useSSL) "https" else "http"
+    val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
+    val indexValue = index.value match {
+      case l: Long => l.toString
+      case s: String => encode(s)
+    }
+
+    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/index/${encode(index.fullName)}/$indexValue"
+  }
+
 
   // ==========================================================================
   // Response => RiakValue
@@ -190,7 +215,7 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
       // TODO: make sure the DateTime is always in the Zulu zone
 
       for (vClock <- vClockOption; eTag <- eTagOption; lastModified <- lastModifiedOption)
-      yield RiakValue(new String(body.buffer, body.contentType.charset.nioCharset), body.contentType, vClock, eTag, lastModified, indexes)
+      yield RiakValue(body.asString, body.contentType, vClock, eTag, lastModified, indexes)
     }
   }
 
@@ -200,8 +225,8 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
 
   private def toIndexHeader(index: RiakIndex): HttpHeader = {
     index match {
-      case RiakLongIndex(indexName, indexValue)   => RawHeader(indexHeaderPrefix + indexName + intIndexSuffix, indexValue.toString)
-      case RiakStringIndex(indexName, indexValue) => RawHeader(indexHeaderPrefix + indexName + binIndexSuffix, encode(indexValue))
+      case l: RiakLongIndex   => RawHeader(indexHeaderPrefix + encode(l.fullName), l.value.toString)
+      case s: RiakStringIndex => RawHeader(indexHeaderPrefix + encode(s.fullName), encode(s.value))
     }
   }
 
@@ -219,6 +244,26 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     headers.filter(_.lowercaseName.startsWith(indexHeaderPrefix))
            .flatMap(toRiakIndex(_))
            .toSet
+  }
+
+  case class RiakIndexQueryResponse(keys: List[String])
+  object RiakIndexQueryResponse {
+    import spray.json._
+    import spray.json.DefaultJsonProtocol._
+
+    implicit val format = jsonFormat1(RiakIndexQueryResponse.apply)
+  }
+
+  private def fetchWithKeysReturnedByIndexLookup(server: RiakServerInfo, bucket: String, response: HttpResponse, resolver: ConflictResolver): Future[List[RiakValue]] = {
+    response.entity.toOption.map { body =>
+      import spray.json._
+
+      val keys = body.asString.asJson.convertTo[RiakIndexQueryResponse].keys
+
+      println("========> Found keys: " + keys)
+
+      traverse(keys)(fetch(server, bucket, _, resolver)).map(_.flatten)
+    }.getOrElse(successful(Nil))
   }
 
 
