@@ -20,6 +20,10 @@ package com.scalapenos.riak
   TODO: How to detect whether indexes are available (i.e. whether the Riak backend is leveldb)?
 */
 
+// ============================================================================
+//  RiakIndex
+// ============================================================================
+
 sealed trait RiakIndex {
   type Type
   def name: String
@@ -44,6 +48,10 @@ final case class RiakLongIndex(name: String, value: Long) extends RiakIndex {
   def suffix = "int"
 }
 
+
+// ============================================================================
+//  RiakIndexer
+// ============================================================================
 
 import annotation.implicitNotFound
 
