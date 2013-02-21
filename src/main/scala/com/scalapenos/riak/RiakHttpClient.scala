@@ -38,6 +38,36 @@ private[riak] object RiakServerInfo {
 
 
 // ============================================================================
+// RiakIndexRange - for easy passing of a fetch range
+// ============================================================================
+
+private[riak] sealed trait RiakIndexRange {
+  type Type
+  def name: String
+  def suffix: String
+  def start: Type
+  def end: Type
+
+  def fullName = s"${name}_${suffix}"
+}
+
+private[riak] object RiakIndexRange {
+  def apply(name: String, start: String, end: String) = RiakStringIndexRange(name, start, end)
+  def apply(name: String, start: Long, end: Long) = RiakLongIndexRange(name, start, end)
+}
+
+private[riak] final case class RiakStringIndexRange(name: String, start: String, end: String) extends RiakIndexRange {
+  type Type = String
+  def suffix = "bin"
+}
+
+private[riak] final case class RiakLongIndexRange(name: String, start: Long, end: Long) extends RiakIndexRange {
+  type Type = Long
+  def suffix = "int"
+}
+
+
+// ============================================================================
 // RiakHttpClient
 //
 // TODO: add Retry support, maybe at the bucket level
@@ -103,8 +133,18 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     httpRequest(Get(url(server, bucket, index))).flatMap { response =>
       response.status match {
         case OK              => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
-        case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => throw new BucketOperationFailed(s"Fetch for index '$index' in bucket '$bucket' produced an unexpected response code '$other'.")
+        case BadRequest      => throw new ParametersInvalid(s"""Invalid index name ("${index.fullName}") or value ("${index.value}").""")
+        case other           => throw new BucketOperationFailed(s"""Fetch for index "${index.fullName}" with value "${index.value}" in bucket "${bucket}" produced an unexpected response code: ${other}.""")
+      }
+    }
+  }
+
+  def fetch(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange, resolver: ConflictResolver): Future[List[RiakValue]] = {
+    httpRequest(Get(url(server, bucket, indexRange))).flatMap { response =>
+      response.status match {
+        case OK              => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
+        case BadRequest      => throw new ParametersInvalid(s"""Invalid index name ("${indexRange.fullName}") or range ("${indexRange.start}" to "${indexRange.start}").""")
+        case other           => throw new BucketOperationFailed(s"""Fetch for index "${indexRange.fullName}" with range "${indexRange.start}" to "${indexRange.start}" in bucket "${bucket}" produced an unexpected response code: ${other}.""")
       }
     }
   }
@@ -198,6 +238,21 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
     }
 
     s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/index/${indexName}/$indexValue"
+  }
+
+  private def url(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange): String = {
+    val protocol = if (server.useSSL) "https" else "http"
+    val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
+
+    // both index name and index value are double-encoded because Riak eagerly decodes the request
+    // and then tries to match the decoded value against our encoded indexes
+    val indexName = encode(encode(indexRange.fullName))
+    val (indexStart, indexEnd) = indexRange.start match {
+      case l: Long => (indexRange.start.toString, indexRange.end.toString)
+      case s: String => (encode(encode(indexRange.start.toString)), encode(encode(indexRange.end.toString)))
+    }
+
+    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/index/${indexName}/${indexStart}/${indexEnd}"
   }
 
 
