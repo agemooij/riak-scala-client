@@ -225,6 +225,9 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
   // HttpHeader <=> RiakIndex
   // ==========================================================================
 
+  // TODO: declare a config setting for whether we encode the index name and/or value
+  //       maybe even at the top-level (for bucket names and keys) so it matches the behaviour of the riak url compatibility setting
+
   private def toIndexHeader(index: RiakIndex): HttpHeader = {
     index match {
       case l: RiakLongIndex   => RawHeader(indexHeaderPrefix + encode(l.fullName), l.value.toString)
