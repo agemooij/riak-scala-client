@@ -188,12 +188,16 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
   private def url(server: RiakServerInfo, bucket: String, index: RiakIndex): String = {
     val protocol = if (server.useSSL) "https" else "http"
     val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
+
+    // both index name and index value are double-encoded because Riak eagerly decodes the request
+    // and then tries to match the decoded value against our encoded indexes
+    val indexName = encode(encode(index.fullName))
     val indexValue = index.value match {
       case l: Long => l.toString
-      case s: String => encode(s)
+      case s: String => encode(encode(s))
     }
 
-    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/index/${encode(index.fullName)}/$indexValue"
+    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/index/${indexName}/$indexValue"
   }
 
 
@@ -233,8 +237,8 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
 
     def toRiakIndex(header: HttpHeader): Set[RiakIndex] = {
       header.lowercaseName match {
-        case IndexNameAndType(name, "int") => header.value.split(',').map(value => RiakIndex(name, value.trim.toLong)).toSet
-        case IndexNameAndType(name, "bin") => header.value.split(',').map(value => RiakIndex(name, decode(value.trim))).toSet
+        case IndexNameAndType(name, "int") => header.value.split(',').map(value => RiakIndex(decode(name), value.trim.toLong)).toSet
+        case IndexNameAndType(name, "bin") => header.value.split(',').map(value => RiakIndex(decode(name), decode(value.trim))).toSet
         case _                             => Set.empty[RiakIndex]
       }
     }
