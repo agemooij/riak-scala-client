@@ -31,7 +31,7 @@ private[riak] object RiakServerInfo {
     url.getHost,
     if (url.getPort != -1) url.getPort else url.getDefaultPort,
     url.getPath,
-    url.getProtocol == "https")
+    url.getProtocol.toLowerCase == "https")
 
   def apply(host: String, port: Int, pathPrefix: String = "", useSSL: Boolean = false): RiakServerInfo = new RiakServerInfo(host, port, pathPrefix.dropWhile(_ == '/'), useSSL)
 }
