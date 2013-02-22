@@ -49,6 +49,8 @@ final case class RiakValue(
 ) {
   import scala.util.Try
 
+  def map(f: String => String): RiakValue = copy(data = f(data))
+
   def as[T: RiakDeserializer]: Try[T] = implicitly[RiakDeserializer[T]].deserialize(data, contentType)
   def toMeta[T: RiakDeserializer]: Try[RiakMeta[T]] = as[T].map(data => RiakMeta(data, contentType, vclock, etag, lastModified, indexes))
 }
