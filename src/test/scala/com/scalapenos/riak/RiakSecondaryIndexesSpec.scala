@@ -22,15 +22,12 @@ import scala.util._
 
 import java.util.UUID._
 
-import akka.actor._
-
 import spray.util._
 
 /**
  * This test depends on a Riak node running on localhost:8098 !!
  */
 class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySupport {
-
   // TODO: skip this test if the localhost backend does not support secondary indexes
   // TODO: tests for multiple indexes
   //       - mixed types
@@ -41,37 +38,29 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
   import RiakSecondaryIndexesTestData._
 
   "A RiakBucket" should {
-    "support storing and returning a value with one secondary Int index" in new
-      StoreAndReturnBody[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", ClassWithOneIntIndex.indexes) {}
-
-    "support storing a value with one secondary Int index and then fetching it by key" in new
+    "support storing and fetching a value with one Int index (by key and each index)" in new
       StoreAndFetch[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", ClassWithOneIntIndex.indexes) {}
 
-    "support storing and returning a value with one secondary String index" in new
-      StoreAndReturnBody[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", ClassWithOneStringIndex.indexes) {}
-
-    "support storing a value with one secondary String index and then fetching it by key" in new
+    "support storing and fetching a value with one String index (by key and each index)" in new
       StoreAndFetch[ClassWithOneStringIndex](ClassWithOneStringIndex("bar"), "bar", ClassWithOneStringIndex.indexes) {}
 
-    "support storing and returning a value with two secondary Int indexes" in new
-      StoreAndReturnBody[ClassWithTwoIntIndexes](ClassWithTwoIntIndexes("bar"), "bar", ClassWithTwoIntIndexes.indexes) {}
+    "support storing and fetching a value with two Int indexes (by key and each index)" in new
+      StoreAndFetch[ClassWithTwoIntIndexes](ClassWithTwoIntIndexes("bar"), "bar", ClassWithTwoIntIndexes.indexes) {}
 
-    "support storing and returning a value with two secondary Int indexes with the same index name" in new
-      StoreAndReturnBody[ClassWithTwoIntIndexesWithTheSameName](ClassWithTwoIntIndexesWithTheSameName("bar"),
-                                                                "bar",
-                                                                ClassWithTwoIntIndexesWithTheSameName.indexes) {}
+    "support storing and fetching a value with two Int indexes with the same index name (by key and each index)" in new
+      StoreAndFetch[ClassWithTwoIntIndexesWithTheSameName](ClassWithTwoIntIndexesWithTheSameName("bar"), "bar", ClassWithTwoIntIndexesWithTheSameName.indexes) {}
 
-    "support storing and returning a value with multiple mixed indexes, including double names" in new
-      StoreAndReturnBody[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
+    "support storing and fetching a value with multiple mixed indexes, including double names (by key and each index)" in new
+      StoreAndFetch[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
 
-    "support storing and returning a value with String indexes that contain one or more commas" in new
-      StoreAndReturnBody[ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces](
+    "support storing and fetching a value with String indexes that contain one or more commas (by key and each index)" in new
+      StoreAndFetch[ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces](
         ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces("bar"),
         "bar",
         ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces.indexes) {}
 
-    "support storing a value with multiple mixed indexes and then fetching it using each index" in new
-      StoreAndFetchByIndexes[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
+    "support storing and fetching a value with multiple mixed indexes (by key and each index)" in new
+      StoreAndFetch[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
   }
 
 
@@ -81,10 +70,10 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
 
   import org.specs2.specification.Scope
 
-  abstract class StoreAndReturnBody[T: RiakSerializer: RiakIndexer](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
-    val bucket = connection.bucket("riak-index-tests")
+  abstract class StoreAndFetch[T: RiakSerializer: RiakIndexer](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
     val key = randomKey
     val value = constructor
+    val bucket = connection.bucket("riak-index-tests-" + key)
 
     bucket.fetch(key).await must beNone
 
@@ -94,42 +83,18 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
     storedValue.get.data must beEqualTo(expectedData)
     storedValue.get.indexes must beEqualTo(expectedIndexes)
 
-    bucket.delete(key).await must beEqualTo(())
-    bucket.fetch(key).await must beNone
-  }
+    val fetchedByKey = bucket.fetch(key).await
 
-  abstract class StoreAndFetch[T: RiakSerializer: RiakIndexer](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
-    val bucket = connection.bucket("riak-index-tests")
-    val key = randomKey
-    val value = constructor
-
-    bucket.fetch(key).await must beNone
-    bucket.store(key, value).await
-
-    val fetchedValue = bucket.fetch(key).await
-
-    fetchedValue must beSome[RiakValue]
-    fetchedValue.get.data must beEqualTo(expectedData)
-    fetchedValue.get.indexes must beEqualTo(expectedIndexes)
-
-    bucket.delete(key).await must beEqualTo(())
-    bucket.fetch(key).await must beNone
-  }
-
-  abstract class StoreAndFetchByIndexes[T: RiakSerializer: RiakIndexer](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
-    val bucket = connection.bucket("riak-index-fetching-tests")
-    val key = randomKey
-    val value = constructor
-
-    bucket.fetch(key).await must beNone
-    bucket.store(key, value).await
+    fetchedByKey must beSome[RiakValue]
+    fetchedByKey.get.data must beEqualTo(expectedData)
+    fetchedByKey.get.indexes must beEqualTo(expectedIndexes)
 
     expectedIndexes.foreach { expectedIndex =>
-      val fetchedValues = bucket.fetch(expectedIndex).await
+      val fetchedByIndex = bucket.fetch(expectedIndex).await
 
-      fetchedValues must have size(1)
-      fetchedValues.head.data must beEqualTo(expectedData)
-      fetchedValues.head.indexes must beEqualTo(expectedIndexes)
+      fetchedByIndex must have size(1)
+      fetchedByIndex.head.data must beEqualTo(expectedData)
+      fetchedByIndex.head.indexes must beEqualTo(expectedIndexes)
     }
 
     bucket.delete(key).await must beEqualTo(())
