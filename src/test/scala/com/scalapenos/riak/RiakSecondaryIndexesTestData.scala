@@ -24,68 +24,36 @@ object RiakSecondaryIndexesTestData {
   object ClassWithOneIntIndex {
     val indexes: Set[RiakIndex] = Set(RiakIndex("foos", 1))
 
-    implicit def serializer = new RiakSerializer[ClassWithOneIntIndex] {
-      def serialize(iv: ClassWithOneIntIndex): (String, ContentType) = (iv.foo, ContentType.`text/plain`)
-    }
-
-    implicit def deserializer = new RiakDeserializer[ClassWithOneIntIndex] {
-      def deserialize(data: String, contentType: ContentType): Try[ClassWithOneIntIndex] = Success(apply(data))
-    }
-
-    implicit def indexer = new RiakIndexer[ClassWithOneIntIndex] {
-      def index(v: ClassWithOneIntIndex) = indexes
-    }
+    implicit def serializer = plainTextSerializer[ClassWithOneIntIndex](_.foo)
+    implicit def deserializer = planTextDeserializer(ClassWithOneIntIndex.apply)
+    implicit def indexer = simpleIndexer[ClassWithOneIntIndex](indexes)
   }
 
   case class ClassWithOneStringIndex(foo: String)
   object ClassWithOneStringIndex {
     val indexes: Set[RiakIndex] = Set(RiakIndex("foos", "bars"))
 
-    implicit def serializer = new RiakSerializer[ClassWithOneStringIndex] {
-      def serialize(iv: ClassWithOneStringIndex): (String, ContentType) = (iv.foo, ContentType.`text/plain`)
-    }
-
-    implicit def deserializer = new RiakDeserializer[ClassWithOneStringIndex] {
-      def deserialize(data: String, contentType: ContentType): Try[ClassWithOneStringIndex] = Success(apply(data))
-    }
-
-    implicit def indexer = new RiakIndexer[ClassWithOneStringIndex] {
-      def index(v: ClassWithOneStringIndex) = indexes
-    }
+    implicit def serializer = plainTextSerializer[ClassWithOneStringIndex](_.foo)
+    implicit def deserializer = planTextDeserializer(ClassWithOneStringIndex.apply)
+    implicit def indexer = simpleIndexer[ClassWithOneStringIndex](indexes)
   }
 
   case class ClassWithTwoIntIndexes(foo: String)
   object ClassWithTwoIntIndexes {
     val indexes: Set[RiakIndex] = Set(RiakIndex("foos", 1), RiakIndex("bars", 42))
 
-    implicit def serializer = new RiakSerializer[ClassWithTwoIntIndexes] {
-      def serialize(iv: ClassWithTwoIntIndexes): (String, ContentType) = (iv.foo, ContentType.`text/plain`)
-    }
-
-    implicit def deserializer = new RiakDeserializer[ClassWithTwoIntIndexes] {
-      def deserialize(data: String, contentType: ContentType): Try[ClassWithTwoIntIndexes] = Success(apply(data))
-    }
-
-    implicit def indexer = new RiakIndexer[ClassWithTwoIntIndexes] {
-      def index(v: ClassWithTwoIntIndexes) = indexes
-    }
+    implicit def serializer = plainTextSerializer[ClassWithTwoIntIndexes](_.foo)
+    implicit def deserializer = planTextDeserializer(ClassWithTwoIntIndexes.apply)
+    implicit def indexer = simpleIndexer[ClassWithTwoIntIndexes](indexes)
   }
 
   case class ClassWithTwoIntIndexesWithTheSameName(foo: String)
   object ClassWithTwoIntIndexesWithTheSameName {
     val indexes: Set[RiakIndex] = Set(RiakIndex("foos", 1), RiakIndex("foos", 42))
 
-    implicit def serializer = new RiakSerializer[ClassWithTwoIntIndexesWithTheSameName] {
-      def serialize(iv: ClassWithTwoIntIndexesWithTheSameName): (String, ContentType) = (iv.foo, ContentType.`text/plain`)
-    }
-
-    implicit def deserializer = new RiakDeserializer[ClassWithTwoIntIndexesWithTheSameName] {
-      def deserialize(data: String, contentType: ContentType): Try[ClassWithTwoIntIndexesWithTheSameName] = Success(apply(data))
-    }
-
-    implicit def indexer = new RiakIndexer[ClassWithTwoIntIndexesWithTheSameName] {
-      def index(v: ClassWithTwoIntIndexesWithTheSameName) = indexes
-    }
+    implicit def serializer = plainTextSerializer[ClassWithTwoIntIndexesWithTheSameName](_.foo)
+    implicit def deserializer = planTextDeserializer(ClassWithTwoIntIndexesWithTheSameName.apply)
+    implicit def indexer = simpleIndexer[ClassWithTwoIntIndexesWithTheSameName](indexes)
   }
 
   case class ClassWithMixedIndexes(foo: String)
@@ -99,34 +67,41 @@ object RiakSecondaryIndexesTestData {
       RiakIndex("foo bars", "bacon")
     )
 
+    implicit def serializer = plainTextSerializer[ClassWithMixedIndexes](_.foo)
+    implicit def deserializer = planTextDeserializer[ClassWithMixedIndexes](apply)
+    implicit def indexer = simpleIndexer[ClassWithMixedIndexes](indexes)
+  }
 
-    implicit def serializer = new RiakSerializer[ClassWithMixedIndexes] {
-      def serialize(iv: ClassWithMixedIndexes): (String, ContentType) = (iv.foo, ContentType.`text/plain`)
-    }
-
-    implicit def deserializer = new RiakDeserializer[ClassWithMixedIndexes] {
-      def deserialize(data: String, contentType: ContentType): Try[ClassWithMixedIndexes] = Success(apply(data))
-    }
-
-    implicit def indexer = new RiakIndexer[ClassWithMixedIndexes] {
-      def index(v: ClassWithMixedIndexes) = indexes
+  case class ClassWithConfigurableIntIndex(foo: String, indexedBy: Int)
+  object ClassWithConfigurableIntIndex {
+    val indexName = "foos"
+    implicit def serializer = plainTextSerializer[ClassWithConfigurableIntIndex](_.foo)
+    implicit def deserializer = planTextDeserializer[ClassWithConfigurableIntIndex](data => ClassWithConfigurableIntIndex(data, -1))
+    implicit def indexer = new RiakIndexer[ClassWithConfigurableIntIndex] {
+      def index(t: ClassWithConfigurableIntIndex) = Set(RiakIndex(indexName, t.indexedBy))
     }
   }
 
-  case class ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces(foo: String)
-  object ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces {
-    val indexes: Set[RiakIndex] = Set(RiakIndex("foos", "index1, index2"), RiakIndex("foos", "index3, index4"))
-
-    implicit def serializer = new RiakSerializer[ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces] {
-      def serialize(iv: ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces): (String, ContentType) = (iv.foo, ContentType.`text/plain`)
+  case class ClassWithConfigurableStringIndex(foo: String, indexedBy: String)
+  object ClassWithConfigurableStringIndex {
+    val indexName = "bars"
+    implicit def serializer = plainTextSerializer[ClassWithConfigurableStringIndex](_.foo)
+    implicit def deserializer = planTextDeserializer[ClassWithConfigurableStringIndex](data => ClassWithConfigurableStringIndex(data, ""))
+    implicit def indexer = new RiakIndexer[ClassWithConfigurableStringIndex] {
+      def index(t: ClassWithConfigurableStringIndex) = Set(RiakIndex(indexName, t.indexedBy))
     }
+  }
 
-    implicit def deserializer = new RiakDeserializer[ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces] {
-      def deserialize(data: String, contentType: ContentType): Try[ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces] = Success(apply(data))
-    }
 
-    implicit def indexer = new RiakIndexer[ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces] {
-      def index(v: ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces) = indexes
-    }
+  def plainTextSerializer[T](ser: T => String) = new RiakSerializer[T] {
+    def serialize(t: T): (String, ContentType) = (ser(t), ContentType.`text/plain`)
+  }
+
+  def planTextDeserializer[T](d: String => T) = new RiakDeserializer[T] {
+    def deserialize(data: String, contentType: ContentType): Try[T] = Success(d(data))
+  }
+
+  def simpleIndexer[T](indexes: Set[RiakIndex]) = new RiakIndexer[T] {
+    def index(t: T) = indexes
   }
 }

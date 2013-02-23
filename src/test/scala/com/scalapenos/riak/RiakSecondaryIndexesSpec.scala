@@ -22,20 +22,16 @@ import scala.util._
 
 import java.util.UUID._
 
-import spray.util._
-
 /**
  * This test depends on a Riak node running on localhost:8098 !!
  */
 class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySupport {
   // TODO: skip this test if the localhost backend does not support secondary indexes
-  // TODO: tests for multiple indexes
-  //       - mixed types
-  //       - same name but different value
-  //       - different names, same values
-
 
   import RiakSecondaryIndexesTestData._
+
+  // manual pimped future stoeln from spray.util because a spray.util._ import causes implicit conflicts
+  implicit def pimpFuture[T](fut: Future[T]): spray.util.pimps.PimpedFuture[T] = new spray.util.pimps.PimpedFuture[T](fut)
 
   "A RiakBucket" should {
     "support storing and fetching a value with one Int index (by key and each index)" in new
@@ -53,14 +49,93 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
     "support storing and fetching a value with multiple mixed indexes, including double names (by key and each index)" in new
       StoreAndFetch[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
 
-    "support storing and fetching a value with String indexes that contain one or more commas (by key and each index)" in new
-      StoreAndFetch[ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces](
-        ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces("bar"),
-        "bar",
-        ClassWithDoubleIndexNamesAndValuesContainingCommasAndSpaces.indexes) {}
-
-    "support storing and fetching a value with multiple mixed indexes (by key and each index)" in new
+    "support storing and fetching a value with multiple mixed indexes, some containing special characters (by key and each index)" in new
       StoreAndFetch[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
+
+    "Supports storing multiple key/value pairs with the same index and fetching them by that index" in {
+      val numbers = (0 to 10).toList
+
+      val intIndex = 42
+      val intIndexKeys = numbers.map(n => "int-indexed-" + n)
+      val intIndexValues  = numbers.map(n => ClassWithConfigurableIntIndex("foo-int-" + n, intIndex))
+      val intIndexKvs = intIndexKeys.zip(intIndexValues)
+
+      val stringIndex = "foo"
+      val stringIndexKeys = numbers.map(n => "string-indexed-" + n)
+      val stringIndexValues = numbers.map(n => ClassWithConfigurableStringIndex("foo-string-" + n, stringIndex))
+      val stringIndexKvs = stringIndexKeys.zip(stringIndexValues)
+
+      val bucket = connection.bucket("riak-index-tests-" + randomKey)
+      val storedValues1 = Future.traverse(intIndexKvs)(kv => bucket.store(kv._1, kv._2, true)).await
+      val storedValues2 = Future.traverse(stringIndexKvs)(kv => bucket.store(kv._1, kv._2, true)).await
+
+      storedValues1 must have size(numbers.size)
+      storedValues2 must have size(numbers.size)
+
+      bucket.fetch(ClassWithConfigurableIntIndex.indexName, intIndex).await must have size(numbers.size)
+      bucket.fetch(ClassWithConfigurableStringIndex.indexName, stringIndex).await must have size(numbers.size)
+
+      Future.traverse(intIndexKeys ++ stringIndexKeys)(bucket.delete(_)).await must have size(numbers.size * 2)
+    }
+
+    "Supports storing multiple key/value pairs with int indexes and fetching multiple values using index ranges" in {
+      val indexName = ClassWithConfigurableIntIndex.indexName
+      val indexes = (0 to 10).toList ++ (40 to 60).toList
+      val keys = indexes.map(n => "key-" + n)
+      val values = indexes.map(n => ClassWithConfigurableIntIndex("foo-" + n, n))
+      val kvs = keys.zip(values)
+
+      val bucket = connection.bucket("riak-index-tests-" + randomKey)
+      val storedValues = Future.traverse(kvs)(kv => bucket.store(kv._1, kv._2, true)).await
+
+      storedValues must have size(indexes.size)
+
+      bucket.fetch(indexName,  0, 60).await must have size(indexes.size)
+      bucket.fetch(indexName,  60, 0).await must have size(indexes.size)
+      bucket.fetch(indexName,  0, 80).await must have size(indexes.size)
+      bucket.fetch(indexName,-10, 80).await must have size(indexes.size)
+      bucket.fetch(indexName,  0, 10).await must have size(11)
+      bucket.fetch(indexName, 11, 39).await must have size(0)
+      bucket.fetch(indexName, 10, 40).await must have size(2)
+      bucket.fetch(indexName,  0,  0).await must have size(1)
+      bucket.fetch(indexName,  0,  1).await must have size(2)
+
+      bucket.fetch(indexName, 30).await must have size(0)
+
+      Future.traverse(keys)(bucket.delete(_)).await must have size(indexes.size)
+    }
+
+    "Supports storing multiple key/value pairs with String indexes and fetching multiple values using index ranges" in {
+      val indexName = ClassWithConfigurableStringIndex.indexName
+      val numberIndexes = ((0 to 10).toList ++ (40 to 60).toList).map(_.toString)
+      val letterIndexes = List("a", "b", "y", "z", "aa", "bb", "yy", "zz", "A", "B", "Y", "Z")
+      val indexes = numberIndexes ++ letterIndexes
+      val keys = indexes.map(n => "key-" + n)
+      val values = indexes.map(n => ClassWithConfigurableStringIndex("foo-" + n, n))
+      val kvs = keys.zip(values)
+
+      val bucket = connection.bucket("riak-index-tests-" + randomKey)
+      val storedValues = Future.traverse(kvs)(kv => bucket.store(kv._1, kv._2, true)).await
+
+      storedValues must have size(indexes.size)
+
+      bucket.fetch(indexName,  "0",   "9").await must have size(numberIndexes.size)
+      bucket.fetch(indexName,  "9",   "0").await must have size(numberIndexes.size)
+      bucket.fetch(indexName,  "0",  "90").await must have size(numberIndexes.size)
+      bucket.fetch(indexName, "00",  "90").await must have size(numberIndexes.size - 1)
+      bucket.fetch(indexName,  "0",  "zz").await must have size(indexes.size)
+      bucket.fetch(indexName,  "0", "zza").await must have size(indexes.size)
+      bucket.fetch(indexName, "zz",   "0").await must have size(indexes.size)
+      bucket.fetch(indexName,  "a",  "zz").await must have size(8)
+      bucket.fetch(indexName,  "a",   "z").await must have size(7)
+      bucket.fetch(indexName, "aa",  "zz").await must have size(7)
+      bucket.fetch(indexName,  "a",   "a").await must have size(1)
+      bucket.fetch(indexName,  "a",   "b").await must have size(3)
+      bucket.fetch(indexName, "aa",   "b").await must have size(2)
+      bucket.fetch(indexName,  "A",   "B").await must have size(2)
+
+      Future.traverse(keys)(bucket.delete(_)).await must have size(indexes.size)
+    }
   }
 
 
@@ -100,4 +175,5 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
     bucket.delete(key).await must beEqualTo(())
     bucket.fetch(key).await must beNone
   }
+
 }
