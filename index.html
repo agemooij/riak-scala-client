@@ -31,44 +31,53 @@
         <hr>
 
         <section id="main_content">
-          <p>A fast, non-blocking idiomatic Scala client library for interacting with Riak.</p>
+          <h2>What is this?</h2>
 
-<h2>Current Status</h2>
+<p>A fast, non-blocking idiomatic Scala client library for interacting with <a href="http://basho.com/riak/">Riak</a>.</p>
 
-<p><strong><em>Preparing for a first public release</em></strong></p>
+<h2>Design goals</h2>
 
-<p>This project is very new and still under heavy construction. The aim is to support
-most, if not all, features exposed by the Riak HTTP API.</p>
+<ul>
+<li>It should be non-blocking (i.e. all calls are handled asynchronously and result in Futures)</li>
+<li>It should not wrap the java client for Riak, since that only exposes a blocking API</li>
+<li>It should provide an idiomatic Scala client API without resorting to hard to learn DSLs</li>
+<li>It should integrate with Akka (using an Akka extension)</li>
+<li>It should be easy to use</li>
+</ul><p>The initial focus is on supporting the Riak HTTP API. Protobuf support might be added
+later but it has a low priority at the moment.</p>
 
-<p>A first public release to the Sonatype/Central repositories is scheduled for mid-March 2013.</p>
+<h2>Current Status: Preparing for public release</h2>
 
-<p>So far, the following Riak API features are supported:</p>
+<p>A first public release to the Sonatype/Central repositories is scheduled for February 2013.</p>
+
+<p>This project was started in December 2012 out of frustration about the ack of non-blocking
+Scala (or Java) client libraries for <a href="http://basho.com/riak/">Riak</a>. It is still under construction.</p>
+
+<p>So far, the following Riak (http) API features are supported:</p>
 
 <ul>
 <li>Fetch</li>
 <li>Store</li>
 <li>Delete</li>
-<li>Customizable and strongly typed conflict resolution on all fetches (and Stores when returnbody=true)</li>
-<li>Automatic conversion between raw RiakValues and Scala (case) classes using type classes</li>
-<li>A RiakMeta[T] box type for retaining the riak meta data (like the vclock, the etag, the last modified date, the indexes, etc.) after conversion to Scala (case) classes.</li>
-<li>Secondary Indexes (2i): exact matches</li>
-<li>Secondary Indexes (2i): ranges</li>
-<li>auto-retry (a standard feature of the underlying spray-client library)</li>
+<li>Customizable and strongly typed conflict resolution on all fetches (and stores when returnbody=true)</li>
+<li>Automatic (de)serialization of Scala (case) classes using type classes</li>
+<li>Secondary Indexes (2i)
+
+<ul>
+<li>Fetching exact matches</li>
+<li>Fetching ranges</li>
+<li>Automatic indexing of Scala (case) classes using type classes</li>
+</ul>
+</li>
+<li>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
+<li>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
+<li>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
 </ul><p>These Riak features are currently missing and/or under construction:</p>
 
 <ul>
 <li>link walking</li>
 <li>Map Reduce</li>
-</ul><h2>Design goals</h2>
-
-<ul>
-<li>It should provide an idiomatic Scala client API</li>
-<li>It should be non-blocking (i.e. all calls are handled asynchronously and result in Futures)</li>
-<li>Easy Integration with Akka</li>
-</ul><p>The initial focus will be on supporting the Riak HTTP API. Protobuf support might be added
-later but it has a low priority at the moment.</p>
-
-<h2>Design and Implementation</h2>
+</ul><h2>Design and Implementation</h2>
 
 <p>The <em>riak-scala-client</em> is based on <a href="http://akka.io/">Akka</a> 2.1 and and <a href="http://spray.io/">Spray</a> client 1.1.</p>
 
