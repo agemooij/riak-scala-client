@@ -17,33 +17,53 @@
 package com.scalapenos.riak
 
 /*
-
-TODO:
-
-Add indexes to RiakValue
-Allows converters to define their own indexes
-
-How to detect whether indexes are available (i.e. whether the Riak backend is leveldb)?
-
-Make converters stackable/delegatable so you could for instance use the standard spray json converter AND add extra indexes
+  TODO: How to detect whether indexes are available (i.e. whether the Riak backend is leveldb)?
 */
 
+// ============================================================================
+//  RiakIndex
+// ============================================================================
 
 sealed trait RiakIndex {
   type Type
   def name: String
+  def suffix: String
   def value: Type
+
+  def fullName = s"${name}_${suffix}"
 }
 
 object RiakIndex {
   def apply(name: String, value: String) = RiakStringIndex(name, value)
-  def apply(name: String, value: Int) = RiakIntIndex(name, value)
+  def apply(name: String, value: Long) = RiakLongIndex(name, value)
 }
 
 final case class RiakStringIndex(name: String, value: String) extends RiakIndex {
   type Type = String
+  def suffix = "bin"
 }
 
-final case class RiakIntIndex(name: String, value: Int) extends RiakIndex {
-  type Type = Int
+final case class RiakLongIndex(name: String, value: Long) extends RiakIndex {
+  type Type = Long
+  def suffix = "int"
+}
+
+
+// ============================================================================
+//  RiakIndexer
+// ============================================================================
+
+import annotation.implicitNotFound
+
+@implicitNotFound(msg = "Cannot find RiakIndex type class for ${T}")
+trait RiakIndexer[T] {
+  def index(t: T): Set[RiakIndex]
+}
+
+object RiakIndexer extends LowPriorityDefaultRiakIndexerImplicits
+
+trait LowPriorityDefaultRiakIndexerImplicits {
+  implicit def defaultNoIndexes[T] = new RiakIndexer[T] {
+    def index(t: T) = Set.empty[RiakIndex]
+  }
 }

@@ -21,16 +21,17 @@ package com.scalapenos.riak
 // RiakMeta
 // ============================================================================
 
-final case class RiakMeta[T](
+final case class RiakMeta[T: RiakSerializer: RiakIndexer](
   data: T,
   contentType: ContentType,
   vclock: VClock,
   etag: ETag,
-  lastModified: DateTime
+  lastModified: DateTime,
+  indexes: Set[RiakIndex] = Set.empty[RiakIndex]
 ) {
   def map(f: T => T): RiakMeta[T] = RiakMeta(f(data), contentType, vclock, etag, lastModified)
 
-  def toRiakValue(implicit serializer: RiakSerializer[T]): RiakValue = RiakSerializerSupport.toRiakValue(this)(serializer)
+  def toRiakValue = RiakValue(this)
 }
 
 
@@ -43,39 +44,29 @@ final case class RiakValue(
   contentType: ContentType,
   vclock: VClock,
   etag: ETag,
-  lastModified: DateTime
-  // indexes: Set[RiakIndex]
+  lastModified: DateTime,
+  indexes: Set[RiakIndex] = Set.empty[RiakIndex]
 ) {
   import scala.util.Try
 
-  def as[T: RiakDeserializer]: Try[T] = RiakDeserializerSupport.deserialize[T](this)
-  def toMeta[T: RiakDeserializer]: Try[RiakMeta[T]] = as[T].map(data => RiakMeta(data, contentType, vclock, etag, lastModified))
+  def map(f: String => String): RiakValue = copy(data = f(data))
+
+  def as[T: RiakDeserializer]: Try[T] = implicitly[RiakDeserializer[T]].deserialize(data, contentType)
+  def toMeta[T: RiakDeserializer: RiakSerializer: RiakIndexer]: Try[RiakMeta[T]] = as[T].map(data => RiakMeta(data, contentType, vclock, etag, lastModified, indexes))
 }
 
 object RiakValue {
-  // use the magnet pattern so we can have overloads that would break due to type-erasure?
+  def apply[T: RiakSerializer: RiakIndexer](data: T): RiakValue = {
+    val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(data)
+    val indexes = implicitly[RiakIndexer[T]].index(data)
 
-  // def apply(value: String): RiakValue = {
-  //   apply(value, VClock.NotSpecified)
-  // }
+    RiakValue(dataAsString, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now, indexes)
+  }
 
-  // def apply(value: String, vclock: VClock): RiakValue = {
-  //   apply(value, ContentType.`text/plain`, vclock)
-  // }
+  def apply[T: RiakSerializer: RiakIndexer](meta: RiakMeta[T]): RiakValue = {
+    val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(meta.data)
+    val indexes = meta.indexes ++ implicitly[RiakIndexer[T]].index(meta.data)
 
-  // def apply(data: String, contentType: ContentType): RiakValue = {
-  //   apply(data, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now)
-  // }
-
-  // def apply(value: String, contentType: ContentType, vclock: VClock): RiakValue = {
-  //   apply(value, contentType, vclock, "", DateTime.now)
-  // }
-
-  // def apply(value: Array[Byte], contentType: ContentType, vclock: VClock, etag: String, lastModified: DateTime): RiakValue = {
-  //   RiakValue(new String(value, contentType.charset.nioCharset), contentType, vclock, etag, lastModified)
-  // }
-
-  // def apply[T: RiakValueWriter](value: T): RiakValue = implicitly[RiakValueWriter[T]].write(value)
-  // def apply[T: RiakValueWriter](value: T, vclock: VClock): RiakValue = implicitly[RiakValueWriter[T]].write(value, vclock)
-
+    RiakValue(dataAsString, contentType, meta.vclock, meta.etag, DateTime.now, indexes)
+  }
 }

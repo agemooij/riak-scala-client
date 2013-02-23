@@ -81,7 +81,6 @@ trait RiakConnection {
 
 trait RiakBucket {
   import scala.concurrent.Future
-  import RiakSerializerSupport._
 
   /**
    * Every bucket has a default ConflictResolver that will be used when resolving
@@ -97,42 +96,41 @@ trait RiakBucket {
   /**
    *
    */
-  // def fetch(index: String, value: String): Future[Option[RiakValue]]
-  // def fetch(index: String, value: Int): Future[Option[RiakValue]]
+  def fetch(index: String, value: String): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
+  def fetch(index: String, value: Int): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
+  def fetch(index: RiakIndex): Future[List[RiakValue]]
 
-  // def fetch(index: String, lowerBound: String, upperBound: String): Future[List[RiakValue]]
-  // def fetch(index: String, lowerBound: Int, upperBound: Int): Future[List[RiakValue]]
-
-
-
-  /**
-   *
-   */
-  def store[T: RiakSerializer](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
-    store(key, meta, false)
-  }
+  def fetch(index: String, start: String, end: String): Future[List[RiakValue]] = fetch(RiakIndexRange(index, start, end))
+  def fetch(index: String, start: Int, end: Int): Future[List[RiakValue]] = fetch(RiakIndexRange(index, start, end))
+  private[riak] def fetch(index: RiakIndexRange): Future[List[RiakValue]]
 
   /**
    *
    */
-  def store[T: RiakSerializer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, toRiakValue(meta), returnBody)
-  }
-
-  /**
-   *
-   */
-  def store[T: RiakSerializer](key: String, value: T): Future[Option[RiakValue]] = {
+  def store[T: RiakSerializer: RiakIndexer](key: String, value: T): Future[Option[RiakValue]] = {
     store(key, value, false)
   }
 
   /**
    *
    */
-  def store[T: RiakSerializer](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, toRiakValue(value), returnBody)
+  def store[T: RiakSerializer: RiakIndexer](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, RiakValue(value), returnBody)
   }
 
+  /**
+   *
+   */
+  def store[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
+    store(key, meta, false)
+  }
+
+  /**
+   *
+   */
+  def store[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
+    store(key, RiakValue(meta), returnBody)
+  }
 
   /**
    *
@@ -144,15 +142,7 @@ trait RiakBucket {
   /**
    *
    */
-  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]// = {
-  //   store(key, value, Set.empty[RiakIndex], returnBody)
-  // }
-
-
-  /**
-   *
-   */
-  // def store(key: String, value: RiakValue, indexes: Set[RiakIndex], returnBody: Boolean): Future[Option[RiakValue]]
+  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]
 
 
   /**
@@ -192,12 +182,14 @@ trait RiakBucket {
 // Private Implementations
 // ============================================================================
 
-private[riak] class HttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
+private[riak] final class HttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
   def bucket(name: String, resolver: ConflictResolver) = new HttpBucket(httpClient, server, name, resolver)
 }
 
-private[riak] class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
+private[riak] final class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
   def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
+  def fetch(index: RiakIndex) = httpClient.fetch(server, bucket, index, resolver)
+  def fetch(indexRange: RiakIndexRange) = httpClient.fetch(server, bucket, indexRange, resolver)
 
   def store(key: String, value: RiakValue, returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
 

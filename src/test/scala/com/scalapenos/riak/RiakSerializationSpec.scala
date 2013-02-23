@@ -55,11 +55,8 @@ class RiakSerializationSpec extends Specification {
     }
   }
 
-
   "When serializing any type T, it" should {
     "serialize to (t.toString, ContentType.`text/plain`) if DefaultRiakSerializationSupport._ is imported" in {
-      import DefaultRiakSerializationSupport._
-
       val t = new ClassWithoutCustomSerialization("The answer", 42)
 
       val (data, contentType) = implicitly[RiakSerializer[ClassWithoutCustomSerialization]].serialize(t)
@@ -91,8 +88,6 @@ class RiakSerializationSpec extends Specification {
 
   "When deserializing (String, ContentType) to any type T, it" should {
     "deserialize to the raw string data if DefaultRiakSerializationSupport._ is imported" in {
-      import DefaultRiakSerializationSupport._
-
       val data = "some string"
       val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentType.`text/plain`)
 
@@ -100,8 +95,6 @@ class RiakSerializationSpec extends Specification {
     }
 
     "deserialize to the raw string data if DefaultRiakSerializationSupport._ is imported, ignoring the ContentType" in {
-      import DefaultRiakSerializationSupport._
-
       val data = """{some: "string"}"""
       val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentType(`application/json`))
 

@@ -20,8 +20,8 @@ package com.scalapenos.riak
 object RiakHttpHeaders {
   val `X-Riak-ClientId` = "X-Riak-ClientId"
   val `X-Riak-Vclock`   = "X-Riak-Vclock"
+  val `ETag`            = "ETag"
+
+  val indexHeaderPrefix = "x-riak-index-"
 }
 
-object StandardHttpHeaders {
-
-}
