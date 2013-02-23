@@ -119,12 +119,12 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
   def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     httpRequest(Get(url(server, bucket, key))).flatMap { response =>
       response.status match {
-        case OK              => successful(toRiakValue(response))
-        case NotFound        => successful(None)
-        case MultipleChoices => resolveConflict(server, bucket, key, response, resolver)
-        case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
-        // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
+        case OK                 => successful(toRiakValue(response))
+        case NotFound           => successful(None)
+        case MultipleChoices    => resolveConflict(server, bucket, key, response, resolver)
+        case BadRequest         => throw new ParametersInvalid("Does Riak even give us a reason for this?")
+        case other              => throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
+        // TODO: case NotModified => successful(None)
       }
     }
   }
