@@ -16,16 +16,15 @@ So far, the following Riak API features are supported:
 - Fetch
 - Store
 - Delete
-- Automatic conversion between raw RiakValues and Scala (case) classes using type classes
 - Customizable and strongly typed conflict resolution on all fetches (and Stores when returnbody=true)
-- A VClocked[T] box type for retaining the vclock after conversion to Scala (case) classes. We are investigating to take this further into a full type RiakMeta[T] box, including all the Riak meta data (eTag, links, indexes, meta headers, content type, etc.)
+- Automatic conversion between raw RiakValues and Scala (case) classes using type classes
+- A RiakMeta[T] box type for retaining the riak meta data (like the vclock, the etag, the last modified date, the indexes, etc.) after conversion to Scala (case) classes.
+- Secondary Indexes (2i): exact matches
+- Secondary Indexes (2i): ranges
 - auto-retry (a standard feature of the underlying spray-client library)
-
 
 These Riak features are currently missing and/or under construction:
 
-- Secondary Indexes (2i): exact matches
-- Secondary Indexes (2i): ranges
 - link walking
 - Map Reduce
 
