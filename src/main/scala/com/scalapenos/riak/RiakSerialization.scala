@@ -54,7 +54,7 @@ object RiakDeserializer extends LowPriorityDefaultRiakDeserializerImplicits
 trait LowPriorityDefaultRiakDeserializerImplicits {
   import scala.util._
 
-  implicit def toStringDeserializer = new RiakDeserializer[String] {
+  implicit def stringDeserializer = new RiakDeserializer[String] {
     def deserialize(data: String, contentType: ContentType): Try[String] = Success(data)
   }
 }
