@@ -182,11 +182,11 @@ trait RiakBucket {
 // Private Implementations
 // ============================================================================
 
-private[riak] class HttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
+private[riak] final class HttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
   def bucket(name: String, resolver: ConflictResolver) = new HttpBucket(httpClient, server, name, resolver)
 }
 
-private[riak] class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
+private[riak] final class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
   def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
   def fetch(index: RiakIndex) = httpClient.fetch(server, bucket, index, resolver)
   def fetch(indexRange: RiakIndexRange) = httpClient.fetch(server, bucket, indexRange, resolver)
