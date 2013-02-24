@@ -35,13 +35,13 @@ trait SprayJsonSerialization {
     def deserialize(data: String, contentType: ContentType) = {
       contentType match {
         case ContentType(`application/json`, _) => parseAndConvert(data)
-        case _ => Failure(RiakUnsupportedContentTypeException(ContentType.`application/json`, contentType))
+        case _ => Failure(RiakUnsupportedContentType(ContentType.`application/json`, contentType))
       }
     }
 
     private def parseAndConvert(data: String) = {
         Try(implicitly[RootJsonReader[T]].read(JsonParser(data))) recoverWith {
-          case throwable => Failure(RiakDeserializationFailedException(data, implicitly[ClassTag[T]].runtimeClass.getName, throwable))
+          case throwable => Failure(RiakDeserializationFailed(data, implicitly[ClassTag[T]].runtimeClass.getName, throwable))
         }
     }
   }

@@ -41,7 +41,7 @@ class RiakSerializationSpec extends Specification {
 
         contentType match {
           case ContentType(`text/xml`, _) => toXml.flatMap(fromXml(_))
-          case _ => Failure(RiakUnsupportedContentTypeException(ContentType(`text/xml`), contentType))
+          case _ => Failure(RiakUnsupportedContentType(ContentType(`text/xml`), contentType))
         }
       }
     }
@@ -112,7 +112,7 @@ class RiakSerializationSpec extends Specification {
       val data = """<xml><a>w00t!</a></xml>"""
       val out = implicitly[RiakDeserializer[ClassWithCustomSerialization]].deserialize(data, ContentType(`application/json`))
 
-      out must beEqualTo(Failure(RiakUnsupportedContentTypeException(ContentType(`text/xml`), ContentType(`application/json`))))
+      out must beEqualTo(Failure(RiakUnsupportedContentType(ContentType(`text/xml`), ContentType(`application/json`))))
     }
   }
 

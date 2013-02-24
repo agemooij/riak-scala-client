@@ -65,9 +65,9 @@ class SprayJsonRiakValueConverterSpec extends Specification {
 
       val exception = thingy.asInstanceOf[Failure[Thingy]].exception
 
-      exception must beAnInstanceOf[RiakDeserializationFailedException]
+      exception must beAnInstanceOf[RiakDeserializationFailed]
 
-      val details = exception.asInstanceOf[RiakDeserializationFailedException]
+      val details = exception.asInstanceOf[RiakDeserializationFailed]
 
       details.data must beEqualTo(invalidJson)
       details.targetType must beEqualTo(classOf[Thingy].getName)
@@ -79,7 +79,7 @@ class SprayJsonRiakValueConverterSpec extends Specification {
 
       thingy must beAnInstanceOf[Failure[Thingy]]
 
-      thingy must beEqualTo(Failure(RiakUnsupportedContentTypeException(ContentType.`application/json`, ContentType.`text/plain`)))
+      thingy must beEqualTo(Failure(RiakUnsupportedContentType(ContentType.`application/json`, ContentType.`text/plain`)))
     }
   }
 
