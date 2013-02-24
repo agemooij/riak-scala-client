@@ -62,7 +62,7 @@ trait RiakIndexer[T] {
 
 object RiakIndexer extends LowPriorityDefaultRiakIndexerImplicits
 
-trait LowPriorityDefaultRiakIndexerImplicits {
+private[riak] trait LowPriorityDefaultRiakIndexerImplicits {
   implicit def defaultNoIndexes[T] = new RiakIndexer[T] {
     def index(t: T) = Set.empty[RiakIndex]
   }

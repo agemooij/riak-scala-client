@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.scalapenos.riak.utils
+package com.scalapenos.riak
+package utils
 
 
-object SprayClientExtras {
+private[riak] object SprayClientExtras {
   import spray.http.HttpHeader
   import spray.httpx.RequestBuilding.RequestTransformer
 
