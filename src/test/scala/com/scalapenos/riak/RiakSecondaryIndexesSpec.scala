@@ -47,7 +47,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
     "support storing and fetching a value with multiple mixed indexes, some containing special characters (by key and each index)" in new
       StoreAndFetch[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
 
-    "Supports storing multiple key/value pairs with the same index and fetching them by that index" in {
+    "support storing multiple key/value pairs with the same index and fetching them by that index" in {
       val numbers = (0 to 10).toList
 
       val intIndex = 42
@@ -73,7 +73,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       Future.traverse(intIndexKeys ++ stringIndexKeys)(bucket.delete(_)).await must have size(numbers.size * 2)
     }
 
-    "Supports storing multiple key/value pairs with int indexes and fetching multiple values using index ranges" in {
+    "support storing multiple key/value pairs with int indexes and fetching multiple values using index ranges" in {
       val indexName = ClassWithConfigurableIntIndex.indexName
       val indexes = (0 to 10).toList ++ (40 to 60).toList
       val keys = indexes.map(n => "key-" + n)
@@ -100,7 +100,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       Future.traverse(keys)(bucket.delete(_)).await must have size(indexes.size)
     }
 
-    "Supports storing multiple key/value pairs with String indexes and fetching multiple values using index ranges" in {
+    "support storing multiple key/value pairs with String indexes and fetching multiple values using index ranges" in {
       val indexName = ClassWithConfigurableStringIndex.indexName
       val numberIndexes = ((0 to 10).toList ++ (40 to 60).toList).map(_.toString)
       val letterIndexes = List("a", "b", "y", "z", "aa", "bb", "yy", "zz", "A", "B", "Y", "Z")
