@@ -34,14 +34,18 @@ So far, the following Riak (http) API features are supported:
     - Fetching exact matches
     - Fetching ranges
     - Automatic indexing of Scala (case) classes using type classes
-- An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)
-- A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)
+- An untyped RiakValue class for interacting with raw Riak values and their associated
+  meta data (vlock, etag, content type, last modified time, indexes, etc.)
+- A typed RiakMeta[T] class for interacting with deserialized values while retaining
+  their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)
 - Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)
 
 These Riak features are currently missing and/or under construction:
 
 - link walking
 - Map Reduce
+- Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
+  If-Modified-Since and If-Unmodified-Since for LastModified)
 
 
 ## Design and Implementation
@@ -49,12 +53,16 @@ These Riak features are currently missing and/or under construction:
 The _riak-scala-client_ is based on [Akka] 2.1 and and [Spray] client 1.1.
 
 The client is implemented as an Akka extension, making it very easy to use
-from Akka-based applications and non-Akka applications alike.
+from Akka-based applications, with some wrapper code to make sure non-Akka
+applications are not bothered by the underlying Akka layer.
 
 
 ## Why such a boring name?
 
-It seems all the cool names (scalariak, riakka, riaktor, etc.) have been taken already.
+It seems all the cool names, like riactive, riakka, riaktor, scalariak, etc. have already
+been taken by other projects but there seems to be a common naming pattern used by client libraries
+for other languages so that's what ended up deciding the name.
+
 If you come up with a cooler name, please let us know and eternal fame will be yours!
 
 
