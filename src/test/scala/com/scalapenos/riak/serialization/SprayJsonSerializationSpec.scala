@@ -21,10 +21,7 @@ import org.specs2.mutable._
 import scala.util._
 
 
-/**
- * This test depends on a Riak node running on localhost:8098 !!
- */
-class SprayJsonRiakValueConverterSpec extends Specification {
+class SprayJsonSerializationSpec extends Specification {
   import spray.json.DefaultJsonProtocol._
   import spray.http.MediaTypes._
   import SprayJsonSerialization._

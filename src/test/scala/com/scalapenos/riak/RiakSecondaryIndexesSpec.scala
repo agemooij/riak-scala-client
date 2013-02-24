@@ -22,9 +22,7 @@ import scala.util._
 
 import java.util.UUID._
 
-/**
- * This test depends on a Riak node running on localhost:8098 !!
- */
+
 class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySupport {
   // TODO: skip this test if the localhost backend does not support secondary indexes
 

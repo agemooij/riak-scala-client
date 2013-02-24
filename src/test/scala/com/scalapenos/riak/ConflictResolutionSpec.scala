@@ -26,9 +26,6 @@ import akka.actor._
 import spray.util._
 
 
-/**
- * This test depends on a Riak node running on localhost:8098 !!
- */
 class ConflictResolutionSpec extends AkkaActorSystemSpecification {
 
   "When resolving conflicts with a custom resolver during fetch, the client" should {
