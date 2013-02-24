@@ -34,14 +34,14 @@ trait SprayJsonSerialization {
   class SprayJsonDeserializer[T: RootJsonReader: ClassTag] extends RiakDeserializer[T] {
     def deserialize(data: String, contentType: ContentType) = {
       contentType match {
-        case ContentType(`application/json`, _) => parseAndconvert(data)
+        case ContentType(`application/json`, _) => parseAndConvert(data)
         case _ => Failure(RiakUnsupportedContentTypeException(ContentType.`application/json`, contentType))
       }
     }
 
-    private def parseAndconvert(data: String) = {
+    private def parseAndConvert(data: String) = {
         Try(implicitly[RootJsonReader[T]].read(JsonParser(data))) recoverWith {
-          case throwable => Failure(RiakDeserializationException(data, implicitly[ClassTag[T]].runtimeClass.getName, throwable))
+          case throwable => Failure(RiakDeserializationFailedException(data, implicitly[ClassTag[T]].runtimeClass.getName, throwable))
         }
     }
   }

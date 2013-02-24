@@ -21,6 +21,10 @@ import scala.util._
 import scala.util.control.NoStackTrace
 
 
+// ============================================================================
+// Serialization
+// ============================================================================
+
 /**
   * Provides the RiakValue serialization for type T.
  */
@@ -41,6 +45,11 @@ trait LowPriorityDefaultRiakSerializerImplicits {
   }
 }
 
+
+// ============================================================================
+// Deserialization
+// ============================================================================
+
 /**
   * Provides the RiakValue deserialization for type T.
  */
@@ -59,13 +68,13 @@ trait LowPriorityDefaultRiakDeserializerImplicits {
   }
 }
 
+sealed trait RiakDeserializationException
 
-// ============================================================================
-// Commons Exceptions
-// ============================================================================
-
-case class RiakDeserializationException(data: String, targetType: String, cause: Throwable)
+case class RiakDeserializationFailedException(data: String, targetType: String, cause: Throwable)
   extends RuntimeException(s"Unable to deserialize data to target type '$targetType'. Reason: '${cause.getMessage}'. Data: '$data'.", cause)
+  with RiakDeserializationException
 
 case class RiakUnsupportedContentTypeException(expected: ContentType, actual: ContentType)
-  extends RuntimeException(s"Unexpected ContentType during deserialization: expected $expected but got $actual.") with NoStackTrace
+  extends RuntimeException(s"Unexpected ContentType during deserialization: expected '$expected' but got '$actual'.")
+  with RiakDeserializationException
+  with NoStackTrace
