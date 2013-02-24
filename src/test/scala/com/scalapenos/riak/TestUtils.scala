@@ -2,6 +2,7 @@ package com.scalapenos.riak
 
 import org.specs2.mutable._
 
+import scala.concurrent.Future
 import akka.actor._
 import akka.testkit._
 
@@ -18,6 +19,9 @@ import org.specs2.time.NoTimeConversions
 trait AkkaActorSystemSpecification extends Specification with NoTimeConversions {
   implicit val system = ActorSystem(actorSystemNameFrom(getClass))
   implicit val executor = system.dispatcher
+
+  // manual pimped future stolen from spray.util because a spray.util._ import causes implicit conflicts with the above implicit system
+  implicit def pimpFuture[T](fut: Future[T]): spray.util.pimps.PimpedFuture[T] = new spray.util.pimps.PimpedFuture[T](fut)
 
   def failTest(msg: String) = throw new FailureException(Failure(msg))
 

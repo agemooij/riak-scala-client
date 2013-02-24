@@ -28,9 +28,6 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
 
   import RiakSecondaryIndexesTestData._
 
-  // manual pimped future stoeln from spray.util because a spray.util._ import causes implicit conflicts
-  implicit def pimpFuture[T](fut: Future[T]): spray.util.pimps.PimpedFuture[T] = new spray.util.pimps.PimpedFuture[T](fut)
-
   "A RiakBucket" should {
     "support storing and fetching a value with one Int index (by key and each index)" in new
       StoreAndFetch[ClassWithOneIntIndex](ClassWithOneIntIndex("bar"), "bar", ClassWithOneIntIndex.indexes) {}
