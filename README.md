@@ -40,12 +40,17 @@ So far, the following Riak (http) API features are supported:
   their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)
 - Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)
 
-These Riak features are currently missing and/or under construction:
+These Riak features are currently missing or under construction:
 
-- link walking
-- Map Reduce
+- getting/setting bucket properties
+- listing all buckets
+- listing all keys in a bucket
+- ping
+- status
 - Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
   If-Modified-Since and If-Unmodified-Since for LastModified)
+- link walking
+- Map Reduce
 
 
 ## Design and Implementation
