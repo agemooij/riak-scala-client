@@ -51,7 +51,7 @@ initialCommands in console += {
 
 licenses := Seq("The Apache Software License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 
-homepage := Some(url("https://github.com/agemooij/riak-scala-client"))
+homepage := Some(url("http://riak.scalapenos.com"))
 
 publishArtifact in Test := false
 
