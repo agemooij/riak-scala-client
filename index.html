@@ -69,12 +69,21 @@ Scala (or Java) client libraries for <a href="http://basho.com/riak/">Riak</a>. 
 <li>Automatic indexing of Scala (case) classes using type classes</li>
 </ul>
 </li>
-<li>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
-<li>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
+<li>An untyped RiakValue class for interacting with raw Riak values and their associated
+meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
+<li>A typed RiakMeta[T] class for interacting with deserialized values while retaining
+their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
 <li>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
-</ul><p>These Riak features are currently missing and/or under construction:</p>
+</ul><p>These Riak features are currently missing or under construction:</p>
 
 <ul>
+<li>getting/setting bucket properties</li>
+<li>listing all buckets</li>
+<li>listing all keys in a bucket</li>
+<li>ping</li>
+<li>status</li>
+<li>Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
+If-Modified-Since and If-Unmodified-Since for LastModified)</li>
 <li>link walking</li>
 <li>Map Reduce</li>
 </ul><h2>Design and Implementation</h2>
@@ -82,12 +91,16 @@ Scala (or Java) client libraries for <a href="http://basho.com/riak/">Riak</a>. 
 <p>The <em>riak-scala-client</em> is based on <a href="http://akka.io/">Akka</a> 2.1 and and <a href="http://spray.io/">Spray</a> client 1.1.</p>
 
 <p>The client is implemented as an Akka extension, making it very easy to use
-from Akka-based applications and non-Akka applications alike.</p>
+from Akka-based applications, with some wrapper code to make sure non-Akka
+applications are not bothered by the underlying Akka layer.</p>
 
 <h2>Why such a boring name?</h2>
 
-<p>It seems all the cool names (scalariak, riakka, riaktor, etc.) have been taken already.
-If you come up with a cooler name, please let us know and eternal fame will be yours!</p>
+<p>It seems all the cool names, like riactive, riakka, riaktor, scalariak, etc. have already
+been taken by other projects but there seems to be a common naming pattern used by client libraries
+for other languages so that's what ended up deciding the name.</p>
+
+<p>If you come up with a cooler name, please let us know and eternal fame will be yours!</p>
 
 <h2>License</h2>
 
