@@ -41,7 +41,7 @@ libraryDependencies ++= {
 }
 
 initialCommands in console += {
-  Iterator("com.scalapenos.riak._", "akka.actor._").map("import "+).mkString("\n")
+  List("import com.scalapenos.riak._", "import akka.actor._").mkString("\n")
 }
 
 
