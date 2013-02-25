@@ -47,8 +47,6 @@ final case class RiakValue(
   lastModified: DateTime,
   indexes: Set[RiakIndex] = Set.empty[RiakIndex]
 ) {
-  import scala.util.Try
-
   def withData(newData: String): RiakValue = copy(data = newData)
   def withData[T: RiakSerializer: RiakIndexer](data: T): RiakValue = {
     val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(data)
@@ -57,8 +55,8 @@ final case class RiakValue(
     RiakValue(dataAsString, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now, indexes)
   }
 
-  def as[T: RiakDeserializer]: Try[T] = implicitly[RiakDeserializer[T]].deserialize(data, contentType)
-  def asMeta[T: RiakDeserializer: RiakSerializer: RiakIndexer]: Try[RiakMeta[T]] = as[T].map(data => RiakMeta(data, contentType, vclock, etag, lastModified, indexes))
+  def as[T: RiakDeserializer]: T = implicitly[RiakDeserializer[T]].deserialize(data, contentType)
+  def asMeta[T: RiakDeserializer: RiakSerializer: RiakIndexer]: RiakMeta[T] = RiakMeta(as[T], contentType, vclock, etag, lastModified, indexes)
 }
 
 object RiakValue {

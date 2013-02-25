@@ -38,45 +38,33 @@ class SprayJsonSerializationSpec extends Specification {
     "correctly deserialize valid JSON when the ContentType is ContentType.`application/json`." in {
       val thingy = implicitly[RiakDeserializer[Thingy]].deserialize(validJson, ContentType.`application/json`)
 
-      thingy must beAnInstanceOf[Success[Thingy]]
-      thingy.foreach{ t =>
-        t.name must beEqualTo("Answer")
-        t.number must beEqualTo(42)
-      }
+      thingy.name must beEqualTo("Answer")
+      thingy.number must beEqualTo(42)
     }
 
     "correctly deserialize valid JSON when the ContentType is ContentType(`application/json`)." in {
       val thingy = implicitly[RiakDeserializer[Thingy]].deserialize(validJson, ContentType(`application/json`))
 
-      thingy must beAnInstanceOf[Success[Thingy]]
-      thingy.foreach{ t =>
-        t.name must beEqualTo("Answer")
-        t.number must beEqualTo(42)
-      }
+      thingy.name must beEqualTo("Answer")
+      thingy.number must beEqualTo(42)
     }
 
     "fail when deserializing with ContentType.`application/json` but invalid JSON data" in {
-      val thingy = implicitly[RiakDeserializer[Thingy]].deserialize(invalidJson, ContentType.`application/json`)
+      val deserializer = implicitly[RiakDeserializer[Thingy]]
 
-      thingy must beAnInstanceOf[Failure[Thingy]]
-
-      val exception = thingy.asInstanceOf[Failure[Thingy]].exception
-
-      exception must beAnInstanceOf[RiakDeserializationFailed]
-
-      val details = exception.asInstanceOf[RiakDeserializationFailed]
-
-      details.data must beEqualTo(invalidJson)
-      details.targetType must beEqualTo(classOf[Thingy].getName)
-      details.cause must beAnInstanceOf[spray.json.DeserializationException]
+      deserializer.deserialize(invalidJson, ContentType.`application/json`) must throwA[RiakDeserializationFailed].like {
+        case exception: RiakDeserializationFailed => {
+          exception.data must beEqualTo(invalidJson)
+          exception.targetType must beEqualTo(classOf[Thingy].getName)
+          exception.cause must beAnInstanceOf[spray.json.DeserializationException]
+        }
+      }
     }
 
     "fail when deserializing with an unsupported ContentType" in {
-      val thingy = implicitly[RiakDeserializer[Thingy]].deserialize(validJson, ContentType.`text/plain`)
+      val deserializer = implicitly[RiakDeserializer[Thingy]]
 
-      thingy must beAnInstanceOf[Failure[Thingy]]
-
-      thingy must beEqualTo(Failure(RiakUnsupportedContentType(ContentType.`application/json`, ContentType.`text/plain`)))
+      deserializer.deserialize(validJson, ContentType.`text/plain`) must throwA(RiakUnsupportedContentType(ContentType.`application/json`, ContentType.`text/plain`))
     }
   }
 

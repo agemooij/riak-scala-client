@@ -17,7 +17,6 @@
 package com.scalapenos.riak
 
 import annotation.implicitNotFound
-import scala.util._
 import scala.util.control.NoStackTrace
 
 
@@ -65,7 +64,7 @@ trait RiakDeserializer[T] {
    * Deserializes from some raw data and a ContentType to a type T.
    * @throws RiakDeserializationException if the content could not be converted to an instance of T.
    */
-  def deserialize(data: String, contentType: ContentType): Try[T]
+  def deserialize(data: String, contentType: ContentType): T
 }
 
 /**
@@ -74,10 +73,8 @@ trait RiakDeserializer[T] {
 object RiakDeserializer extends LowPriorityDefaultRiakDeserializerImplicits
 
 private[riak] trait LowPriorityDefaultRiakDeserializerImplicits {
-  import scala.util._
-
   implicit def stringDeserializer = new RiakDeserializer[String] {
-    def deserialize(data: String, contentType: ContentType): Try[String] = Success(data)
+    def deserialize(data: String, contentType: ContentType): String = data
   }
 }
 

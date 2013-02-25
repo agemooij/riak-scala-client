@@ -98,7 +98,7 @@ object RiakSecondaryIndexesTestData {
   }
 
   def planTextDeserializer[T](d: String => T) = new RiakDeserializer[T] {
-    def deserialize(data: String, contentType: ContentType): Try[T] = Success(d(data))
+    def deserialize(data: String, contentType: ContentType): T = d(data)
   }
 
   def simpleIndexer[T](indexes: Set[RiakIndex]) = new RiakIndexer[T] {
