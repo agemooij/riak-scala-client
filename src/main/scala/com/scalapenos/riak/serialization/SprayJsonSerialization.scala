@@ -40,15 +40,15 @@ trait SprayJsonSerialization {
     }
 
     private def parseAndConvert(data: String) = {
-        Try(implicitly[RootJsonReader[T]].read(JsonParser(data))) match {
-          case Success(t) => t
-          case Failure(throwable) => throw RiakDeserializationFailed(data, implicitly[ClassTag[T]].runtimeClass.getName, throwable)
-        }
+      Try(implicitly[RootJsonReader[T]].read(JsonParser(data))) match {
+        case Success(t) => t
+        case Failure(throwable) => throw RiakDeserializationFailed(data, implicitly[ClassTag[T]].runtimeClass.getName, throwable)
+      }
     }
   }
 
-  implicit def sprayJsonSerializer[T: RootJsonFormat] = new SprayJsonSerializer[T]
-  implicit def sprayJsonDeserializer[T: RootJsonFormat: ClassTag] = new SprayJsonDeserializer[T]
+  implicit def sprayJsonSerializer[T: RootJsonWriter] = new SprayJsonSerializer[T]
+  implicit def sprayJsonDeserializer[T: RootJsonReader: ClassTag] = new SprayJsonDeserializer[T]
 }
 
 object SprayJsonSerialization extends SprayJsonSerialization
