@@ -2,7 +2,7 @@ name := "riak-scala-client"
 
 version := "0.1-SNAPSHOT"
 
-organization := "com.scalapenos.riak"
+organization := "com.scalapenos"
 
 organizationHomepage := Some(url("http://scalapenos.com/"))
 
