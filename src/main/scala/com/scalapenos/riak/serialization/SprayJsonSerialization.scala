@@ -17,16 +17,14 @@
 package com.scalapenos.riak
 package serialization
 
-import scala.reflect.ClassTag
-import scala.util._
-
-import spray.http.ContentType
-import spray.http.MediaType
-import spray.http.MediaTypes._
-import spray.json._
-
 
 trait SprayJsonSerialization {
+  import scala.reflect.ClassTag
+  import scala.util._
+
+  import spray.http.MediaTypes._
+  import spray.json._
+
   class SprayJsonSerializer[T: RootJsonWriter] extends RiakSerializer[T] {
     def serialize(t: T) = (implicitly[RootJsonWriter[T]].write(t).compactPrint, ContentType.`application/json`)
   }
