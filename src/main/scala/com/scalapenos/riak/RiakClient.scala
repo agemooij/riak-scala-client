@@ -59,5 +59,5 @@ class RiakClientExtension(system: ExtendedActorSystem) extends Extension {
   def connect(url: java.net.URL): RiakConnection = connect(RiakServerInfo(url))
   def connect(host: String, port: Int): RiakConnection = connect(RiakServerInfo(host, port))
 
-  private def connect(server: RiakServerInfo): RiakConnection = new HttpConnection(httpClient, server)
+  private def connect(server: RiakServerInfo): RiakConnection = new RiakHttpConnection(httpClient, server)
 }
