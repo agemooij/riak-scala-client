@@ -19,56 +19,6 @@ package internal
 
 
 // ============================================================================
-// RiakServerInfo - a nice way to encode the Riak server properties
-// ============================================================================
-
-private[riak] class RiakServerInfo(val host: String, val port: Int, val pathPrefix: String = "", val useSSL: Boolean = false)
-
-private[riak] object RiakServerInfo {
-  import java.net.URL
-
-  def apply(url: String): RiakServerInfo = apply(new URL(url))
-  def apply(url: URL): RiakServerInfo = apply(
-    url.getHost,
-    if (url.getPort != -1) url.getPort else url.getDefaultPort,
-    url.getPath,
-    url.getProtocol.toLowerCase == "https")
-
-  def apply(host: String, port: Int, pathPrefix: String = "", useSSL: Boolean = false): RiakServerInfo = new RiakServerInfo(host, port, pathPrefix.dropWhile(_ == '/'), useSSL)
-}
-
-
-// ============================================================================
-// RiakIndexRange - for easy passing of a fetch range
-// ============================================================================
-
-private[riak] sealed trait RiakIndexRange {
-  type Type
-  def name: String
-  def suffix: String
-  def start: Type
-  def end: Type
-
-  def fullName = s"${name}_${suffix}"
-}
-
-private[riak] object RiakIndexRange {
-  def apply(name: String, start: String, end: String) = RiakStringIndexRange(name, start, end)
-  def apply(name: String, start: Long, end: Long) = RiakLongIndexRange(name, start, end)
-}
-
-private[riak] final case class RiakStringIndexRange(name: String, start: String, end: String) extends RiakIndexRange {
-  type Type = String
-  def suffix = "bin"
-}
-
-private[riak] final case class RiakLongIndexRange(name: String, start: Long, end: Long) extends RiakIndexRange {
-  type Type = Long
-  def suffix = "int"
-}
-
-
-// ============================================================================
 // HttpConnection
 // ============================================================================
 
@@ -93,8 +43,6 @@ private[riak] final class HttpBucket(httpClient: RiakHttpClient, server: RiakSer
 
 // ============================================================================
 // RiakHttpClient
-//
-// TODO: add Retry support, maybe at the bucket level
 // ============================================================================
 
 import akka.actor._
