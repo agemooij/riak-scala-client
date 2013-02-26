@@ -73,7 +73,7 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
 
   import org.slf4j.LoggerFactory
 
-  import utils.SprayClientExtras._
+  import SprayClientExtras._
   import RiakHttpHeaders._
   import RiakHttpClient._
 

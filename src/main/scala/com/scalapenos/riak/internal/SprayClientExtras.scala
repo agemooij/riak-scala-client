@@ -15,7 +15,7 @@
  */
 
 package com.scalapenos.riak
-package utils
+package internal
 
 
 private[riak] object SprayClientExtras {
