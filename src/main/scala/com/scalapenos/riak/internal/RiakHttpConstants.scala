@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.scalapenos.riak
+package com.scalapenos.riak.internal
 
-
-private[riak] object RiakHttpHeaders {
+private[internal] object RiakHttpHeaders {
   val `X-Riak-ClientId` = "X-Riak-ClientId"
   val `X-Riak-Vclock`   = "X-Riak-Vclock"
   val `ETag`            = "ETag"

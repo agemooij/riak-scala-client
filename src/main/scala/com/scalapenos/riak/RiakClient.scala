@@ -17,6 +17,7 @@
 package com.scalapenos.riak
 
 import akka.actor._
+import internal._
 
 
 // ============================================================================
@@ -59,23 +60,4 @@ class RiakClientExtension(system: ExtendedActorSystem) extends Extension {
   def connect(host: String, port: Int): RiakConnection = connect(RiakServerInfo(host, port))
 
   private def connect(server: RiakServerInfo): RiakConnection = new HttpConnection(httpClient, server)
-}
-
-
-// ============================================================================
-// Private Implementations
-// ============================================================================
-
-private[riak] final class HttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
-  def bucket(name: String, resolver: ConflictResolver) = new HttpBucket(httpClient, server, name, resolver)
-}
-
-private[riak] final class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
-  def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
-  def fetch(index: RiakIndex) = httpClient.fetch(server, bucket, index, resolver)
-  def fetch(indexRange: RiakIndexRange) = httpClient.fetch(server, bucket, indexRange, resolver)
-
-  def store(key: String, value: RiakValue, returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
-
-  def delete(key: String) = httpClient.delete(server, bucket, key)
 }

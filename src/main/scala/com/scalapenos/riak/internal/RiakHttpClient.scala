@@ -15,6 +15,7 @@
  */
 
 package com.scalapenos.riak
+package internal
 
 
 // ============================================================================
@@ -64,6 +65,29 @@ private[riak] final case class RiakStringIndexRange(name: String, start: String,
 private[riak] final case class RiakLongIndexRange(name: String, start: Long, end: Long) extends RiakIndexRange {
   type Type = Long
   def suffix = "int"
+}
+
+
+// ============================================================================
+// HttpConnection
+// ============================================================================
+
+private[riak] final class HttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
+  def bucket(name: String, resolver: ConflictResolver) = new HttpBucket(httpClient, server, name, resolver)
+}
+
+// ============================================================================
+// HttpBucket
+// ============================================================================
+
+private[riak] final class HttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
+  def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
+  def fetch(index: RiakIndex) = httpClient.fetch(server, bucket, index, resolver)
+  def fetch(indexRange: RiakIndexRange) = httpClient.fetch(server, bucket, indexRange, resolver)
+
+  def store(key: String, value: RiakValue, returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
+
+  def delete(key: String) = httpClient.delete(server, bucket, key)
 }
 
 

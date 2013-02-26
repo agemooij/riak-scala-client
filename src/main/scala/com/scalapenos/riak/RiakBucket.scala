@@ -19,6 +19,7 @@ package com.scalapenos.riak
 
 trait RiakBucket {
   import scala.concurrent.Future
+  import internal._
 
   /**
    * Every bucket has a default ConflictResolver that will be used when resolving
@@ -113,3 +114,4 @@ trait RiakBucket {
 
   */
 }
+

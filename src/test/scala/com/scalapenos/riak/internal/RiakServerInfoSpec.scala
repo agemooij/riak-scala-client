@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.scalapenos.riak
+package com.scalapenos.riak.internal
 
 import org.specs2.mutable._
 
