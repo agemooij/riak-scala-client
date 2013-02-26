@@ -167,7 +167,7 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
         case NoContent       => successful(None)
         case MultipleChoices => resolveConflict(server, bucket, key, response, resolver)
         case BadRequest      => throw new ParametersInvalid("Does Riak even give us a reason for this?")
-        case other           => throw new BucketOperationFailed(s"Store for of value '$value' for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
+        case other           => throw new BucketOperationFailed(s"Store of value '$value' for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
