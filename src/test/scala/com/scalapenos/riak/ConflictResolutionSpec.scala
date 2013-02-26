@@ -36,7 +36,7 @@ class ConflictResolutionSpec extends AkkaActorSystemSpecification {
         }
       }
 
-      val bucket = RiakClient(system).connect().bucket(name = "test-conflict-resolution", resolver = resolver)
+      val bucket = RiakClient(system).connect().bucket(name = "riak-conflict-resolution-tests", resolver = resolver)
 
       val stored1 = bucket.store("foo", "bar").await
       val stored2 = bucket.store("foo", "foo").await
