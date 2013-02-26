@@ -56,15 +56,6 @@ class RiakSerializationSpec extends Specification {
   }
 
   "When serializing any type T, it" should {
-    "serialize to (t.toString, ContentType.`text/plain`) if DefaultRiakSerializationSupport._ is imported" in {
-      val t = new ClassWithoutCustomSerialization("The answer", 42)
-
-      val (data, contentType) = implicitly[RiakSerializer[ClassWithoutCustomSerialization]].serialize(t)
-
-      data must beEqualTo(t.toString)
-      contentType must beEqualTo(ContentType.`text/plain`)
-    }
-
     "serialize using a Serializer[T] defined in the companion object of T" in {
       val t = new ClassWithCustomSerialization("The answer is 42")
 
@@ -87,20 +78,6 @@ class RiakSerializationSpec extends Specification {
   }
 
   "When deserializing (String, ContentType) to any type T, it" should {
-    "deserialize to the raw string data if DefaultRiakSerializationSupport._ is imported" in {
-      val data = "some string"
-      val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentType.`text/plain`)
-
-      out must beEqualTo(data)
-    }
-
-    "deserialize to the raw string data if DefaultRiakSerializationSupport._ is imported, ignoring the ContentType" in {
-      val data = """{some: "string"}"""
-      val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentType(`application/json`))
-
-      out must beEqualTo(data)
-    }
-
     "deserialize to Success(ClassWithCustomSerialization) if the ContentType matches the one defined in the RiakDeserializer" in {
       val data = """<xml><a>w00t!</a></xml>"""
       val out = implicitly[RiakDeserializer[ClassWithCustomSerialization]].deserialize(data, ContentType(`text/xml`))
@@ -113,6 +90,30 @@ class RiakSerializationSpec extends Specification {
       val deserializer = implicitly[RiakDeserializer[ClassWithCustomSerialization]]
 
       deserializer.deserialize(data, ContentType(`application/json`)) must throwA(RiakUnsupportedContentType(ContentType(`text/xml`), ContentType(`application/json`)))
+    }
+  }
+
+  "By default, without any imports, it" should {
+    "serialize Strings to text/plain" in {
+      val anyString = "is a good String"
+      val (data, contentType) = implicitly[RiakSerializer[String]].serialize(anyString)
+
+      data must beEqualTo(anyString)
+      contentType must beEqualTo(ContentType.`text/plain`)
+    }
+
+    "deserialize to the raw string data" in {
+      val data = "some string"
+      val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentType.`text/plain`)
+
+      out must beEqualTo(data)
+    }
+
+    "deserialize to the raw string data, ignoring the ContentType" in {
+      val data = """{some: "string"}"""
+      val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentType(`application/json`))
+
+      out must beEqualTo(data)
     }
   }
 

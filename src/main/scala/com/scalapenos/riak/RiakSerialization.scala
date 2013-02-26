@@ -40,10 +40,6 @@ trait RiakSerializer[T] {
 object RiakSerializer extends LowPriorityDefaultRiakSerializerImplicits
 
 private[riak] trait LowPriorityDefaultRiakSerializerImplicits {
-  implicit def toStringSerializer[T] = new RiakSerializer[T] {
-    def serialize(t: T): (String, ContentType) = (t.toString, ContentType.`text/plain`)
-  }
-
   implicit def stringSerializer = new RiakSerializer[String] {
     def serialize(s: String): (String, ContentType) = (s, ContentType.`text/plain`)
   }
