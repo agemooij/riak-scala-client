@@ -24,21 +24,22 @@ import internal._
 // RiakClient - The main entry point
 // ============================================================================
 
-case class RiakClient(system: ActorSystem) {
-  def connect(): RiakConnection = connect("localhost", 8098)
-  def connect(host: String, port: Int): RiakConnection = RiakClientExtension(system).connect(host, port)
-  def connect(url: String): RiakConnection = RiakClientExtension(system).connect(url)
-  def connect(url: java.net.URL): RiakConnection = RiakClientExtension(system).connect(url)
-
-  def apply(host: String, port: Int): RiakConnection = connect(host, port)
-  def apply(url: String): RiakConnection = connect(url)
-  def apply(url: java.net.URL): RiakConnection = connect(url)
-}
-
 object RiakClient {
-  lazy val system = ActorSystem("riak-client")
+  private val defaultHost = "localhost"
+  private val defaultPort = 8098
+  private lazy val internalSystem = ActorSystem("riak-client")
 
-  def apply(): RiakClient = apply(system)
+  def apply()                   : RiakConnection = RiakClientExtension(internalSystem).connect(defaultHost, defaultPort)
+  def apply(system: ActorSystem): RiakConnection = RiakClientExtension(system).connect(defaultHost, defaultPort)
+
+  def apply(host: String, port: Int)                     : RiakConnection = RiakClientExtension(internalSystem).connect(host, port)
+  def apply(system: ActorSystem, host: String, port: Int): RiakConnection = RiakClientExtension(system).connect(host, port)
+
+  def apply(url: String)                     : RiakConnection = RiakClientExtension(internalSystem).connect(url)
+  def apply(system: ActorSystem, url: String): RiakConnection = RiakClientExtension(system).connect(url)
+
+  def apply(url: java.net.URL)                     : RiakConnection = RiakClientExtension(internalSystem).connect(url)
+  def apply(system: ActorSystem, url: java.net.URL): RiakConnection = RiakClientExtension(system).connect(url)
 }
 
 
