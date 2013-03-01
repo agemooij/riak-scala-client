@@ -19,25 +19,26 @@ package internal
 
 
 // ============================================================================
-// RiakHttpConnection
+// RiakHttpClient
 // ============================================================================
 
-private[riak] final class RiakHttpConnection(httpClient: RiakHttpClient, server: RiakServerInfo) extends RiakConnection {
-  def bucket(name: String, resolver: ConflictResolver) = new RiakHttpBucket(httpClient, server, name, resolver)
+private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: RiakServerInfo) extends RiakClient {
+  def bucket(name: String, resolver: ConflictResolver) = new RiakHttpBucket(helper, server, name, resolver)
 }
+
 
 // ============================================================================
 // RiakHttpBucket
 // ============================================================================
 
-private[riak] final class RiakHttpBucket(httpClient: RiakHttpClient, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
-  def fetch(key: String) = httpClient.fetch(server, bucket, key, resolver)
-  def fetch(index: RiakIndex) = httpClient.fetch(server, bucket, index, resolver)
-  def fetch(indexRange: RiakIndexRange) = httpClient.fetch(server, bucket, indexRange, resolver)
+private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
+  def fetch(key: String) = helper.fetch(server, bucket, key, resolver)
+  def fetch(index: RiakIndex) = helper.fetch(server, bucket, index, resolver)
+  def fetch(indexRange: RiakIndexRange) = helper.fetch(server, bucket, indexRange, resolver)
 
-  def store(key: String, value: RiakValue, returnBody: Boolean) = httpClient.store(server, bucket, key, value, returnBody, resolver)
+  def store(key: String, value: RiakValue, returnBody: Boolean) = helper.store(server, bucket, key, value, returnBody, resolver)
 
-  def delete(key: String) = httpClient.delete(server, bucket, key)
+  def delete(key: String) = helper.delete(server, bucket, key)
 }
 
 
@@ -47,7 +48,7 @@ private[riak] final class RiakHttpBucket(httpClient: RiakHttpClient, server: Ria
 
 import akka.actor._
 
-private[riak] object RiakHttpClient {
+private[riak] object RiakHttpClientHelper {
   import spray.http.HttpBody
   import spray.httpx.marshalling._
 
@@ -61,7 +62,7 @@ private[riak] object RiakHttpClient {
   }
 }
 
-private[riak] class RiakHttpClient(system: ActorSystem) {
+private[riak] class RiakHttpClientHelper(system: ActorSystem) {
   import scala.concurrent.Future
   import scala.concurrent.Future._
 
@@ -75,7 +76,7 @@ private[riak] class RiakHttpClient(system: ActorSystem) {
 
   import SprayClientExtras._
   import RiakHttpHeaders._
-  import RiakHttpClient._
+  import RiakHttpClientHelper._
 
   import system.dispatcher
 

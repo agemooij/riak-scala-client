@@ -32,10 +32,10 @@ trait AkkaActorSystemSpecification extends Specification with NoTimeConversions 
 }
 
 trait RiakClientSpecification extends AkkaActorSystemSpecification with Before {
-  var connection: RiakConnection = _
+  var client: RiakClient = _
 
   def before {
-    connection = RiakClient(system)
+    client = RiakClient(system)
   }
 }
 

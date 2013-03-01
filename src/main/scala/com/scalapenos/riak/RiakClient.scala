@@ -29,17 +29,22 @@ object RiakClient {
   private val defaultPort = 8098
   private lazy val internalSystem = ActorSystem("riak-client")
 
-  def apply()                   : RiakConnection = RiakClientExtension(internalSystem).connect(defaultHost, defaultPort)
-  def apply(system: ActorSystem): RiakConnection = RiakClientExtension(system).connect(defaultHost, defaultPort)
+  def apply()                                             : RiakClient = RiakClientExtension(internalSystem).connect(defaultHost, defaultPort)
+  def apply(host: String, port: Int)                      : RiakClient = RiakClientExtension(internalSystem).connect(host, port)
+  def apply(url: String)                                  : RiakClient = RiakClientExtension(internalSystem).connect(url)
+  def apply(url: java.net.URL)                            : RiakClient = RiakClientExtension(internalSystem).connect(url)
+  def apply(system: ActorSystem)                          : RiakClient = RiakClientExtension(system).connect(defaultHost, defaultPort)
+  def apply(system: ActorSystem, host: String, port: Int) : RiakClient = RiakClientExtension(system).connect(host, port)
+  def apply(system: ActorSystem, url: String)             : RiakClient = RiakClientExtension(system).connect(url)
+  def apply(system: ActorSystem, url: java.net.URL)       : RiakClient = RiakClientExtension(system).connect(url)
+}
 
-  def apply(host: String, port: Int)                     : RiakConnection = RiakClientExtension(internalSystem).connect(host, port)
-  def apply(system: ActorSystem, host: String, port: Int): RiakConnection = RiakClientExtension(system).connect(host, port)
+trait RiakClient {
+  import resolvers.LastValueWinsResolver
 
-  def apply(url: String)                     : RiakConnection = RiakClientExtension(internalSystem).connect(url)
-  def apply(system: ActorSystem, url: String): RiakConnection = RiakClientExtension(system).connect(url)
+  // TODO: ping and stats
 
-  def apply(url: java.net.URL)                     : RiakConnection = RiakClientExtension(internalSystem).connect(url)
-  def apply(system: ActorSystem, url: java.net.URL): RiakConnection = RiakClientExtension(system).connect(url)
+  def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): RiakBucket
 }
 
 
@@ -54,11 +59,11 @@ object RiakClientExtension extends ExtensionId[RiakClientExtension] with Extensi
 
 class RiakClientExtension(system: ExtendedActorSystem) extends Extension {
   private[riak] val settings = new RiakClientSettings(system.settings.config)
-  private[riak] lazy val httpClient = new RiakHttpClient(system: ActorSystem)
+  private[riak] lazy val httpHelper = new RiakHttpClientHelper(system: ActorSystem)
 
-  def connect(url: String): RiakConnection = connect(RiakServerInfo(url))
-  def connect(url: java.net.URL): RiakConnection = connect(RiakServerInfo(url))
-  def connect(host: String, port: Int): RiakConnection = connect(RiakServerInfo(host, port))
+  def connect(url: String): RiakClient = connect(RiakServerInfo(url))
+  def connect(url: java.net.URL): RiakClient = connect(RiakServerInfo(url))
+  def connect(host: String, port: Int): RiakClient = connect(RiakServerInfo(host, port))
 
-  private def connect(server: RiakServerInfo): RiakConnection = new RiakHttpConnection(httpClient, server)
+  private def connect(server: RiakServerInfo): RiakClient = new RiakHttpClient(httpHelper, server)
 }

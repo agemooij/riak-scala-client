@@ -27,7 +27,7 @@ class RiakClientSpec extends RiakClientSpecification with RandomKeySupport {
 
   "A RiakClient" should {
     "support storing any class T if there is a Serializer[T] and a RiakIndexer[T]in scope" in {
-      val bucket = connection.bucket("riak-client-tests-" + randomKey)
+      val bucket = client.bucket("riak-client-tests-" + randomKey)
 
       pending
     }

@@ -60,7 +60,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       val stringIndexValues = numbers.map(n => ClassWithConfigurableStringIndex("foo-string-" + n, stringIndex))
       val stringIndexKvs = stringIndexKeys.zip(stringIndexValues)
 
-      val bucket = connection.bucket("riak-index-tests-" + randomKey)
+      val bucket = client.bucket("riak-index-tests-" + randomKey)
       val storedValues1 = Future.traverse(intIndexKvs)(kv => bucket.store(kv._1, kv._2, true)).await
       val storedValues2 = Future.traverse(stringIndexKvs)(kv => bucket.store(kv._1, kv._2, true)).await
 
@@ -80,7 +80,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       val values = indexes.map(n => ClassWithConfigurableIntIndex("foo-" + n, n))
       val kvs = keys.zip(values)
 
-      val bucket = connection.bucket("riak-index-tests-" + randomKey)
+      val bucket = client.bucket("riak-index-tests-" + randomKey)
       val storedValues = Future.traverse(kvs)(kv => bucket.store(kv._1, kv._2, true)).await
 
       storedValues must have size(indexes.size)
@@ -109,7 +109,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       val values = indexes.map(n => ClassWithConfigurableStringIndex("foo-" + n, n))
       val kvs = keys.zip(values)
 
-      val bucket = connection.bucket("riak-index-tests-" + randomKey)
+      val bucket = client.bucket("riak-index-tests-" + randomKey)
       val storedValues = Future.traverse(kvs)(kv => bucket.store(kv._1, kv._2, true)).await
 
       storedValues must have size(indexes.size)
@@ -143,7 +143,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
   abstract class StoreAndFetch[T: RiakSerializer: RiakIndexer](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
     val key = randomKey
     val value = constructor
-    val bucket = connection.bucket("riak-index-tests-" + key)
+    val bucket = client.bucket("riak-index-tests-" + key)
 
     bucket.fetch(key).await must beNone
 
