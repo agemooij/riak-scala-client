@@ -20,8 +20,8 @@ later but it has a low priority at the moment.
 
 A first public release to the Sonatype/Central repositories is scheduled for February 2013.
 
-This project was started in December 2012 out of frustration about the ack of non-blocking
-Scala (or Java) client libraries for [Riak]. It is still under construction.
+This project was started in December 2012 out of frustration about the (then) lack of non-blocking
+Scala (or Java) client libraries for [Riak].
 
 So far, the following Riak (http) API features are supported:
 
