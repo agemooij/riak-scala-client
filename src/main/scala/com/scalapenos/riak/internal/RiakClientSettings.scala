@@ -15,6 +15,7 @@
  */
 
 package com.scalapenos.riak
+package internal
 
 import com.typesafe.config.Config
 
