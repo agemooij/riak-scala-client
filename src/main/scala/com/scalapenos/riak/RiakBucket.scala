@@ -96,18 +96,21 @@ trait RiakBucket {
 
   def n_val(implicit ec: ExecutionContext): Future[Int] = numberOfReplicas
   def numberOfReplicas(implicit ec: ExecutionContext): Future[Int] = properties.map(_.numberOfReplicas)
-  def n_val_=(number: Int): Future[Unit] = numberOfReplicas_=(number)
-  def numberOfReplicas_=(number: Int): Future[Unit] = properties_=(Set(NumberOfReplicas(number)))
+  def n_val_=(number: Int): Future[Unit] = setNumberOfReplicas(number)
+  def numberOfReplicas_=(number: Int): Future[Unit] = setNumberOfReplicas(number)
+  def setNumberOfReplicas(number: Int): Future[Unit] = properties_=(Set(NumberOfReplicas(number)))
 
   def allow_mult(implicit ec: ExecutionContext): Future[Boolean] = allowSiblings
   def allowSiblings(implicit ec: ExecutionContext): Future[Boolean] = properties.map(_.allowSiblings)
-  def allow_mult_=(value: Boolean): Future[Unit] = allowSiblings_=(value)
-  def allowSiblings_=(value: Boolean): Future[Unit] = properties_=(Set(AllowSiblings(value)))
+  def allow_mult_=(value: Boolean): Future[Unit] = setAllowSiblings(value)
+  def allowSiblings_=(value: Boolean): Future[Unit] = setAllowSiblings(value)
+  def setAllowSiblings(value: Boolean): Future[Unit] = properties_=(Set(AllowSiblings(value)))
 
   def last_write_wins(implicit ec: ExecutionContext): Future[Boolean] = lastWriteWins
   def lastWriteWins(implicit ec: ExecutionContext): Future[Boolean] = properties.map(_.lastWriteWins)
-  def last_write_wins_=(value: Boolean): Future[Unit] = lastWriteWins_=(value)
-  def lastWriteWins_=(value: Boolean): Future[Unit] = properties_=(Set(LastWriteWins(value)))
+  def last_write_wins_=(value: Boolean): Future[Unit] = setLastWriteWins(value)
+  def lastWriteWins_=(value: Boolean): Future[Unit] = setLastWriteWins(value)
+  def setLastWriteWins(value: Boolean): Future[Unit] = properties_=(Set(LastWriteWins(value)))
 
 }
 
