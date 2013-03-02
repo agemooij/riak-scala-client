@@ -39,6 +39,9 @@ private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: R
   def store(key: String, value: RiakValue, returnBody: Boolean) = helper.store(server, bucket, key, value, returnBody, resolver)
 
   def delete(key: String) = helper.delete(server, bucket, key)
+
+  def properties = helper.getBucketProperties(server, bucket)
+  def properties_=(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, bucket, newProperties)
 }
 
 
@@ -75,6 +78,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
   import org.slf4j.LoggerFactory
 
   import SprayClientExtras._
+  import SprayJsonSupport._
   import RiakHttpHeaders._
   import RiakHttpClientHelper._
 
@@ -103,7 +107,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
   }
 
   def fetch(server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: ConflictResolver): Future[List[RiakValue]] = {
-    httpRequest(Get(url(server, bucket, index))).flatMap { response =>
+    httpRequest(Get(indexUrl(server, bucket, index))).flatMap { response =>
       response.status match {
         case OK              => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
         case BadRequest      => throw new ParametersInvalid(s"""Invalid index name ("${index.fullName}") or value ("${index.value}").""")
@@ -113,7 +117,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
   }
 
   def fetch(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange, resolver: ConflictResolver): Future[List[RiakValue]] = {
-    httpRequest(Get(url(server, bucket, indexRange))).flatMap { response =>
+    httpRequest(Get(indexRangeUrl(server, bucket, indexRange))).flatMap { response =>
       response.status match {
         case OK              => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
         case BadRequest      => throw new ParametersInvalid(s"""Invalid index name ("${indexRange.fullName}") or range ("${indexRange.start}" to "${indexRange.start}").""")
@@ -157,6 +161,24 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
     }
   }
 
+  def getBucketProperties(server: RiakServerInfo, bucket: String): Future[RiakBucketProperties] = {
+    import spray.httpx.unmarshalling._
+
+    httpRequest(Get(bucketPropertiesUrl(server, bucket))).map { response =>
+      response.status match {
+        case OK    => response.entity.as[RiakBucketProperties] match {
+          case Right(properties) => properties
+          case Left(error) => throw new BucketOperationFailed(s"Fetching properties of bucket '$bucket' failed because the response entity could not be parsed.")
+        }
+        case other => throw new BucketOperationFailed(s"Fetching properties of bucket '$bucket' produced an unexpected response code '$other'.")
+      }
+    }
+  }
+
+  def setBucketProperties(server: RiakServerInfo, bucket: String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] = {
+    successful(())
+  }
+
 
   // ==========================================================================
   // Request building
@@ -191,18 +213,23 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
     def queryString = s"?returnbody=$returnBody"
   }
 
-  private def url(server: RiakServerInfo, bucket: String, key: String, parameters: QueryParameters = NoQueryParameters): String = {
+  private def bucketUrl(server: RiakServerInfo, bucket: String): String = {
     val protocol = if (server.useSSL) "https" else "http"
     val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
 
-    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/keys/${encode(key)}${parameters.queryString}"
+    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}"
   }
 
-  private def url(server: RiakServerInfo, bucket: String, index: RiakIndex): String = {
-    val protocol = if (server.useSSL) "https" else "http"
-    val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
+  private def url(server: RiakServerInfo, bucket: String, key: String, parameters: QueryParameters = NoQueryParameters): String = {
+    s"${bucketUrl(server, bucket)}/keys/${encode(key)}${parameters.queryString}"
+  }
 
-    // both index name and index value are double-encoded because Riak eagerly decodes the request
+  private def bucketPropertiesUrl(server: RiakServerInfo, bucket: String): String = {
+    s"${bucketUrl(server, bucket)}/props"
+  }
+
+  private def indexUrl(server: RiakServerInfo, bucket: String, index: RiakIndex): String = {
+    // both index name and String index values are double-encoded because Riak eagerly decodes the request
     // and then tries to match the decoded value against our encoded indexes
     val indexName = encode(encode(index.fullName))
     val indexValue = index.value match {
@@ -210,14 +237,11 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
       case s: String => encode(encode(s))
     }
 
-    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/index/${indexName}/$indexValue"
+    s"${bucketUrl(server, bucket)}/index/${indexName}/$indexValue"
   }
 
-  private def url(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange): String = {
-    val protocol = if (server.useSSL) "https" else "http"
-    val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
-
-    // both index name and index value are double-encoded because Riak eagerly decodes the request
+  private def indexRangeUrl(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange): String = {
+    // both index name and String index values are double-encoded because Riak eagerly decodes the request
     // and then tries to match the decoded value against our encoded indexes
     val indexName = encode(encode(indexRange.fullName))
     val (indexStart, indexEnd) = indexRange.start match {
@@ -225,7 +249,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
       case s: String => (encode(encode(indexRange.start.toString)), encode(encode(indexRange.end.toString)))
     }
 
-    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}/index/${indexName}/${indexStart}/${indexEnd}"
+    s"${bucketUrl(server, bucket)}/index/${indexName}/${indexStart}/${indexEnd}"
   }
 
 

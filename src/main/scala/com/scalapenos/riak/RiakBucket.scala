@@ -18,7 +18,7 @@ package com.scalapenos.riak
 
 
 trait RiakBucket {
-  import scala.concurrent.Future
+  import scala.concurrent.{ExecutionContext, Future}
   import internal._
 
   /**
@@ -90,28 +90,23 @@ trait RiakBucket {
   def delete(key: String): Future[Unit]
 
 
-  // TODO: implement support for reading and writing bucket properties
-  // def allow_mult: Future[Boolean]
-  // def allow_mult_=(allow: Boolean): Future[Unit]
+  def properties: Future[RiakBucketProperties]
+  def properties_=(newProperties: Set[RiakBucketProperty[_]]): Future[Unit]
 
+  def n_val(implicit ec: ExecutionContext): Future[Int] = numberOfReplicas
+  def numberOfReplicas(implicit ec: ExecutionContext): Future[Int] = properties.map(_.numberOfReplicas)
+  def n_val_=(number: Int): Future[Unit] = numberOfReplicas_=(number)
+  def numberOfReplicas_=(number: Int): Future[Unit] = properties_=(Set(NumberOfReplicas(number)))
 
-  /* Writable bucket properties:
+  def allow_mult(implicit ec: ExecutionContext): Future[Boolean] = allowSiblings
+  def allowSiblings(implicit ec: ExecutionContext): Future[Boolean] = properties.map(_.allowSiblings)
+  def allow_mult_=(value: Boolean): Future[Unit] = allowSiblings_=(value)
+  def allowSiblings_=(value: Boolean): Future[Unit] = properties_=(Set(AllowSiblings(value)))
 
-  {
-    "props": {
-      "n_val": 3,
-      "allow_mult": true,
-      "last_write_wins": false,
-      "precommit": [],
-      "postcommit": [],
-      "r": "quorum",
-      "w": "quorum",
-      "dw": "quorum",
-      "rw": "quorum",
-      "backend": ""
-    }
-  }
+  def last_write_wins(implicit ec: ExecutionContext): Future[Boolean] = lastWriteWins
+  def lastWriteWins(implicit ec: ExecutionContext): Future[Boolean] = properties.map(_.lastWriteWins)
+  def last_write_wins_=(value: Boolean): Future[Unit] = lastWriteWins_=(value)
+  def lastWriteWins_=(value: Boolean): Future[Unit] = properties_=(Set(LastWriteWins(value)))
 
-  */
 }
 
