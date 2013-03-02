@@ -23,11 +23,11 @@ import scala.util._
 import java.util.UUID._
 
 
-class RiakClientSpec extends RiakClientSpecification with RandomKeySupport {
+class RiakClientSpec extends RiakClientSpecification {
 
   "A RiakClient" should {
-    "support storing any class T if there is a Serializer[T] and a RiakIndexer[T]in scope" in {
-      val bucket = client.bucket("riak-client-tests-" + randomKey)
+    "support calling the Riak ping API" in {
+
 
       pending
     }
