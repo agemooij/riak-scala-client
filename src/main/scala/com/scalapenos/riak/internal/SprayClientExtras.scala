@@ -24,3 +24,18 @@ private[riak] object SprayClientExtras {
 
   def addOptionalHeader(header: => Option[HttpHeader]): RequestTransformer = _.mapHeaders(headers => header.toList ++ headers)
 }
+
+
+private[riak] object SprayJsonSupport extends spray.httpx.SprayJsonSupport {
+  import spray.json._
+
+  implicit object JsObjectFormat extends RootJsonFormat[JsObject] {
+    def write(jsObject: JsObject) = jsObject
+    def read(value: JsValue) = value.asJsObject
+  }
+
+  implicit object JsArrayFormat extends RootJsonFormat[JsArray] {
+    def write(jsArray: JsArray) = jsArray
+    def read(value: JsValue) = value.asInstanceOf[JsArray]
+  }
+}
