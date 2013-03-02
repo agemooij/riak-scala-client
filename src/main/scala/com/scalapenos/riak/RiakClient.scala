@@ -17,7 +17,6 @@
 package com.scalapenos.riak
 
 import akka.actor._
-import internal._
 
 
 // ============================================================================
@@ -58,6 +57,8 @@ object RiakClientExtension extends ExtensionId[RiakClientExtension] with Extensi
 }
 
 class RiakClientExtension(system: ExtendedActorSystem) extends Extension {
+  import internal._
+
   private[riak] val settings = new RiakClientSettings(system.settings.config)
   private[riak] lazy val httpHelper = new RiakHttpClientHelper(system: ActorSystem)
 
