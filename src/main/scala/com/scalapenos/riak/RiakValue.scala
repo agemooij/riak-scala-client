@@ -16,6 +16,8 @@
 
 package com.scalapenos.riak
 
+import internal.DateTimeSupport._
+
 
 // ============================================================================
 // RiakMeta
@@ -47,12 +49,12 @@ final case class RiakValue(
   lastModified: DateTime,
   indexes: Set[RiakIndex] = Set.empty[RiakIndex]
 ) {
-  def withData(newData: String): RiakValue = copy(data = newData)
+  def withData(newData: String): RiakValue = copy(data = newData, lastModified = currentDateTimeUTC)
   def withData[T: RiakSerializer: RiakIndexer](data: T): RiakValue = {
     val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(data)
     val indexes = implicitly[RiakIndexer[T]].index(data)
 
-    RiakValue(dataAsString, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now, indexes)
+    RiakValue(dataAsString, contentType, VClock.NotSpecified, ETag.NotSpecified, currentDateTimeUTC, indexes)
   }
 
   def as[T: RiakDeserializer]: T = implicitly[RiakDeserializer[T]].deserialize(data, contentType)
@@ -64,13 +66,13 @@ object RiakValue {
     val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(data)
     val indexes = implicitly[RiakIndexer[T]].index(data)
 
-    RiakValue(dataAsString, contentType, VClock.NotSpecified, ETag.NotSpecified, DateTime.now, indexes)
+    RiakValue(dataAsString, contentType, VClock.NotSpecified, ETag.NotSpecified, currentDateTimeUTC, indexes)
   }
 
   def apply[T: RiakSerializer: RiakIndexer](meta: RiakMeta[T]): RiakValue = {
     val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(meta.data)
     val indexes = meta.indexes ++ implicitly[RiakIndexer[T]].index(meta.data)
 
-    RiakValue(dataAsString, contentType, meta.vclock, meta.etag, DateTime.now, indexes)
+    RiakValue(dataAsString, contentType, meta.vclock, meta.etag, currentDateTimeUTC, indexes)
   }
 }

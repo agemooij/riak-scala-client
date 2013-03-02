@@ -34,7 +34,7 @@ private[riak] object RiakHttpClientHelper {
   }
 }
 
-private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSupport {
+private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSupport with DateTimeSupport {
   import scala.concurrent.Future
   import scala.concurrent.Future._
 
@@ -96,14 +96,14 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   }
 
   def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, returnBody: Boolean, resolver: ConflictResolver): Future[Option[RiakValue]] = {
-    // TODO: add the Last-Modified value from the RiakValue as a header
-
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock))
     val etagHeader = value.etag.toOption.map(etag => RawHeader(`ETag`, etag))
+    val lastModifiedHeader = lastModifiedFromDateTime(value.lastModified)
     val indexHeaders = value.indexes.map(toIndexHeader(_)).toList
 
     val request = addOptionalHeader(vclockHeader) ~>
                   addOptionalHeader(etagHeader) ~>
+                  addHeader(lastModifiedHeader) ~>
                   addHeaders(indexHeaders) ~>
                   httpRequest
 
@@ -183,16 +183,17 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     entity.toOption.flatMap { body =>
       val vClockOption       = headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).map(_.value)
       val eTagOption         = headers.find(_.is("etag")).map(_.value)
-      val lastModifiedOption = headers.find(_.is("last-modified"))
-                                      .map(h => new DateTime(h.asInstanceOf[`Last-Modified`].date.clicks))
+      val lastModifiedOption = headers.find(_.is("last-modified")).map(h => dateTimeFromLastModified(h.asInstanceOf[`Last-Modified`]))
       val indexes            = toRiakIndexes(headers)
-
-      // TODO: make sure the DateTime is always in the Zulu zone
 
       for (vClock <- vClockOption; eTag <- eTagOption; lastModified <- lastModifiedOption)
       yield RiakValue(body.asString, body.contentType, vClock, eTag, lastModified, indexes)
     }
   }
+
+  def dateTimeFromLastModified(lm: `Last-Modified`): DateTime = fromSprayDateTime(lm.date)
+  def lastModifiedFromDateTime(dateTime: DateTime): `Last-Modified` = `Last-Modified`(toSprayDateTime(dateTime))
+
 
   // ==========================================================================
   // HttpHeader <=> RiakIndex

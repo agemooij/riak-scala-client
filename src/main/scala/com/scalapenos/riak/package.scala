@@ -27,7 +27,6 @@ package object riak {
   val ContentType = spray.http.ContentType
 
   type DateTime = org.joda.time.DateTime
-  val DateTime  = com.github.nscala_time.time.StaticDateTime
 
 
   // ============================================================================
