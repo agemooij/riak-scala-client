@@ -4,6 +4,51 @@
 A fast, non-blocking idiomatic Scala client library for interacting with [Riak].
 
 
+## Current Status (March 2013): Preparing for public release
+
+A first stable public version, 0.8, is scheduled to be released to the Sonatype/Central
+repositories around mid-March 2013. We are currently adding the last finishing touches.
+
+This project was started in December 2012 out of frustration about the (then) lack of non-blocking
+Scala (or Java) client libraries for [Riak].
+
+
+## Features
+
+So far, the following Riak (http) API features are supported:
+
+- Fetch
+- Store
+- Delete
+- Secondary Indexes (2i)
+    - Fetching exact matches
+    - Fetching ranges
+    - Storing with indexes
+- Getting/setting bucket properties
+
+Other features include:
+
+- Automatic (de)serialization of Scala (case) classes using type classes
+- Automatic indexing of Scala (case) classes using type classes
+- An untyped RiakValue class for interacting with raw Riak values and their associated
+  meta data (vlock, etag, content type, last modified time, indexes, etc.)
+- A typed RiakMeta[T] class for interacting with deserialized values while retaining
+  their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)
+- Customizable and strongly typed conflict resolution on all fetches (and stores when returnbody=true)
+- Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)
+
+These Riak (http) API features are currently missing or under construction:
+
+- Map Reduce
+- link walking
+- ping
+- status
+- listing all buckets
+- listing all keys in a bucket
+- Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
+  If-Modified-Since and If-Unmodified-Since for LastModified)
+
+
 ## Design goals
 
 - It should be non-blocking (i.e. all calls are handled asynchronously and result in Futures)
@@ -14,43 +59,6 @@ A fast, non-blocking idiomatic Scala client library for interacting with [Riak].
 
 The initial focus is on supporting the Riak HTTP API. Protobuf support might be added
 later but it has a low priority at the moment.
-
-
-## Current Status: Preparing for public release
-
-A first public release to the Sonatype/Central repositories is scheduled for February 2013.
-
-This project was started in December 2012 out of frustration about the (then) lack of non-blocking
-Scala (or Java) client libraries for [Riak].
-
-So far, the following Riak (http) API features are supported:
-
-- Fetch
-- Store
-- Delete
-- Customizable and strongly typed conflict resolution on all fetches (and stores when returnbody=true)
-- Automatic (de)serialization of Scala (case) classes using type classes
-- Secondary Indexes (2i)
-    - Fetching exact matches
-    - Fetching ranges
-    - Automatic indexing of Scala (case) classes using type classes
-- An untyped RiakValue class for interacting with raw Riak values and their associated
-  meta data (vlock, etag, content type, last modified time, indexes, etc.)
-- A typed RiakMeta[T] class for interacting with deserialized values while retaining
-  their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)
-- Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)
-
-These Riak features are currently missing or under construction:
-
-- getting/setting bucket properties
-- listing all buckets
-- listing all keys in a bucket
-- ping
-- status
-- Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
-  If-Modified-Since and If-Unmodified-Since for LastModified)
-- link walking
-- Map Reduce
 
 
 ## Design and Implementation
