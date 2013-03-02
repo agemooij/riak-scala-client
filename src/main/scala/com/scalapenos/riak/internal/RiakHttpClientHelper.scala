@@ -34,7 +34,7 @@ private[riak] object RiakHttpClientHelper {
   }
 }
 
-private[riak] class RiakHttpClientHelper(system: ActorSystem) {
+private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSupport {
   import scala.concurrent.Future
   import scala.concurrent.Future._
 
@@ -175,65 +175,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
 
 
   // ==========================================================================
-  // URL building and Query Parameters
-  // ==========================================================================
-
-  private def encode(in: String) = java.net.URLEncoder.encode(in, "UTF-8")
-  private def decode(in: String) = java.net.URLDecoder.decode(in, "UTF-8")
-
-  private sealed trait QueryParameters {
-    def queryString: String
-  }
-
-  private case object NoQueryParameters extends QueryParameters {
-    def queryString = ""
-  }
-
-  private case class StoreQueryParameters(returnBody: Boolean = false) extends QueryParameters {
-    def queryString = s"?returnbody=$returnBody"
-  }
-
-  private def bucketUrl(server: RiakServerInfo, bucket: String): String = {
-    val protocol = if (server.useSSL) "https" else "http"
-    val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
-
-    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${encode(bucket)}"
-  }
-
-  private def url(server: RiakServerInfo, bucket: String, key: String, parameters: QueryParameters = NoQueryParameters): String = {
-    s"${bucketUrl(server, bucket)}/keys/${encode(key)}${parameters.queryString}"
-  }
-
-  private def bucketPropertiesUrl(server: RiakServerInfo, bucket: String): String = {
-    s"${bucketUrl(server, bucket)}/props"
-  }
-
-  private def indexUrl(server: RiakServerInfo, bucket: String, index: RiakIndex): String = {
-    // both index name and String index values are double-encoded because Riak eagerly decodes the request
-    // and then tries to match the decoded value against our encoded indexes
-    val indexName = encode(encode(index.fullName))
-    val indexValue = index.value match {
-      case l: Long => l.toString
-      case s: String => encode(encode(s))
-    }
-
-    s"${bucketUrl(server, bucket)}/index/${indexName}/$indexValue"
-  }
-
-  private def indexRangeUrl(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange): String = {
-    // both index name and String index values are double-encoded because Riak eagerly decodes the request
-    // and then tries to match the decoded value against our encoded indexes
-    val indexName = encode(encode(indexRange.fullName))
-    val (indexStart, indexEnd) = indexRange.start match {
-      case l: Long => (indexRange.start.toString, indexRange.end.toString)
-      case s: String => (encode(encode(indexRange.start.toString)), encode(encode(indexRange.end.toString)))
-    }
-
-    s"${bucketUrl(server, bucket)}/index/${indexName}/${indexStart}/${indexEnd}"
-  }
-
-
-  // ==========================================================================
   // Response => RiakValue
   // ==========================================================================
 
@@ -257,13 +198,13 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
   // HttpHeader <=> RiakIndex
   // ==========================================================================
 
-  // TODO: declare a config setting for whether we encode the index name and/or value
+  // TODO: declare a config setting for whether we url encode the index name and/or value
   //       maybe even at the top-level (for bucket names and keys) so it matches the behaviour of the riak url compatibility setting
 
   private def toIndexHeader(index: RiakIndex): HttpHeader = {
     index match {
-      case l: RiakLongIndex   => RawHeader(indexHeaderPrefix + encode(l.fullName), l.value.toString)
-      case s: RiakStringIndex => RawHeader(indexHeaderPrefix + encode(s.fullName), encode(s.value))
+      case l: RiakLongIndex   => RawHeader(indexHeaderPrefix + urlEncode(l.fullName), l.value.toString)
+      case s: RiakStringIndex => RawHeader(indexHeaderPrefix + urlEncode(s.fullName), urlEncode(s.value))
     }
   }
 
@@ -272,8 +213,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
 
     def toRiakIndex(header: HttpHeader): Set[RiakIndex] = {
       header.lowercaseName match {
-        case IndexNameAndType(name, "int") => header.value.split(',').map(value => RiakIndex(decode(name), value.trim.toLong)).toSet
-        case IndexNameAndType(name, "bin") => header.value.split(',').map(value => RiakIndex(decode(name), decode(value.trim))).toSet
+        case IndexNameAndType(name, "int") => header.value.split(',').map(value => RiakIndex(urlDecode(name), value.trim.toLong)).toSet
+        case IndexNameAndType(name, "bin") => header.value.split(',').map(value => RiakIndex(urlDecode(name), urlDecode(value.trim))).toSet
         case _                             => Set.empty[RiakIndex]
       }
     }
