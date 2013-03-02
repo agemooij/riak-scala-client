@@ -23,10 +23,8 @@ import scala.util._
 
 import akka.actor._
 
-import spray.util._
 
-
-class ConflictResolutionSpec extends AkkaActorSystemSpecification {
+class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySupport {
 
   "When resolving conflicts with a custom resolver during fetch, the client" should {
     "write the resolved value back to Riak and return the new value with the appropriate vector clock" in {
@@ -36,7 +34,11 @@ class ConflictResolutionSpec extends AkkaActorSystemSpecification {
         }
       }
 
-      val bucket = RiakClient(system).bucket(name = "riak-conflict-resolution-tests", resolver = resolver)
+      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, resolver)
+
+      (bucket.allowSiblings = true).await
+
+      bucket.allowSiblings.await must beTrue
 
       val stored1 = bucket.store("foo", "bar").await
       val stored2 = bucket.store("foo", "foo").await
