@@ -77,7 +77,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       val bucket = client.bucket("riak-bucket-tests-" + randomKey)
       val oldProperties = bucket.properties.await
 
-      (bucket.properties = Set()).await
+      bucket.setProperties(Set()).await
 
       val newProperties = bucket.properties.await
 
