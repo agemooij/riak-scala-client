@@ -24,7 +24,6 @@ import java.util.UUID._
 
 
 class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
-  val bucket = client.bucket("riak-bucket-tests-" + randomKey)
 
   "A RiakBucket" should {
     "support storing any class T if there is a Serializer[T] and a RiakIndexer[T]in scope" in {
@@ -32,6 +31,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "support getting the bucket properties" in {
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
       val properties = bucket.properties.await
 
       properties.numberOfReplicas must beEqualTo(3)
@@ -39,24 +39,79 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       properties.lastWriteWins must beFalse
     }
 
+    "support getting the 'n_val' bucket property directly" in {
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+
+      bucket.numberOfReplicas.await must beEqualTo(3)
+      bucket.n_val.await must beEqualTo(3)
+    }
+
+    "support getting the 'allow_mult' bucket property directly" in {
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+
+      bucket.allowSiblings.await must beFalse
+      bucket.allow_mult.await must beFalse
+    }
+
+    "support getting the 'last_write_wins' bucket property directly" in {
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+
+      bucket.lastWriteWins.await must beFalse
+      bucket.last_write_wins.await must beFalse
+    }
+
     "support setting the bucket properties" in {
-      pending
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+      val oldProperties = bucket.properties.await
+
+      (bucket.properties = Set(NumberOfReplicas(5), AllowSiblings(true), LastWriteWins(true))).await
+
+      val newProperties = bucket.properties.await
+
+      oldProperties.numberOfReplicas must not be equalTo(newProperties.numberOfReplicas)
+      oldProperties.allowSiblings must not be equalTo(newProperties.allowSiblings)
+      oldProperties.lastWriteWins must not be equalTo(newProperties.lastWriteWins)
     }
 
     "support setting the bucket properties with an empty set (nothing happens)" in {
-      pending
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+      val oldProperties = bucket.properties.await
+
+      (bucket.properties = Set()).await
+
+      val newProperties = bucket.properties.await
+
+      oldProperties must be equalTo(newProperties)
     }
 
-    "support setting and getting the 'n_val' bucket property" in {
-      pending
+    "support setting the 'n_val' bucket property directly" in {
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+
+      bucket.numberOfReplicas.await must beEqualTo(3)
+
+      (bucket.numberOfReplicas = 5).await
+
+      bucket.numberOfReplicas.await must beEqualTo(5)
     }
 
-    "support setting and getting the 'allow_mult' bucket property" in {
-      pending
+    "support setting the 'allow_mult' bucket property directly" in {
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+
+      bucket.allowSiblings.await must beFalse
+
+      (bucket.allowSiblings = true).await
+
+      bucket.allowSiblings.await must beTrue
     }
 
-    "support setting and getting the 'last_value_wins' bucket property" in {
-      pending
+    "support setting the 'last_write_wins' bucket property directly" in {
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+
+      bucket.lastWriteWins.await must beFalse
+
+      (bucket.lastWriteWins = true).await
+
+      bucket.lastWriteWins.await must beTrue
     }
   }
 

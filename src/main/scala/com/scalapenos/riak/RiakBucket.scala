@@ -92,6 +92,7 @@ trait RiakBucket {
 
   def properties: Future[RiakBucketProperties]
   def properties_=(newProperties: Set[RiakBucketProperty[_]]): Future[Unit]
+  def setProperties(newProperties: Set[RiakBucketProperty[_]]): Future[Unit] = properties_=(newProperties)
 
   def n_val(implicit ec: ExecutionContext): Future[Int] = numberOfReplicas
   def numberOfReplicas(implicit ec: ExecutionContext): Future[Int] = properties.map(_.numberOfReplicas)

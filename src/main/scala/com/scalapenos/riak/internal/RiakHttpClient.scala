@@ -166,9 +166,9 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
 
     httpRequest(Get(bucketPropertiesUrl(server, bucket))).map { response =>
       response.status match {
-        case OK    => response.entity.as[RiakBucketProperties] match {
+        case OK => response.entity.as[RiakBucketProperties] match {
           case Right(properties) => properties
-          case Left(error) => throw new BucketOperationFailed(s"Fetching properties of bucket '$bucket' failed because the response entity could not be parsed.")
+          case Left(error)       => throw new BucketOperationFailed(s"Fetching properties of bucket '$bucket' failed because the response entity could not be parsed.")
         }
         case other => throw new BucketOperationFailed(s"Fetching properties of bucket '$bucket' produced an unexpected response code '$other'.")
       }
@@ -176,7 +176,18 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) {
   }
 
   def setBucketProperties(server: RiakServerInfo, bucket: String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] = {
-    successful(())
+    import spray.json._
+
+    val entity = JsObject("props" -> JsObject(newProperties.map(property => (property.name -> property.json)).toMap))
+
+    httpRequest(Put(bucketPropertiesUrl(server, bucket), entity)).map { response =>
+      response.status match {
+        case NoContent            => ()
+        case BadRequest           => throw new ParametersInvalid(s"Setting properties of bucket '$bucket' failed because the http request contained invalid data.")
+        case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting properties of bucket '$bucket' failed because the content type of the http request was not 'application/json'.")
+        case other                => throw new BucketOperationFailed(s"Setting properties of bucket '$bucket' produced an unexpected response code '$other'.")
+      }
+    }
   }
 
 
