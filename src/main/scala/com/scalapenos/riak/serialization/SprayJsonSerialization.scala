@@ -44,9 +44,6 @@ trait SprayJsonSerialization {
       }
     }
   }
-
-  implicit def sprayJsonSerializer[T: RootJsonWriter] = new SprayJsonSerializer[T]
-  implicit def sprayJsonDeserializer[T: RootJsonReader: ClassTag] = new SprayJsonDeserializer[T]
 }
 
 object SprayJsonSerialization extends SprayJsonSerialization
