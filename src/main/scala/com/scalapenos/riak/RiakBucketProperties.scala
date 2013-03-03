@@ -111,6 +111,8 @@ sealed trait RiakBucketProperty[T] {
 }
 
 final class NumberOfReplicas(val value: Int) extends RiakBucketProperty[Int] {
+  require(value > 0, s"Number of replicas (n_val) must be an integer larger than 0. You specified $value.")
+
   def name = "n_val"
   def json = JsNumber(value)
 }

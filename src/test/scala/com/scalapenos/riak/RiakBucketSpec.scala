@@ -84,7 +84,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       oldProperties must be equalTo(newProperties)
     }
 
-    "support setting the 'n_val' bucket property directly" in {
+    "support directly setting the 'n_val' bucket property" in {
       val bucket = client.bucket("riak-bucket-tests-" + randomKey)
 
       bucket.numberOfReplicas.await must beEqualTo(3)
@@ -94,7 +94,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       bucket.numberOfReplicas.await must beEqualTo(5)
     }
 
-    "support setting the 'allow_mult' bucket property directly" in {
+    "support directly setting the 'allow_mult' bucket property" in {
       val bucket = client.bucket("riak-bucket-tests-" + randomKey)
 
       bucket.allowSiblings.await must beFalse
@@ -104,7 +104,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       bucket.allowSiblings.await must beTrue
     }
 
-    "support setting the 'last_write_wins' bucket property directly" in {
+    "support directly setting the 'last_write_wins' bucket property" in {
       val bucket = client.bucket("riak-bucket-tests-" + randomKey)
 
       bucket.lastWriteWins.await must beFalse
@@ -112,6 +112,20 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       (bucket.lastWriteWins = true).await
 
       bucket.lastWriteWins.await must beTrue
+    }
+
+    "fail when directly setting the 'n_val' bucket property to any integer smaller than 1" in {
+      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+
+      (bucket.numberOfReplicas = 0).await must throwA[IllegalArgumentException]
+      (bucket.numberOfReplicas = -1).await must throwA[IllegalArgumentException]
+      (bucket.numberOfReplicas = -1000).await must throwA[IllegalArgumentException]
+    }
+
+    "fail when creating an instance of NumberOfReplicas (n_val) with any integer smaller than 1" in {
+      NumberOfReplicas(0) must throwA[IllegalArgumentException]
+      NumberOfReplicas(-1) must throwA[IllegalArgumentException]
+      NumberOfReplicas(-42) must throwA[IllegalArgumentException]
     }
   }
 
