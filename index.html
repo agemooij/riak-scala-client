@@ -1,97 +1,165 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <meta charset="utf-8">
+    <title>Riak Scala Client - Scalapenos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/bootstrap-responsive.css">
+    <link rel="stylesheet" href="css/docs.css">
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="js/html5shiv.js"></script>
     <![endif]-->
-    <title>Riak Scala Client by agemooij</title>
+
+    <!-- Fav and touch icons -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="ico/apple-touch-icon-114-precomposed.png">
+      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="ico/apple-touch-icon-72-precomposed.png">
+                    <link rel="apple-touch-icon-precomposed" href="ico/apple-touch-icon-57-precomposed.png">
+                                   <link rel="shortcut icon" href="ico/favicon.png">
   </head>
 
   <body>
-    <div id="container">
-      <div class="inner">
 
-        <header>
-          <h1>Riak Scala Client</h1>
-          <h2>A fast, non-blocking Scala Riak client library based on Akka and Spray</h2>
-        </header>
-
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/agemooij/riak-scala-client/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/agemooij/riak-scala-client/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/agemooij/riak-scala-client" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
-
-        <hr>
-
-        <section id="main_content">
-          <p>A fast, non-blocking idiomatic Scala client library for interacting with Riak.</p>
-
-<h2>Current Status</h2>
-
-<p><strong><em>Preparing for a first public release</em></strong></p>
-
-<p>This project is very new and still under heavy construction. The aim is to support
-most, if not all, features exposed by the Riak HTTP API.</p>
-
-<p>A first public release to the Sonatype/Central repositories is scheduled for mid-March 2013.</p>
-
-<p>So far, the following Riak API features are supported:</p>
-
-<ul>
-<li>Fetch</li>
-<li>Store</li>
-<li>Delete</li>
-<li>Customizable and strongly typed conflict resolution on all fetches (and Stores when returnbody=true)</li>
-<li>Automatic conversion between raw RiakValues and Scala (case) classes using type classes</li>
-<li>A RiakMeta[T] box type for retaining the riak meta data (like the vclock, the etag, the last modified date, the indexes, etc.) after conversion to Scala (case) classes.</li>
-<li>Secondary Indexes (2i): exact matches</li>
-<li>Secondary Indexes (2i): ranges</li>
-<li>auto-retry (a standard feature of the underlying spray-client library)</li>
-</ul><p>These Riak features are currently missing and/or under construction:</p>
-
-<ul>
-<li>link walking</li>
-<li>Map Reduce</li>
-</ul><h2>Design goals</h2>
-
-<ul>
-<li>It should provide an idiomatic Scala client API</li>
-<li>It should be non-blocking (i.e. all calls are handled asynchronously and result in Futures)</li>
-<li>Easy Integration with Akka</li>
-</ul><p>The initial focus will be on supporting the Riak HTTP API. Protobuf support might be added
-later but it has a low priority at the moment.</p>
-
-<h2>Design and Implementation</h2>
-
-<p>The <em>riak-scala-client</em> is based on <a href="http://akka.io/">Akka</a> 2.1 and and <a href="http://spray.io/">Spray</a> client 1.1.</p>
-
-<p>The client is implemented as an Akka extension, making it very easy to use
-from Akka-based applications and non-Akka applications alike.</p>
-
-<h2>Why such a boring name?</h2>
-
-<p>It seems all the cool names (scalariak, riakka, riaktor, etc.) have been taken already.
-If you come up with a cooler name, please let us know and eternal fame will be yours!</p>
-
-<h2>License</h2>
-
-<p>The <em>riak-scala-client</em> is licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">APL 2.0</a>.</p>
-        </section>
-
-        <footer>
-          Riak Scala Client is maintained by <a href="https://github.com/agemooij">agemooij</a><br>
-          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
-        </footer>
-
-        
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="#">Riak Scala Client</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="active"><a href="#">Home</a></li>
+              <li><a href="#about">Documentation</a></li>
+              <li><a href="#contact">Examples</a></li>
+              <!-- <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li><a href="#">Action</a></li>
+                  <li><a href="#">Another action</a></li>
+                  <li><a href="#">Something else here</a></li>
+                  <li class="divider"></li>
+                  <li class="nav-header">Nav header</li>
+                  <li><a href="#">Separated link</a></li>
+                  <li><a href="#">One more separated link</a></li>
+                </ul>
+              </li> -->
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
       </div>
     </div>
+
+    <div class="jumbotron masthead">
+    <div class="container">
+
+      <h1>Riak Scala Client</h1>
+      <p>A fast, non-blocking idiomatic Scala client library for interacting with Riak</p>
+
+      <!-- <p>
+        <a class="btn btn-large btn-github" href="https://github.com/agemooij/riak-scala-client" target="_blank">
+          <i class="icon-github icon-large"></i>
+          View Project on GitHub
+        </a>
+      </p> -->
+
+    </div>
+    </div>
+
+    <div class="bs-docs-social">
+      <div class="container">
+        <ul class="bs-docs-social-buttons">
+          <li>
+            <iframe class="github-btn"
+                    src="http://ghbtns.com/github-btn.html?user=agemooij&repo=riak-scala-client&type=watch&count=true"
+                    allowtransparency="true" frameborder="0" scrolling="0" width="100px" height="20px">
+            </iframe>
+          </li>
+          <li>
+            <iframe class="github-btn"
+                    src="http://ghbtns.com/github-btn.html?user=agemooij&repo=riak-scala-client&type=fork&count=true"
+                    allowtransparency="true" frameborder="0" scrolling="0" width="102px" height="20px">
+            </iframe>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+
+    <div class="container">
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="span4">
+          <h2>Heading</h2>
+          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+
+        </div>
+        <div class="span4">
+          <h2>Heading</h2>
+          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+
+        </div>
+        <div class="span4">
+          <h2>Heading</h2>
+          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+
+       </div>
+      </div>
+    </div> <!-- /container -->
+
+    <div class="container">
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="span3">
+          <h2>Heading</h2>
+          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+
+        </div>
+        <div class="span3">
+          <h2>Heading</h2>
+          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+
+        </div>
+        <div class="span3">
+          <h2>Heading</h2>
+          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+
+       </div>
+        <div class="span3">
+          <h2>Heading</h2>
+          <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
+
+        </div>
+      </div>
+    </div> <!-- /container -->
+
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap-transition.js"></script>
+    <script src="js/bootstrap-alert.js"></script>
+    <script src="js/bootstrap-modal.js"></script>
+    <script src="js/bootstrap-dropdown.js"></script>
+    <script src="js/bootstrap-scrollspy.js"></script>
+    <script src="js/bootstrap-tab.js"></script>
+    <script src="js/bootstrap-tooltip.js"></script>
+    <script src="js/bootstrap-popover.js"></script>
+    <script src="js/bootstrap-button.js"></script>
+    <script src="js/bootstrap-collapse.js"></script>
+    <script src="js/bootstrap-carousel.js"></script>
+    <script src="js/bootstrap-typeahead.js"></script>
+
   </body>
 </html>
