@@ -1,7 +1,7 @@
 
 ## What is this?
 
-A fast, non-blocking idiomatic Scala client library for interacting with [Riak].
+A fast, non-blocking Scala client library for interacting with [Riak].
 
 
 ## Current Status (March 2013): Preparing for public release
