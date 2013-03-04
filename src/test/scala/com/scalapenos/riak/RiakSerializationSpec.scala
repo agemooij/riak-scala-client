@@ -55,6 +55,12 @@ class RiakSerializationSpec extends Specification {
     }
   }
 
+  object CustomJsonFormatForClassWithoutCustomSerialization {
+    import spray.json.DefaultJsonProtocol._
+
+    implicit def jsonFormat = jsonFormat2(ClassWithoutCustomSerialization)
+  }
+
   "When serializing any type T, it" should {
     "serialize using a Serializer[T] defined in the companion object of T" in {
       val t = new ClassWithCustomSerialization("The answer is 42")
@@ -114,6 +120,26 @@ class RiakSerializationSpec extends Specification {
       val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentType(`application/json`))
 
       out must beEqualTo(data)
+    }
+
+    "serialize using any defined RootJsonWriter[T] in scope" in {
+      import CustomJsonFormatForClassWithoutCustomSerialization._
+
+      val t = new ClassWithoutCustomSerialization("The answer is", 42)
+
+      val (data, contentType) = implicitly[RiakSerializer[ClassWithoutCustomSerialization]].serialize(t)
+
+      data must beEqualTo(s"""{"a":"${t.a}","b":${t.b}}""")
+      contentType must beEqualTo(ContentType.`application/json`)
+    }
+
+    "deserialize using any defined RootJsonReader[T] in scope" in {
+      import CustomJsonFormatForClassWithoutCustomSerialization._
+
+      val data = s"""{"a":"The answer is","b":42}"""
+      val out = implicitly[RiakDeserializer[ClassWithoutCustomSerialization]].deserialize(data, ContentType(`application/json`))
+
+      out must beEqualTo(new ClassWithoutCustomSerialization("The answer is", 42))
     }
   }
 
