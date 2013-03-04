@@ -26,9 +26,9 @@ h3 code {
 /* Tweak navbar brand link to be super sleek
 -------------------------------------------------- */
 
-body > .navbar {
+/*body > .navbar {
   font-size: 13px;
-}
+}*/
 
 /* Change the docs' brand */
 body > .navbar .brand {
