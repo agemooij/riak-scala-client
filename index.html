@@ -63,6 +63,8 @@ Scala (or Java) client libraries for <a href="http://basho.com/riak/">Riak</a>.<
 </ul><p>Other features include:</p>
 
 <ul>
+<li>Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray</li>
+<li>Transparent integration with Akka projects through an Akka extension</li>
 <li>An untyped RiakValue class for interacting with raw Riak values and their associated
 meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
 <li>A typed RiakMeta[T] class for interacting with deserialized values while retaining
@@ -76,8 +78,6 @@ their associated meta data (vlock, etag, content type, last modified time, index
 </li>
 <li>Automatic indexing of Scala (case) classes using type classes</li>
 <li>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
-<li>Completely non-blocking thanks to Scala 2.10 Futures, Akka, and spray-client</li>
-<li>Transparent integration with Akka projects through an Akka extension</li>
 </ul><p>The following Riak (http) API features are still under construction:</p>
 
 <ul>
