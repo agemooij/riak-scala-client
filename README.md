@@ -51,28 +51,19 @@ The following Riak (http) API features are still under construction:
 - Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
   If-Modified-Since and If-Unmodified-Since for LastModified)
 
-The riak-scala-client has been tested against [Riak] versions 1.2.x and 1.3.0.
-
-
-## Design goals
-
-- It should be non-blocking (i.e. all calls are handled asynchronously and result in Futures)
-- It should not wrap the java client for Riak, since that only exposes a blocking API
-- It should provide an idiomatic Scala client API without resorting to hard to learn DSLs
-- It should integrate with Akka (using an Akka extension)
-- It should be easy to use
-
 The initial focus is on supporting the Riak HTTP API. Protobuf support might be added
 later but it has a low priority at the moment.
 
+The riak-scala-client has been tested against [Riak] versions 1.2.x and 1.3.0.
 
-## Design and Implementation
 
-The _riak-scala-client_ is based on [Akka] 2.1 and and [Spray] client 1.1.
+## Current Limitations
 
-The client is implemented as an Akka extension, making it very easy to use
-from Akka-based applications, with some wrapper code to make sure non-Akka
-applications are not bothered by the underlying Akka layer.
+- 2i fetches do not use streaming when processing the initial Riak response containing
+  all matching keys. This means that this list of keys matching the specified index
+  is currently read into memory in its entirety. Fetches with large (100k+) result sets can
+  be slow because of this and might potentially cause memory problems. A future release
+  will solve this by streaming the key data using iteratees.
 
 
 ## Why such a boring name?
