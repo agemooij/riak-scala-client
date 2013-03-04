@@ -88,8 +88,8 @@
     <div class="container">
       <!-- Example row of columns -->
       <div class="row">
-        <div class="span6">
-          <h2>Supported API Features</h2>
+        <div class="span4">
+          <h2>Supported Riak API</h2>
           <div class="well well-transparent">
             <ul class="icons">
               <li><i class="icon-ok"></i>Fetch</li>
@@ -108,16 +108,23 @@
           </div>
         </div>
 
-        <div class="span6">
-          <h2>Other Features</h2>
+        <div class="span8">
+          <h2>Features</h2>
           <div class="well well-transparent">
             <ul class="icons">
-              <li><i class="icon-ok"></i>Bulleted lists (like this one)</li>
-              <li><i class="icon-ok"></i>Buttons</li>
-              <li><i class="icon-ok"></i>Button groups</li>
-              <li><i class="icon-ok"></i>Navigation</li>
-              <li><i class="icon-ok"></i>Prepended form inputs</li>
-              <li><i class="icon-ok"></i>And many more with Custom CSS</li>
+              <li><i class="icon-ok"></i>Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray</li>
+              <li><i class="icon-ok"></i>Transparent integration with Akka projects through an Akka extension</li>
+              <li><i class="icon-ok"></i>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
+              <li><i class="icon-ok"></i>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
+              <li><i class="icon-ok"></i>Customizable and strongly typed conflict resolution on all fetches (and stores when returnbody=true)</li>
+              <li><i class="icon-ok"></i>Automatic (de)serialization of Scala (case) classes using type classes</li>
+              <li>
+                <ul class="icons">
+                  <li><i class="icon-ok"></i>builtin spray-json (de)serializers</li>
+                </ul>
+              </li>
+              <li><i class="icon-ok"></i>Automatic indexing of Scala (case) classes using type classes</li>
+              <li><i class="icon-ok"></i>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
             </ul>
           </div>
         </div>
