@@ -28,6 +28,8 @@ So far, the following Riak (http) API features are supported:
 
 Other features include:
 
+- Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray
+- Transparent integration with Akka projects through an Akka extension
 - An untyped RiakValue class for interacting with raw Riak values and their associated
   meta data (vlock, etag, content type, last modified time, indexes, etc.)
 - A typed RiakMeta[T] class for interacting with deserialized values while retaining
@@ -37,8 +39,6 @@ Other features include:
     - builtin spray-json (de)serializers
 - Automatic indexing of Scala (case) classes using type classes
 - Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)
-- Completely non-blocking thanks to Scala 2.10 Futures, Akka, and spray-client
-- Transparent integration with Akka projects through an Akka extension
 
 The following Riak (http) API features are still under construction:
 
