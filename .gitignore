@@ -29,3 +29,4 @@ project/plugins/project/
 /.env
 atlassian-ide-plugin.xml
 /.sublime/
+/_site/

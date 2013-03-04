@@ -1,188 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Riak Scala Client - Scalapenos</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="">
+---
+layout: main
+title: Home
+section: home
+---
+<div class="container">
+  <div class="row">
+    <div class="span1"></div>
 
-    <!-- Le styles -->
-    <link rel="stylesheet" href="css/bootstrap.css">
-    <link rel="stylesheet" href="css/bootstrap-responsive.css">
-    <link rel="stylesheet" href="css/docs.css">
-    <link rel="stylesheet" href="css/font-awesome.min.css">
-
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="js/html5shiv.js"></script>
-    <![endif]-->
-
-    <!-- Fav and touch icons -->
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="ico/apple-touch-icon-114-precomposed.png">
-      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="ico/apple-touch-icon-72-precomposed.png">
-                    <link rel="apple-touch-icon-precomposed" href="ico/apple-touch-icon-57-precomposed.png">
-                                   <link rel="shortcut icon" href="ico/favicon.png">
-  </head>
-
-  <body>
-
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="brand" href="#">Riak Scala Client</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
-              <li><a href="documentation.html">Documentation</a></li>
-              <li><a href="#apidocs">API Reference</a></li>
-              <li><a href="examples.html">Examples</a></li>
-              <li><a href="#license">License</a></li>
-            </ul>
-            <ul class="nav pull-right">
-              <li><a href="mailto:age@scalapenos.com"><i class="icon-envelope"></i> Contact</a></li>
-              <li><a href="https://github.com/agemooij/riak-scala-client"><i class="icon-github"></i> GitHub Project</a></li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
-    </div>
-
-    <div class="jumbotron masthead">
-    <div class="container">
-
-      <h1>Riak Scala Client</h1>
-      <p>A fast, non-blocking Scala client library for interacting with Riak</p>
-
-      <!-- <p>
-        <a class="btn btn-large btn-github" href="https://github.com/agemooij/riak-scala-client" target="_blank">
-          <i class="icon-github icon-large"></i>
-          View Project on GitHub
-        </a>
-      </p> -->
-
-    </div>
-    </div>
-
-    <div class="bs-docs-social">
-      <div class="container">
-        <ul class="bs-docs-social-buttons">
+    <div class="span4">
+      <h2>Supported Riak API</h2>
+      <div class="well well-transparent">
+        <ul class="icons">
+          <li><i class="icon-ok"></i>Fetch</li>
+          <li><i class="icon-ok"></i>Store</li>
+          <li><i class="icon-ok"></i>Delete</li>
+          <li><i class="icon-ok"></i>Secondary Indexes (2i)</li>
           <li>
-            <iframe class="github-btn"
-                    src="http://ghbtns.com/github-btn.html?user=agemooij&repo=riak-scala-client&type=watch&count=true"
-                    allowtransparency="true" frameborder="0" scrolling="0" width="100px" height="20px">
-            </iframe>
+            <ul class="icons">
+              <li><i class="icon-ok"></i>Fetching exact matches</li>
+              <li><i class="icon-ok"></i>Fetching ranges</li>
+              <li><i class="icon-ok"></i>Storing with indexes</li>
+            </ul>
           </li>
-          <li>
-            <iframe class="github-btn"
-                    src="http://ghbtns.com/github-btn.html?user=agemooij&repo=riak-scala-client&type=fork&count=true"
-                    allowtransparency="true" frameborder="0" scrolling="0" width="102px" height="20px">
-            </iframe>
-          </li>
+          <li><i class="icon-ok"></i>Getting/setting bucket properties</li>
         </ul>
       </div>
     </div>
 
-
-    <div class="container">
-      <!-- Example row of columns -->
-      <div class="row">
-        <div class="span1"></div>
-
-        <div class="span4">
-          <h2>Supported Riak API</h2>
-          <div class="well well-transparent">
+    <div class="span6">
+      <h2>Features</h2>
+      <div class="well well-transparent">
+        <ul class="icons">
+          <li><i class="icon-ok"></i>Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray</li>
+          <li><i class="icon-ok"></i>Transparent integration with Akka projects through an Akka extension</li>
+          <li><i class="icon-ok"></i>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
+          <li><i class="icon-ok"></i>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
+          <li><i class="icon-ok"></i>Customizable and strongly typed conflict resolution on all fetches (and stores when returnbody=true)</li>
+          <li><i class="icon-ok"></i>Automatic (de)serialization of Scala (case) classes using type classes</li>
+          <li>
             <ul class="icons">
-              <li><i class="icon-ok"></i>Fetch</li>
-              <li><i class="icon-ok"></i>Store</li>
-              <li><i class="icon-ok"></i>Delete</li>
-              <li><i class="icon-ok"></i>Secondary Indexes (2i)</li>
-              <li>
-                <ul class="icons">
-                  <li><i class="icon-ok"></i>Fetching exact matches</li>
-                  <li><i class="icon-ok"></i>Fetching ranges</li>
-                  <li><i class="icon-ok"></i>Storing with indexes</li>
-                </ul>
-              </li>
-              <li><i class="icon-ok"></i>Getting/setting bucket properties</li>
+              <li><i class="icon-ok"></i>builtin spray-json (de)serializers</li>
             </ul>
-          </div>
-        </div>
-
-        <div class="span6">
-          <h2>Features</h2>
-          <div class="well well-transparent">
-            <ul class="icons">
-              <li><i class="icon-ok"></i>Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray</li>
-              <li><i class="icon-ok"></i>Transparent integration with Akka projects through an Akka extension</li>
-              <li><i class="icon-ok"></i>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
-              <li><i class="icon-ok"></i>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
-              <li><i class="icon-ok"></i>Customizable and strongly typed conflict resolution on all fetches (and stores when returnbody=true)</li>
-              <li><i class="icon-ok"></i>Automatic (de)serialization of Scala (case) classes using type classes</li>
-              <li>
-                <ul class="icons">
-                  <li><i class="icon-ok"></i>builtin spray-json (de)serializers</li>
-                </ul>
-              </li>
-              <li><i class="icon-ok"></i>Automatic indexing of Scala (case) classes using type classes</li>
-              <li><i class="icon-ok"></i>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="span1"></div>
+          </li>
+          <li><i class="icon-ok"></i>Automatic indexing of Scala (case) classes using type classes</li>
+          <li><i class="icon-ok"></i>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
+        </ul>
       </div>
-    </div> <!-- /container -->
+    </div>
 
-    <div class="container">
-      <!-- Example row of columns -->
-      <div class="row">
-        <div class="span3">
-          <h2>Heading</h2>
-          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+    <div class="span1"></div>
+  </div>
+</div> <!-- /container -->
 
-        </div>
-        <div class="span3">
-          <h2>Heading</h2>
-          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+<div class="container">
+  <div class="row">
+    <div class="span1"></div>
 
-        </div>
-        <div class="span3">
-          <h2>Heading</h2>
-          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+    <div class="span10">
+      <h2>Getting Started</h2>
+      <p>
+        Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
+        mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna
+        mollis euismod. Donec sed odio dui.
+      </p>
+      <p>
+<pre class="prettyprint linenums lang-scala">
+val client = RiakClient(system, "localhost", 9098)
+val bucket = client.bucket("my-awesome-bucket")
 
-       </div>
-        <div class="span3">
-          <h2>Heading</h2>
-          <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
+bucket.store("key", "value")
+</pre>
+      </p>
+      <p>
+        Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
+        mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna
+        mollis euismod. Donec sed odio dui.
+      </p>
+    </div>
 
-        </div>
-      </div>
-    </div> <!-- /container -->
+    <div class="span1"></div>
+  </div>
+</div> <!-- /container -->
 
+<div class="container">
+  <div class="row">
+    <div class="span1"></div>
 
-    <!-- Le javascript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="js/jquery.js"></script>
-    <script src="js/bootstrap-transition.js"></script>
-    <script src="js/bootstrap-alert.js"></script>
-    <script src="js/bootstrap-modal.js"></script>
-    <script src="js/bootstrap-dropdown.js"></script>
-    <script src="js/bootstrap-scrollspy.js"></script>
-    <script src="js/bootstrap-tab.js"></script>
-    <script src="js/bootstrap-tooltip.js"></script>
-    <script src="js/bootstrap-popover.js"></script>
-    <script src="js/bootstrap-button.js"></script>
-    <script src="js/bootstrap-collapse.js"></script>
-    <script src="js/bootstrap-carousel.js"></script>
-    <script src="js/bootstrap-typeahead.js"></script>
+    <div class="span10">
+      <h2>Why Such a Boring Name?</h2>
+      <p>
+        It seems all the cool and appropriate names, like <a href="https://github.com/xaleraz/Riaktive">riaktive</a>,
+        <a href="https://github.com/timperrett/riakka">riakka</a>, <a href="https://github.com/benmyles/riaktor">riaktor</a>,
+        <a href="https://github.com/ariejdl/scala-riak">scalariak</a>, etc. have already
+        been taken by other projects (even though most of those seem to have fallen into a deep sleep)
+        but there seems to be a common naming pattern used by client libraries
+        for other languages so that's what ended up deciding the name.
+      </p></p>
+        If you come up with a cooler name, please let us know and eternal fame will be yours!
+      </p>
+    </div>
 
-  </body>
-</html>
+    <div class="span1"></div>
+  </div>
+</div> <!-- /container -->
+
+<div class="container">
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h2>License</h2>
+      <p>
+        This project is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0 open source license</a>.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+</div> <!-- /container -->
