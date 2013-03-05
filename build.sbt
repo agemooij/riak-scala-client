@@ -25,7 +25,7 @@ resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repo
                   "Spray Nightlies"     at "http://nightlies.spray.io/")
 
 libraryDependencies ++= {
-  val akkaVersion  = "2.1.0"
+  val akkaVersion  = "2.1.1"
   val sprayVersion = "1.1-20130123"
   Seq(
     "com.typesafe.akka"       %%  "akka-actor"             % akkaVersion,
