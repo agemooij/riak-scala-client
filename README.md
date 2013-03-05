@@ -69,9 +69,10 @@ The riak-scala-client has been tested against [Riak] versions 1.2.x and 1.3.0.
 
 ## Why such a boring name?
 
-It seems all the cool names, like riactive, riakka, riaktor, scalariak, etc. have already
-been taken by other projects but there seems to be a common naming pattern used by client libraries
-for other languages so that's what ended up deciding the name.
+It seems all the cool and appropriate names, like [riaktive], [riakka], [riaktor],
+[scalariak], etc. have already been taken by other projects. But there seems to be a
+common riak-xxx-client naming pattern used by Riak client libraries for other languages
+so that's what ended up deciding the, admittedly boring, name.
 
 If you come up with a cooler name, please let us know and eternal fame will be yours!
 
@@ -80,7 +81,11 @@ If you come up with a cooler name, please let us know and eternal fame will be y
 
 The _riak-scala-client_ is licensed under [APL 2.0].
 
-  [Riak]:     http://basho.com/riak/
-  [Akka]:     http://akka.io/
-  [Spray]:    http://spray.io/
-  [APL 2.0]:  http://www.apache.org/licenses/LICENSE-2.0
+  [Riak]:      http://basho.com/riak/
+  [Akka]:      http://akka.io/
+  [Spray]:     http://spray.io/
+  [APL 2.0]:   http://www.apache.org/licenses/LICENSE-2.0
+  [riaktive]:  https://github.com/xaleraz/Riaktive
+  [riakka]:    https://github.com/timperrett/riakka
+  [riaktor]:   https://github.com/benmyles/riaktor
+  [scalariak]: https://github.com/ariejdl/scala-riak
