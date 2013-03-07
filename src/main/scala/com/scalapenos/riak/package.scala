@@ -16,7 +16,17 @@
 
 package com.scalapenos
 
-
+/**
+ * A fast, non-blocking Scala client library for interacting with Riak.
+ *
+ *
+ * This package also defines some type aliases provided as shortcuts to commonly
+ * used classes from other libraries. For example, ContentType is an alias for
+ * [[spray.http.ContentType]] and DateTime is an alias for [[org.joda.time.DateTime]].
+ *
+ * @version 0.8.0
+ *
+ */
 package object riak {
 
   // ============================================================================
