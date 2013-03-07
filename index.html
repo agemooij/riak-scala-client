@@ -64,11 +64,12 @@ section: home
         mollis euismod. Donec sed odio dui.
       </p>
       <p>
-<pre class="prettyprint linenums lang-scala">
+{% highlight scala %}
 val client = RiakClient(system, "localhost", 9098)
 val bucket = client.bucket("my-awesome-bucket")
 
 bucket.store("key", "value")
+{% endhighlight %}
 </pre>
       </p>
       <p>
@@ -92,9 +93,9 @@ bucket.store("key", "value")
         It seems all the cool and appropriate names, like <a href="https://github.com/xaleraz/Riaktive">riaktive</a>,
         <a href="https://github.com/timperrett/riakka">riakka</a>, <a href="https://github.com/benmyles/riaktor">riaktor</a>,
         <a href="https://github.com/ariejdl/scala-riak">scalariak</a>, etc. have already
-        been taken by other projects (even though most of those seem to have fallen into a deep sleep)
-        but there seems to be a common naming pattern used by client libraries
-        for other languages so that's what ended up deciding the name.
+        been taken by other projects. But there seems to be a common riak-xxx-client naming
+        pattern used by Riak client libraries for other languages
+        so that's what ended up deciding the, admittedly boring, name.
       </p></p>
         If you come up with a cooler name, please let us know and eternal fame will be yours!
       </p>
