@@ -21,39 +21,66 @@ import scala.concurrent.Future._
 import scala.concurrent.duration._
 import scala.util._
 
+import spray.json.DefaultJsonProtocol._
+
 import akka.actor._
 
 
 class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySupport {
 
-  "When resolving conflicts with a custom resolver during fetch, the client" should {
-    "write the resolved value back to Riak and return the new value with the appropriate vector clock" in {
-      val resolver = new ConflictResolver {
-        def resolve(values: Set[RiakValue]) = {
-          values.find(v => v.data == "foo").getOrElse(failTest("The resolver should always find the value 'foo'."))
-        }
+  case class TestEntityWithMergableList(things: List[String])
+  object TestEntityWithMergableList {
+    implicit val jsonFormat = jsonFormat1(TestEntityWithMergableList.apply)
+  }
+
+  case object TestEntityWithMergableListResolver extends ConflictResolver {
+    // this resolver merges the lists of things and removes any duplicates
+    def resolve(values: Set[RiakValue]) = {
+      val entities = values.map(_.asMeta[TestEntityWithMergableList])
+
+      val mergedThings = entities.foldLeft(Set[String]()) { (merged, entity) =>
+         merged ++ entity.data.things.toSet
       }
 
-      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, resolver)
+      entities.head
+              .map(_.copy(things = mergedThings.toList))
+              .toRiakValue
+    }
+  }
 
-      (bucket.allowSiblings = true).await
+  "When dealing with concurrent writes, a bucket configured with allow_mult = true and the default resolver" should {
+    "resolve any conflicts, store the resolved value back to Riak, and return the result" in {
+      pending
+    }
+  }
 
+  "When dealing with concurrent writes, a bucket configured with allow_mult = true and a custom resolver" should {
+    "resolve any conflicts, store the resolved value back to Riak, and return the result" in {
+      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver)
+      val key = randomKey
+
+      bucket.setAllowSiblings(true).await
       bucket.allowSiblings.await must beTrue
 
-      val stored1 = bucket.store("foo", "bar").await
-      val stored2 = bucket.store("foo", "foo").await
-      val stored3 = bucket.store("foo", "baz").await
+      val things = List("one", "two", "five")
+      val updatedThings1 = List("one", "three")
+      val updatedThings2 = List("two", "four")
 
-      val fetched = bucket.fetch("foo").await
+      val entity = TestEntityWithMergableList(things)
 
-      fetched must beSome[RiakValue]
-      fetched.get.data must beEqualTo("foo")
+      val storedValue = bucket.store(key, entity, returnBody = true).await.get
+      val storedMeta = storedValue.asMeta[TestEntityWithMergableList]
 
-      bucket.delete("foo").await
+      // concurrent writes based on the same vclock
+      bucket.store(key, storedMeta.map(_.copy(updatedThings1))).await
+      bucket.store(key, storedMeta.map(_.copy(updatedThings2))).await
 
-      val fetchAfterDelete = bucket.fetch("foo").await
+      val resolvedValue = bucket.fetch(key).await
+      val resolvedMeta = resolvedValue.get.asMeta[TestEntityWithMergableList]
 
-      fetchAfterDelete must beNone
+      resolvedMeta.data.things must containTheSameElementsAs(updatedThings1 ++ updatedThings2)
+
+      bucket.fetch(key).await must beEqualTo(resolvedValue)
     }
   }
 
