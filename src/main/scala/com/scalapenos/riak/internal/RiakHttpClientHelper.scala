@@ -62,6 +62,15 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   // Main HTTP Request Implementations
   // ==========================================================================
 
+  def ping(server: RiakServerInfo): Future[Boolean] = {
+    httpRequest(Get(pingUrl(server))).map { response =>
+      response.status match {
+        case OK    => true
+        case other => throw new OperationFailed(s"Ping on server '$server' produced an unexpected response code '$other'.")
+      }
+    }
+  }
+
   def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
     httpRequest(Get(url(server, bucket, key))).flatMap { response =>
       response.status match {

@@ -27,9 +27,7 @@ class RiakClientSpec extends RiakClientSpecification {
 
   "A RiakClient" should {
     "support calling the Riak ping API" in {
-
-
-      pending
+      client.ping.await should beTrue
     }
   }
 

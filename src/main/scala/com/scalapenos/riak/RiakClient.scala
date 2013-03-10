@@ -39,10 +39,12 @@ object RiakClient {
 }
 
 trait RiakClient {
+  import scala.concurrent.Future
   import resolvers.LastValueWinsResolver
 
-  // TODO: ping and stats
+  // TODO: stats
 
+  def ping: Future[Boolean]
   def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): RiakBucket
 }
 

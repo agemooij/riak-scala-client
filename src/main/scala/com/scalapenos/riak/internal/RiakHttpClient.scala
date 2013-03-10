@@ -23,6 +23,7 @@ package internal
 // ============================================================================
 
 private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: RiakServerInfo) extends RiakClient {
+  def ping = helper.ping(server)
   def bucket(name: String, resolver: ConflictResolver) = new RiakHttpBucket(helper, server, name, resolver)
 }
 

@@ -39,11 +39,19 @@ private[riak] trait RiakUrlSupport {
     def queryString = s"?returnbody=$returnBody"
   }
 
-  def bucketUrl(server: RiakServerInfo, bucket: String): String = {
+  def baseUrl(server: RiakServerInfo): String = {
     val protocol = if (server.useSSL) "https" else "http"
     val pathPrefix = if (server.pathPrefix.isEmpty) "" else s"${server.pathPrefix}/"
 
-    s"$protocol://${server.host}:${server.port}/${pathPrefix}buckets/${urlEncode(bucket)}"
+    s"$protocol://${server.host}:${server.port}/${pathPrefix}"
+  }
+
+  def pingUrl(server: RiakServerInfo): String = {
+    s"${baseUrl(server)}ping"
+  }
+
+  def bucketUrl(server: RiakServerInfo, bucket: String): String = {
+    s"${baseUrl(server)}buckets/${urlEncode(bucket)}"
   }
 
   def url(server: RiakServerInfo, bucket: String, key: String, parameters: QueryParameters = NoQueryParameters): String = {
