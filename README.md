@@ -26,6 +26,7 @@ So far, the following Riak (http) API features are supported:
     - Fetching ranges
     - Storing with indexes
 - Getting/setting bucket properties
+- ping
 
 Other features include:
 
@@ -45,7 +46,6 @@ The following Riak (http) API features are still under construction:
 
 - Map Reduce
 - link walking
-- ping
 - status
 - listing all buckets
 - listing all keys in a bucket
