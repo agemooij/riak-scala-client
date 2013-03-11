@@ -37,7 +37,8 @@ private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: R
   def fetch(index: RiakIndex) = helper.fetch(server, bucket, index, resolver)
   def fetch(indexRange: RiakIndexRange) = helper.fetch(server, bucket, indexRange, resolver)
 
-  def store(key: String, value: RiakValue, returnBody: Boolean) = helper.store(server, bucket, key, value, returnBody, resolver)
+  def store(key: String, value: RiakValue) = helper.store(server, bucket, key, value, resolver)
+  def storeAndFetch(key: String, value: RiakValue) = helper.storeAndFetch(server, bucket, key, value, resolver)
 
   def delete(key: String) = helper.delete(server, bucket, key)
 

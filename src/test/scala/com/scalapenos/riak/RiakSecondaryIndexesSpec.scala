@@ -61,8 +61,8 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       val stringIndexKvs = stringIndexKeys.zip(stringIndexValues)
 
       val bucket = client.bucket("riak-index-tests-" + randomKey)
-      val storedValues1 = Future.traverse(intIndexKvs)(kv => bucket.store(kv._1, kv._2, true)).await
-      val storedValues2 = Future.traverse(stringIndexKvs)(kv => bucket.store(kv._1, kv._2, true)).await
+      val storedValues1 = Future.traverse(intIndexKvs)(kv => bucket.storeAndFetch(kv._1, kv._2)).await
+      val storedValues2 = Future.traverse(stringIndexKvs)(kv => bucket.storeAndFetch(kv._1, kv._2)).await
 
       storedValues1 must have size(numbers.size)
       storedValues2 must have size(numbers.size)
@@ -81,7 +81,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       val kvs = keys.zip(values)
 
       val bucket = client.bucket("riak-index-tests-" + randomKey)
-      val storedValues = Future.traverse(kvs)(kv => bucket.store(kv._1, kv._2, true)).await
+      val storedValues = Future.traverse(kvs)(kv => bucket.storeAndFetch(kv._1, kv._2)).await
 
       storedValues must have size(indexes.size)
 
@@ -110,7 +110,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       val kvs = keys.zip(values)
 
       val bucket = client.bucket("riak-index-tests-" + randomKey)
-      val storedValues = Future.traverse(kvs)(kv => bucket.store(kv._1, kv._2, true)).await
+      val storedValues = Future.traverse(kvs)(kv => bucket.storeAndFetch(kv._1, kv._2)).await
 
       storedValues must have size(indexes.size)
 
@@ -147,11 +147,10 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
 
     bucket.fetch(key).await must beNone
 
-    val storedValue = bucket.store(key, value, true).await
+    val storedValue = bucket.storeAndFetch(key, value).await
 
-    storedValue must beSome[RiakValue]
-    storedValue.get.data must beEqualTo(expectedData)
-    storedValue.get.indexes must beEqualTo(expectedIndexes)
+    storedValue.data must beEqualTo(expectedData)
+    storedValue.indexes must beEqualTo(expectedIndexes)
 
     val fetchedByKey = bucket.fetch(key).await
 

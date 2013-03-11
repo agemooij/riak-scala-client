@@ -27,14 +27,8 @@ trait RiakBucket {
    */
   def resolver: ConflictResolver
 
-  /**
-   *
-   */
   def fetch(key: String): Future[Option[RiakValue]]
 
-  /**
-   *
-   */
   def fetch(index: String, value: String): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
   def fetch(index: String, value: Int): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
   def fetch(index: RiakIndex): Future[List[RiakValue]]
@@ -43,50 +37,16 @@ trait RiakBucket {
   def fetch(index: String, start: Int, end: Int): Future[List[RiakValue]] = fetch(RiakIndexRange(index, start, end))
   private[riak] def fetch(index: RiakIndexRange): Future[List[RiakValue]]
 
-  /**
-   *
-   */
-  def store[T: RiakSerializer: RiakIndexer](key: String, value: T): Future[Option[RiakValue]] = {
-    store(key, value, false)
-  }
 
-  /**
-   *
-   */
-  def store[T: RiakSerializer: RiakIndexer](key: String, value: T, returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, RiakValue(value), returnBody)
-  }
+  def store[T: RiakSerializer: RiakIndexer](key: String, value: T): Future[Unit] = store(key, RiakValue(value))
+  def store[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T]): Future[Unit] = store(key, RiakValue(meta))
+  def store(key: String, value: RiakValue): Future[Unit]
 
-  /**
-   *
-   */
-  def store[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T]): Future[Option[RiakValue]] = {
-    store(key, meta, false)
-  }
-
-  /**
-   *
-   */
-  def store[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T], returnBody: Boolean): Future[Option[RiakValue]] = {
-    store(key, RiakValue(meta), returnBody)
-  }
-
-  /**
-   *
-   */
-  def store(key: String, value: RiakValue): Future[Option[RiakValue]] = {
-    store(key, value, false)
-  }
-
-  /**
-   *
-   */
-  def store(key: String, value: RiakValue, returnBody: Boolean): Future[Option[RiakValue]]
+  def storeAndFetch[T: RiakSerializer: RiakIndexer](key: String, value: T): Future[RiakValue] = storeAndFetch(key, RiakValue(value))
+  def storeAndFetch[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T]): Future[RiakValue] = storeAndFetch(key, RiakValue(meta))
+  def storeAndFetch(key: String, value: RiakValue): Future[RiakValue]
 
 
-  /**
-   *
-   */
   def delete(key: String): Future[Unit]
 
 

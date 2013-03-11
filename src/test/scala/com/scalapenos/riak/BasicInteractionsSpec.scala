@@ -35,10 +35,9 @@ class BasicInteractionsSpec extends AkkaActorSystemSpecification {
 
       fetchBeforeStore.await must beNone
 
-      val storedValue = bucket.store("foo", "bar", true).await
+      val storedValue = bucket.storeAndFetch("foo", "bar").await
 
-      storedValue must beSome[RiakValue]
-      storedValue.get.data must beEqualTo("bar")
+      storedValue.data must beEqualTo("bar")
 
       val fetchAfterStore = bucket.fetch("foo").await
 

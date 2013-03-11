@@ -68,7 +68,7 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
 
       val entity = TestEntityWithMergableList(things)
 
-      val storedValue = bucket.store(key, entity, returnBody = true).await.get
+      val storedValue = bucket.storeAndFetch(key, entity).await
       val storedMeta = storedValue.asMeta[TestEntityWithMergableList]
 
       // concurrent writes based on the same vclock
