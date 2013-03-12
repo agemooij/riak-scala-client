@@ -65,8 +65,9 @@ val client = RiakClient("http://riak-node.com/")
       </p>
       <p>
         Since dealing with raw, untyped data is usually not what you want when programming in Scala, any
-        <code>RiakValue</code> can be transformed into an instance of <code>RiakMeta[T]</code>, which
-        represents the same Riak meta data as <code>RiakValue</code> but now the raw data has been
+        <code>RiakValue</code> can be transformed into an instance of
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakMeta" target="_blank">RiakMeta[T]</a></code>,
+        which represents the same Riak meta data as <code>RiakValue</code> but now the raw data has been
         deserialized into some type <code>T</code>. This is accomplished by calling its <code>asMeta[T]</code>
         method.
       </p>
@@ -91,8 +92,9 @@ val raw: RiakValue = meta.toRiakValue
       <p>
         Of course, these transformations between raw serialized data and typed deserialized
         data don't happen by themselves. These transformations require compatible instances of the
-        <code>RiakSerializer[T]</code> and <code>RiakDeserializer[T]</code> type classes to be
-        available in implicit scope. Let's have a look at their definitions:
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakSerializer" target="_blank">RiakSerializer[T]</a></code>
+        and <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakDeserializer" target="_blank">RiakDeserializer[T]</a></code>
+        type classes to be available in implicit scope. Let's have a look at their definitions:
       </p>
       <p>
 {% highlight scala %}
@@ -116,15 +118,16 @@ trait RiakDeserializer[T] {
 {% endhighlight %}
       </p>
       <p>
-        Currently <em>riak-scala-client</em> uses <code>String</code> as the lowest level
-        encoding, which means binary formats are not supported. This was done to keep the API
-        as simple as possible. Please let us know if you would like support for binary formats!
+        <em>riak-scala-client</em> uses <code>String</code> as the lowest level
+        encoding, which means binary formats are not currently supported. This was a design choice
+        made to keep the API as simple as possible. Please let us know if you would like support
+        for binary formats!
       </p>
       <p>
         <em>riak-scala-client</em> comes with out-of-the-box support for (de)serializing
         raw Strings (i.e no serialization at all, using text/plain as the content type) and
         any case classes with an associated <a href="https://github.com/spray/spray-json">spray-json</a>
-        <code>RootJsonFormat</code> (application/json). See the <a href="examples.html">Examples</a>
+        <code>RootJsonFormat</code> (using application/json). See the <a href="examples.html">Examples</a>
         section for examples using both <a href="https://github.com/spray/spray-json">spray-json</a>
         and custom serialization.
       </p>
@@ -138,9 +141,36 @@ trait RiakDeserializer[T] {
     <div class="span1"></div>
 
     <div class="span10">
+      <h3>Buckets</h3>
+      <p>
+        Just like in Riak, buckets in <em>riak-scala-client</em> are just a way to namespace your keys.
+        You can get a reference to a particular bucket simply by calling the <code>bucket</code> method
+        of <code>RiakClient</code>, resulting in an instance of
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakBucket" target="_blank">RiakBucket</a></code>.
+      </p>
+      <p>
+{% highlight scala %}
+val client = RiakClient(actorSystem, "http://riak-node.com/")
+
+val bucket = client.bucket("my-first-bucket")
+{% endhighlight %}
+      </p>
+      <p>
+        Most functionality of <em>riak-scala-client</em> is exposed as methods on a <code>RiakBucket</code>.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
       <h3>Fetching</h3>
       <p>
-        bla bla bla
+        After all of the above, fetching data from Riak is very simple indeed.
       </p>
       <p>
 {% highlight scala %}
@@ -161,6 +191,27 @@ trait RiakDeserializer[T] {
 
     <div class="span10">
       <h3>Storing</h3>
+      <p>
+        bla bla bla
+      </p>
+      <p>
+{% highlight scala %}
+
+{% endhighlight %}
+      </p>
+      <p>
+        bla bla bla
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Conflict Resolution</h3>
       <p>
         bla bla bla
       </p>
