@@ -204,11 +204,12 @@ val value: Future[Option[RiakValue]] = bucket.fetch("some-awesome-key")
       <p>
         As you can see, the return type of <code>fetch</code> is <code>Future[Option[RiakValue]]</code>.
         All operations in <em>riak-scala-client</em> that interact with Riak are non-blocking so all of those
-        operations will result in some type of <code>Future</code> being produced.
+        operations will result in some type of <code>Future</code> being produced. The
+        <a href="examples.html">Examples</a> section has lots of examples of how to interact with Futures.
       </p>
       <p>
-        <code>fetch</code> results in a <code>Future[Option[RiakValue]]</code> because your key might
-        not be bound to a value in Riak.
+        Obviously not all keys will be bound to a value in Riak so the <code>Future[Option[RiakValue]]</code>
+        returned by <code>fetch</code> wraps an <code>Option[RiakValue]</code>.
       </p>
     </div>
 
@@ -267,6 +268,29 @@ val value: Future[Option[RiakValue]] = bucket.fetch("some-awesome-key")
     <div class="span1"></div>
 
     <div class="span10">
+      <h3>Secondary Indexes (2i)</h3>
+      <p>
+        bla bla bla
+      </p>
+      <p>
+{% highlight scala %}
+
+{% endhighlight %}
+      </p>
+      <p>
+        bla bla bla
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
       <h3>Bucket Properties</h3>
       <p>
         Next to the obvious methods for fetching, storing, and deleting values, <code>RiakBucket</code> also
@@ -275,14 +299,25 @@ val value: Future[Option[RiakValue]] = bucket.fetch("some-awesome-key")
       <p>
 {% highlight scala %}
 // Get all bucket properties at once
+val props: Future[RiakBucketProperties] = bucket.properties
 
-// get an individual
-val allowSiblings: Future[]
+// get an individual property
+val allowSiblings: Future[Boolean] = bucket.allowSiblings
 {% endhighlight %}
+      </p>
+      <p>
+        See the Scaladocs for
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakBucket" target="_blank">RiakBucket</a></code> and
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakBucketProperties" target="_blank">RiakBucketProperties</a></code>
+        for the full set of supported bucket properties.
       </p>
     </div>
 
     <div class="span1"></div>
+  </div>
+
+  <div class="row">
+    <div class="span12"></div>
   </div>
 
 </div> <!-- /container -->
