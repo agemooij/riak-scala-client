@@ -53,9 +53,67 @@ val client = RiakClient("http://riak-node.com/")
     <div class="span1"></div>
 
     <div class="span10">
-      <h3>Fetching Values</h3>
+      <h3>RiakValue, RiakMeta, and Serialization</h3>
       <p>
+        Before we can fetch and store values, it might be a good idea to talk about how those values are represented.
+      </p>
+      <p>
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakValue" target="_blank">RiakValue</a></code>
+        represents the raw, serialized value stored in Riak and all its associated meta data,
+        such as its content type, its vclock, its etag, its last modified timestamp its indexes, etc.
+        Most interactions with Riak involve dealing with instances of <code>RiakValue</code> in one way or another.
+      </p>
+      <p>
+        Since dealing with raw, untyped data is usually not what you want when programming in Scala, any
+        <code>RiakValue</code> can be transformed into an instance of <code>RiakMeta[T]</code>, which
+        represents the same Riak meta data as <code>RiakValue</code> but now the raw data has been
+        deserialized into some type <code>T</code>. This is accomplished by calling its <code>asMeta[T]</code>
+        method.
+      </p>
+      <p>
+{% highlight scala %}
+val raw: RiakValue = ...
 
+val meta: RiakMeta[Myclass] = raw.asMeta[MyClass]
+{% endhighlight %}
+      </p>
+      <p>
+        The reverse transformation is just as simple. Just call the <code>toriakValue</code> method
+        on any instance of <code>RiakMeta</code>.
+      </p>
+      <p>
+{% highlight scala %}
+val meta: RiakMeta[Myclass] = raw.asMeta[MyClass]
+
+val raw: RiakValue = meta.toRiakValue
+{% endhighlight %}
+      </p>
+      <p>
+        Of course, these transformations between raw serialized data and typed deserialized
+        data don't happen by themselves. These transformations require compatible instances of the
+        <code>RiakSerializer[T]</code> and <code>RiakDeserializer[T]</code> type classes to be
+        available in implicit scope. Let's have a look at their definitions:
+      </p>
+      <p>
+{% highlight scala %}
+/**
+ * A RiakSerializer is a type class trait for implementing serialization from some
+ * type T to a Tuple2 of raw data (a String) and a ContentType.
+ */
+@implicitNotFound(msg = "Cannot find RiakSerializer type class for ${T}")
+trait RiakSerializer[T] {
+  def serialize(t: T): (String, ContentType)
+}
+
+/**
+ * A RiakDeserializer is a type class trait for implementing deserialization from some
+ * raw data (a String) and a ContentType to a type T.
+ */
+@implicitNotFound(msg = "Cannot find RiakDeserializer type class for ${T}")
+trait RiakDeserializer[T] {
+  def deserialize(data: String, contentType: ContentType): T
+}
+{% endhighlight %}
       </p>
     </div>
 
@@ -67,9 +125,39 @@ val client = RiakClient("http://riak-node.com/")
     <div class="span1"></div>
 
     <div class="span10">
-      <h3></h3>
+      <h3>Fetching</h3>
       <p>
+        bla bla bla
+      </p>
+      <p>
+{% highlight scala %}
 
+{% endhighlight %}
+      </p>
+      <p>
+        bla bla bla
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Storing</h3>
+      <p>
+        bla bla bla
+      </p>
+      <p>
+{% highlight scala %}
+
+{% endhighlight %}
+      </p>
+      <p>
+        bla bla bla
       </p>
     </div>
 
