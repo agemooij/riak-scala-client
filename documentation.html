@@ -49,11 +49,12 @@ val client = RiakClient("http://riak-node.com/")
   </div>
 
 
+
   <div class="row">
     <div class="span1"></div>
 
     <div class="span10">
-      <h3>RiakValue, RiakMeta, and Serialization</h3>
+      <h3>RiakValue and RiakMeta</h3>
       <p>
         Before we can fetch and store values, it might be a good idea to talk about how those values are represented.
       </p>
@@ -89,6 +90,23 @@ val meta: RiakMeta[Myclass] = raw.asMeta[MyClass]
 val raw: RiakValue = meta.toRiakValue
 {% endhighlight %}
       </p>
+      <p>
+        This probably all seems pretty abstract to you. For a more integrated example of how to work with
+        <code>RiakValue</code> and <code>RiakMeta</code>, have a look at the <a href="examples.html">Examples</a>
+        section.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Serialization</h3>
       <p>
         Of course, these transformations between raw serialized data and typed deserialized
         data don't happen by themselves. These transformations require compatible instances of the
@@ -137,6 +155,7 @@ trait RiakDeserializer[T] {
   </div>
 
 
+
   <div class="row">
     <div class="span1"></div>
 
@@ -156,12 +175,14 @@ val bucket = client.bucket("my-first-bucket")
 {% endhighlight %}
       </p>
       <p>
-        Most functionality of <em>riak-scala-client</em> is exposed as methods on a <code>RiakBucket</code>.
+        Most functionality of <em>riak-scala-client</em> is exposed as methods on a <code>RiakBucket</code>
+        as you will see below.
       </p>
     </div>
 
     <div class="span1"></div>
   </div>
+
 
 
   <div class="row">
@@ -170,20 +191,30 @@ val bucket = client.bucket("my-first-bucket")
     <div class="span10">
       <h3>Fetching</h3>
       <p>
-        After all of the above, fetching data from Riak is very simple indeed.
+        As you would expect, fetching data from Riak is very simple indeed. Just call the <code>fetch</code>
+        method on any bucket with a key fo your choice:
       </p>
       <p>
 {% highlight scala %}
+val bucket = client.bucket("my-first-bucket")
 
+val value: Future[Option[RiakValue]] = bucket.fetch("some-awesome-key")
 {% endhighlight %}
       </p>
       <p>
-        bla bla bla
+        As you can see, the return type of <code>fetch</code> is <code>Future[Option[RiakValue]]</code>.
+        All operations in <em>riak-scala-client</em> that interact with Riak are non-blocking so all of those
+        operations will result in some type of <code>Future</code> being produced.
+      </p>
+      <p>
+        <code>fetch</code> results in a <code>Future[Option[RiakValue]]</code> because your key might
+        not be bound to a value in Riak.
       </p>
     </div>
 
     <div class="span1"></div>
   </div>
+
 
 
   <div class="row">
@@ -207,6 +238,8 @@ val bucket = client.bucket("my-first-bucket")
     <div class="span1"></div>
   </div>
 
+
+
   <div class="row">
     <div class="span1"></div>
 
@@ -222,6 +255,30 @@ val bucket = client.bucket("my-first-bucket")
       </p>
       <p>
         bla bla bla
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Bucket Properties</h3>
+      <p>
+        Next to the obvious methods for fetching, storing, and deleting values, <code>RiakBucket</code> also
+        exposes methods for getting and setting common bucket properties. Some examples:
+      </p>
+      <p>
+{% highlight scala %}
+// Get all bucket properties at once
+
+// get an individual
+val allowSiblings: Future[]
+{% endhighlight %}
       </p>
     </div>
 
