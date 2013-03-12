@@ -1,5 +1,19 @@
 /* Add additional stylesheets below
 -------------------------------------------------- */
+
+.logo-pepper-white {
+  display: inline-block;
+  width: 15px;
+  height: 20px;
+  margin-top: 0px;
+  margin-right: 10px;
+  /*line-height: 20px;*/
+  /*vertical-align: text-top;*/
+  background-image: url("../img/pepper-inverse-20px.png");
+  /*background-position: 0px 2px;*/
+  background-repeat: no-repeat;
+}
+
 /*
   Bootstrap's documentation styles
   Special styles for presenting Bootstrap's documentation and examples
@@ -114,7 +128,7 @@ hr.soften {
   font-size: 18px;
   font-weight: 300;
   line-height: 1.25;
-  margin-bottom: 30px;
+  margin-bottom: 15px;
 }
 
 /* Link styles (used on .masthead-links as well) */
@@ -196,12 +210,12 @@ only screen and (     -o-min-device-pixel-ratio: 2/1) {
   color: #fff;
 }
 .masthead h1 {
-  font-size: 80px;
+  font-size: 55px;
   line-height: 1;
   letter-spacing: -2px;
 }
 .masthead p {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 200;
   line-height: 1.25;
 }
