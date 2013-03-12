@@ -115,6 +115,19 @@ trait RiakDeserializer[T] {
 }
 {% endhighlight %}
       </p>
+      <p>
+        Currently <em>riak-scala-client</em> uses <code>String</code> as the lowest level
+        encoding, which means binary formats are not supported. This was done to keep the API
+        as simple as possible. Please let us know if you would like support for binary formats!
+      </p>
+      <p>
+        <em>riak-scala-client</em> comes with out-of-the-box support for (de)serializing
+        raw Strings (i.e no serialization at all, using text/plain as the content type) and
+        any case classes with an associated <a href="https://github.com/spray/spray-json">spray-json</a>
+        <code>RootJsonFormat</code> (application/json). See the <a href="examples.html">Examples</a>
+        section for examples using both <a href="https://github.com/spray/spray-json">spray-json</a>
+        and custom serialization.
+      </p>
     </div>
 
     <div class="span1"></div>
