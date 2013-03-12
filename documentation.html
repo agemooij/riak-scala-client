@@ -8,16 +8,44 @@ section: documentation
   <div class="row">
     <div class="span1"></div>
 
-    <div class="span6">
+    <div class="span10">
       <h3>Initalizing an instance of RiakClient</h3>
       <p>
+        Everything starts with creating an instance of <code>RiakClient</code>. <code>RiakClient</code>
+        takes two core arguments, namely a reference to an <a href="http://akka.io" target="_blank">Akka</a>
+        <code>ActorSystem</code> and the location of the Riak node you want to interact with.
+      </p>
+      <p>
+        If your app is not based on Akka and therefor has no access to an initialized actor system,
+        you can leave off the <code>ActorSystem</code> argument and one will be created for you
+        internally. The location of a riak node can be specified as either an HTTP url pointing
+        to root of your Riak node or a combination of a hostname and a port number.
+      </p>
+      <p>
 {% highlight scala %}
+// Specifying an existing ActorSystem
+val client = RiakClient(actorSystem, "localhost", 80)
 
+// or
+val client = RiakClient(actorSystem, "http://riak-node.com/")
+
+// Using an internal ActorSystem
+val client = RiakClient("localhost", 80)
+
+// or
+val client = RiakClient("http://riak-node.com/")
 {% endhighlight %}
+      </p>
+      <p>
+        It is important to note that internally <code>RiakClient</code> uses an
+        <a href="http://doc.akka.io/docs/akka/2.1.0/scala/extending-akka.html">Akka extension</a> to ensure there can
+        be only one instance of <code>RiakClient</code> per actor system. This means that you can <em>"create"</em>
+        as many instances of <code>RiakClient</code> as you want because under the surface they all point at the same
+        one.
       </p>
     </div>
 
-    <div class="span5"></div>
+    <div class="span1"></div>
   </div>
 
 
@@ -25,7 +53,7 @@ section: documentation
     <div class="span1"></div>
 
     <div class="span10">
-      <h3></h3>
+      <h3>Fetching Values</h3>
       <p>
 
       </p>
