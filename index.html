@@ -23,6 +23,7 @@ section: home
             </ul>
           </li>
           <li><i class="icon-ok"></i>Getting/setting bucket properties</li>
+          <li><i class="icon-ok"></i>Ping</li>
         </ul>
       </div>
     </div>
@@ -33,9 +34,9 @@ section: home
         <ul class="icons">
           <li><i class="icon-ok"></i>Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray</li>
           <li><i class="icon-ok"></i>Transparent integration with Akka projects through an Akka extension</li>
-          <li><i class="icon-ok"></i>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
-          <li><i class="icon-ok"></i>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
-          <li><i class="icon-ok"></i>Customizable and strongly typed conflict resolution on all fetches (and stores when returnbody=true)</li>
+          <li><i class="icon-ok"></i>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vclock, etag, content type, last modified time, indexes, etc.)</li>
+          <li><i class="icon-ok"></i>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vclock, etag, content type, last modified time, indexes, etc.)</li>
+          <li><i class="icon-ok"></i>Customizable conflict resolution on all fetches (and stores when returnbody=true)</li>
           <li><i class="icon-ok"></i>Automatic (de)serialization of Scala (case) classes using type classes</li>
           <li>
             <ul class="icons">
@@ -57,38 +58,81 @@ section: home
     <div class="span1"></div>
 
     <div class="span10">
-      <h2>Getting Started</h2>
       <p>
-        Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
-        mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna
-        mollis euismod. Donec sed odio dui.
+        <em>riak-scala-client</em> is a Scala client library for Riak based on <a href="http://akka.io" target="_blank">Akka</a>
+        and <a href="http://spray.io" target="_blank">Spray</a>. It aims to be easy to use, non-blocking, and fast, in that order.
       </p>
       <p>
-{% highlight scala %}
-val client = RiakClient(system, "localhost", 9098)
-val bucket = client.bucket("my-awesome-bucket")
-
-bucket.store("key", "value")
-{% endhighlight %}
-</pre>
+        This project was started in December 2012 out of frustration about the (then) lack of non-blocking
+        Scala (or Java) client libraries for [Riak]. The first public version ({{ site.version }}) was
+        released in March 2013 after several early beta releases were tested internally to get feedback from
+        external users on a commercial project.
       </p>
       <p>
-        Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
-        mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna
-        mollis euismod. Donec sed odio dui.
+        <em>riak-scala-client</em> has been tested on single machine Riak installations and small(ish) clusters
+        of up to 7 nodes. It has not been used in production yet and, based on public feedback to the first
+        public beta version, there might be some minor API changes on the way towards 1.0. So please go ahead
+        and try it out or even battle test it in production as long as you are aware that the paint is barely dry.
       </p>
     </div>
 
     <div class="span1"></div>
   </div>
-</div> <!-- /container -->
 
-<div class="container">
   <div class="row">
     <div class="span1"></div>
 
     <div class="span10">
-      <h2>Why Such a Boring Name?</h2>
+      <h3>Getting Started</h3>
+      <p>
+        <em>riak-scala-client</em> is available from the Maven Central and Sontatype Releases repositories.
+        The current version is <em>{{ site.version }}</em> and it is only available for Scala 2.10 (and later).
+      </p>
+      <p>
+        You can add <em>riak-scala-client</em> to your SBT project by including the following dependency:
+      </p>
+      <p>
+{% highlight scala %}
+libraryDependencies += "com.scalapenos" %% "riak-scala-client" % {{ site.version }}
+{% endhighlight %}
+      </p>
+      <p>
+        Or if you prefer Maven, you can add <em>riak-scala-client</em> to your Maven project by including the following dependency:
+      </p>
+      <p>
+{% highlight xml %}
+<dependency>
+  <groupId>com.scalapenos</groupId>
+  <artifactId>riak-scala-client_2.10</artifactId>
+  <version>{{ site.version }}</version>
+</dependency>
+{% endhighlight %}
+      </p>
+    </div>
+    <div class="span1"></div>
+  </div>
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>All Feedback is Welcome!</h3>
+      <p>
+        Feedback is always good so please go ahead and fork the project, file issues (or complaints),
+        create pull requests, star the project on GitHub, or loudly proclaim your (dis)approval on
+        a mailing list of your choice (<a href="http://lists.basho.com/mailman/listinfo/riak-users_lists.basho.com">riak-users</a>
+        would be a good one to start with).
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Why Such a Boring Name?</h3>
       <p>
         It seems all the cool and appropriate names, like <a href="https://github.com/xaleraz/Riaktive">riaktive</a>,
         <a href="https://github.com/timperrett/riakka">riakka</a>, <a href="https://github.com/benmyles/riaktor">riaktor</a>,
@@ -110,7 +154,7 @@ bucket.store("key", "value")
     <div class="span1"></div>
 
     <div class="span10">
-      <h2>License</h2>
+      <h3>License</h3>
       <p>
         This project is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0 open source license</a>.
       </p>
