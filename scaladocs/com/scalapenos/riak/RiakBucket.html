@@ -100,7 +100,7 @@
         <span class="name">delete</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Unit">Unit</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p>
+      
     </li><li name="com.scalapenos.riak.RiakBucket#fetch" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="fetch(index:com.scalapenos.riak.RiakIndex):scala.concurrent.Future[List[com.scalapenos.riak.RiakValue]]"></a>
       <a id="fetch(RiakIndex):Future[List[RiakValue]]"></a>
@@ -126,7 +126,7 @@
         <span class="name">fetch</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Option">Option</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p>
+      
     </li><li name="com.scalapenos.riak.RiakBucket#properties" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="properties:scala.concurrent.Future[com.scalapenos.riak.RiakBucketProperties]"></a>
       <a id="properties:Future[RiakBucketProperties]"></a>
@@ -168,18 +168,31 @@
       <p class="shortcomment cmt">Every bucket has a default ConflictResolver that will be used when resolving
 conflicts during fetches and stores (when returnBody is true).</p>
     </li><li name="com.scalapenos.riak.RiakBucket#store" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="store(key:String,value:com.scalapenos.riak.RiakValue,returnBody:Boolean):scala.concurrent.Future[Option[com.scalapenos.riak.RiakValue]]"></a>
-      <a id="store(String,RiakValue,Boolean):Future[Option[RiakValue]]"></a>
+      <a id="store(key:String,value:com.scalapenos.riak.RiakValue):scala.concurrent.Future[Unit]"></a>
+      <a id="store(String,RiakValue):Future[Unit]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">store</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a></span>, <span name="returnBody">returnBody: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Option">Option</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]]</span>
+        <span class="name">store</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Unit">Unit</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p>
+      
+    </li><li name="com.scalapenos.riak.RiakBucket#storeAndFetch" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="storeAndFetch(key:String,value:com.scalapenos.riak.RiakValue):scala.concurrent.Future[com.scalapenos.riak.RiakValue]"></a>
+      <a id="storeAndFetch(String,RiakValue):Future[RiakValue]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">storeAndFetch</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]</span>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
 
@@ -408,7 +421,7 @@ conflicts during fetches and stores (when returnBody is true).</p>
         <span class="name">fetch</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.List">List</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p>
+      
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -660,70 +673,57 @@ conflicts during fetches and stores (when returnBody is true).</p>
       </h4>
       
     </li><li name="com.scalapenos.riak.RiakBucket#store" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="store(key:String,value:com.scalapenos.riak.RiakValue):scala.concurrent.Future[Option[com.scalapenos.riak.RiakValue]]"></a>
-      <a id="store(String,RiakValue):Future[Option[RiakValue]]"></a>
+      <a id="store[T](key:String,meta:com.scalapenos.riak.RiakMeta[T])(implicitevidence$3:com.scalapenos.riak.RiakSerializer[T],implicitevidence$4:com.scalapenos.riak.RiakIndexer[T]):scala.concurrent.Future[Unit]"></a>
+      <a id="store[T](String,RiakMeta[T])(RiakSerializer[T],RiakIndexer[T]):Future[Unit]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">store</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Option">Option</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]]</span>
+        <span class="name">store</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="meta">meta: <a href="RiakMeta.html" class="extype" name="com.scalapenos.riak.RiakMeta">RiakMeta</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="RiakSerializer.html" class="extype" name="com.scalapenos.riak.RiakSerializer">RiakSerializer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>, <span name="arg1">arg1: <a href="RiakIndexer.html" class="extype" name="com.scalapenos.riak.RiakIndexer">RiakIndexer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Unit">Unit</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p>
+      
     </li><li name="com.scalapenos.riak.RiakBucket#store" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="store[T](key:String,meta:com.scalapenos.riak.RiakMeta[T],returnBody:Boolean)(implicitevidence$7:com.scalapenos.riak.RiakSerializer[T],implicitevidence$8:com.scalapenos.riak.RiakIndexer[T]):scala.concurrent.Future[Option[com.scalapenos.riak.RiakValue]]"></a>
-      <a id="store[T](String,RiakMeta[T],Boolean)(RiakSerializer[T],RiakIndexer[T]):Future[Option[RiakValue]]"></a>
+      <a id="store[T](key:String,value:T)(implicitevidence$1:com.scalapenos.riak.RiakSerializer[T],implicitevidence$2:com.scalapenos.riak.RiakIndexer[T]):scala.concurrent.Future[Unit]"></a>
+      <a id="store[T](String,T)(RiakSerializer[T],RiakIndexer[T]):Future[Unit]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">store</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="meta">meta: <a href="RiakMeta.html" class="extype" name="com.scalapenos.riak.RiakMeta">RiakMeta</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>, <span name="returnBody">returnBody: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="RiakSerializer.html" class="extype" name="com.scalapenos.riak.RiakSerializer">RiakSerializer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>, <span name="arg1">arg1: <a href="RiakIndexer.html" class="extype" name="com.scalapenos.riak.RiakIndexer">RiakIndexer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Option">Option</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]]</span>
+        <span class="name">store</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="RiakSerializer.html" class="extype" name="com.scalapenos.riak.RiakSerializer">RiakSerializer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>, <span name="arg1">arg1: <a href="RiakIndexer.html" class="extype" name="com.scalapenos.riak.RiakIndexer">RiakIndexer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Unit">Unit</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p>
-    </li><li name="com.scalapenos.riak.RiakBucket#store" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="store[T](key:String,meta:com.scalapenos.riak.RiakMeta[T])(implicitevidence$5:com.scalapenos.riak.RiakSerializer[T],implicitevidence$6:com.scalapenos.riak.RiakIndexer[T]):scala.concurrent.Future[Option[com.scalapenos.riak.RiakValue]]"></a>
-      <a id="store[T](String,RiakMeta[T])(RiakSerializer[T],RiakIndexer[T]):Future[Option[RiakValue]]"></a>
+      
+    </li><li name="com.scalapenos.riak.RiakBucket#storeAndFetch" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="storeAndFetch[T](key:String,meta:com.scalapenos.riak.RiakMeta[T])(implicitevidence$7:com.scalapenos.riak.RiakSerializer[T],implicitevidence$8:com.scalapenos.riak.RiakIndexer[T]):scala.concurrent.Future[com.scalapenos.riak.RiakValue]"></a>
+      <a id="storeAndFetch[T](String,RiakMeta[T])(RiakSerializer[T],RiakIndexer[T]):Future[RiakValue]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">store</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="meta">meta: <a href="RiakMeta.html" class="extype" name="com.scalapenos.riak.RiakMeta">RiakMeta</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="RiakSerializer.html" class="extype" name="com.scalapenos.riak.RiakSerializer">RiakSerializer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>, <span name="arg1">arg1: <a href="RiakIndexer.html" class="extype" name="com.scalapenos.riak.RiakIndexer">RiakIndexer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Option">Option</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]]</span>
+        <span class="name">storeAndFetch</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="meta">meta: <a href="RiakMeta.html" class="extype" name="com.scalapenos.riak.RiakMeta">RiakMeta</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.storeAndFetch.T">T</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="RiakSerializer.html" class="extype" name="com.scalapenos.riak.RiakSerializer">RiakSerializer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.storeAndFetch.T">T</span>]</span>, <span name="arg1">arg1: <a href="RiakIndexer.html" class="extype" name="com.scalapenos.riak.RiakIndexer">RiakIndexer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.storeAndFetch.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p>
-    </li><li name="com.scalapenos.riak.RiakBucket#store" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="store[T](key:String,value:T,returnBody:Boolean)(implicitevidence$3:com.scalapenos.riak.RiakSerializer[T],implicitevidence$4:com.scalapenos.riak.RiakIndexer[T]):scala.concurrent.Future[Option[com.scalapenos.riak.RiakValue]]"></a>
-      <a id="store[T](String,T,Boolean)(RiakSerializer[T],RiakIndexer[T]):Future[Option[RiakValue]]"></a>
+      
+    </li><li name="com.scalapenos.riak.RiakBucket#storeAndFetch" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="storeAndFetch[T](key:String,value:T)(implicitevidence$5:com.scalapenos.riak.RiakSerializer[T],implicitevidence$6:com.scalapenos.riak.RiakIndexer[T]):scala.concurrent.Future[com.scalapenos.riak.RiakValue]"></a>
+      <a id="storeAndFetch[T](String,T)(RiakSerializer[T],RiakIndexer[T]):Future[RiakValue]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">store</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span></span>, <span name="returnBody">returnBody: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="RiakSerializer.html" class="extype" name="com.scalapenos.riak.RiakSerializer">RiakSerializer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>, <span name="arg1">arg1: <a href="RiakIndexer.html" class="extype" name="com.scalapenos.riak.RiakIndexer">RiakIndexer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Option">Option</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]]</span>
+        <span class="name">storeAndFetch</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="com.scalapenos.riak.RiakBucket.storeAndFetch.T">T</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="RiakSerializer.html" class="extype" name="com.scalapenos.riak.RiakSerializer">RiakSerializer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.storeAndFetch.T">T</span>]</span>, <span name="arg1">arg1: <a href="RiakIndexer.html" class="extype" name="com.scalapenos.riak.RiakIndexer">RiakIndexer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.storeAndFetch.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p>
-    </li><li name="com.scalapenos.riak.RiakBucket#store" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="store[T](key:String,value:T)(implicitevidence$1:com.scalapenos.riak.RiakSerializer[T],implicitevidence$2:com.scalapenos.riak.RiakIndexer[T]):scala.concurrent.Future[Option[com.scalapenos.riak.RiakValue]]"></a>
-      <a id="store[T](String,T)(RiakSerializer[T],RiakIndexer[T]):Future[Option[RiakValue]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">store</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="RiakSerializer.html" class="extype" name="com.scalapenos.riak.RiakSerializer">RiakSerializer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>, <span name="arg1">arg1: <a href="RiakIndexer.html" class="extype" name="com.scalapenos.riak.RiakIndexer">RiakIndexer</a>[<span class="extype" name="com.scalapenos.riak.RiakBucket.store.T">T</span>]</span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Option">Option</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt"></p>
+      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
