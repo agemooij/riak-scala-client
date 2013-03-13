@@ -263,6 +263,8 @@ val result: Future[RiakValue] = bucket.storeAndFetch("some-awesome-key", value)
 {% highlight scala %}
 val value: MyClass = ...
 
+// this only compiles if both a RiakSerializer[MyClass] and a
+// RiakIndexer[MyClass] are implicitly available.
 val result: Future[RiakValue] = bucket.storeAndFetch("some-awesome-key", value)
 {% endhighlight %}
       </p>
@@ -374,15 +376,48 @@ trait RiakConflictResolver {
     <div class="span10">
       <h3>Secondary Indexes (2i)</h3>
       <p>
-        bla bla bla
+        <em>riak-scala-client</em> fully supports Riak secondary indexes. Every <code>RiakValue</code> has a set of
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakIndex" target="_blank">RiakIndex</a></code>
+        instances representing the secondary indexes it should be stored with. There are also a number of extra
+        versions of the <code>fetch</code> method for fetching data by either a single index or an index range.
+        The result of such index fetches is always a <code>Future[List[RiakValue]]</code> where <em>riak-scala-client</em>
+        takes care of fetching the individual values based on the keys returned by the HTTP index fetch.
+        Let's look at some examples:
       </p>
       <p>
 {% highlight scala %}
+val values: Future[List[RiakValue]] = bucket.fetch("skill", "awesomeness")
 
+val values: Future[List[RiakValue]] = bucket.fetch("answer", 42)
+
+val values: Future[List[RiakValue]] = bucket.fetch("timestamp", "201301010000", "201302010000")
+
+val values: Future[List[RiakValue]] = bucket.fetch("size", 10000, 40000)
 {% endhighlight %}
       </p>
       <p>
-        bla bla bla
+        <em>riak-scala-client</em> will add the appropriate type suffix (i.e. "_bin" or "_int") to the name
+        you specify for the index so you don't have to. All index names and index values will also be properly
+        URL encoded so your index names and values can contain non-ascii values.
+      </p>
+      <p>
+        Just like you can create a custom (de)serializer type class for your domain class, you can also
+        create a custom indexer by providing an implicit implementation of the <code>RiakIndexer[T]</code>
+        trait, which looks like this:
+      </p>
+      <p>
+{% highlight scala %}
+@implicitNotFound(msg = "Cannot find RiakIndex type class for ${T}")
+trait RiakIndexer[T] {
+  def index(t: T): Set[RiakIndex]
+}
+{% endhighlight %}
+      </p>
+      <p>
+        <em>riak-scala-client</em> provides a default implementation of <code>RiakIndexer[T]</code> for any
+        <code>T</code> that simply creates an empty set of indexes. This implementation is available from
+        the lowest possible implicit scopes so any custom implementation you make implicitly available will
+        always override it.
       </p>
     </div>
 
