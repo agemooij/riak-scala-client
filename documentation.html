@@ -319,15 +319,47 @@ val result: Future[Unit] = bucket.delete("my-less-awesome-key")
     <div class="span10">
       <h3>Conflict Resolution</h3>
       <p>
-        bla bla bla
+        If you decide to turn on support for siblings for one (or more) of your buckets, which you can do using
+        the <code>allow_mult</code> bucket property (also available as <code>allowSiblings</code>), then any
+        <code>fetch</code> or <code>storeAndFetch</code> can result in a conflict to be resolved.
+        <em>riak-scala-client</em> allows you to solve these conflicts yourself by specifying
+        a <code><a href="scaladocs/index.html#com.scalapenos.riak.package$$RiakConflictsResolver" target="_blank">RiakConflictsResolver</a></code>
+        when getting a reference to a bucket.
       </p>
       <p>
 {% highlight scala %}
+val bucket = client.bucket("stuff", StuffConflictsResolver)
 
+// or
+val bucket = client.bucket("stuff", resolver = StuffConflictsResolver)
 {% endhighlight %}
       </p>
       <p>
-        bla bla bla
+        Conflict resolvers are usually implemented as (case) objects since they are stateless.
+        To create a custom resolver you will need to extend from the <code>RiakConflictsResolver</code>
+        trait and implement the <code>resolve</code> method. <code>RiakConflictsResolver</code> is
+        defined as follows:
+      </p>
+      <p>
+{% highlight scala %}
+trait RiakConflictResolver {
+  def resolve(values: Set[RiakValue]): RiakValue
+}
+{% endhighlight %}
+      </p>
+      <p>
+        Your custom conflict resolver will be presented with a <code>Set</code> of <code>RiakValue</code> instances
+        and its job is to produce one <code>RiakValue</code> instance, which could be one from the set or a new one
+        created based on some combination of the values in the set.
+      </p>
+      <p>
+        If the bucket you are working with has sibling support turned on (i.e. <code>allow_mult == true</code>), you
+        should always specify a conflict resolver. Failing to do so will activate the default no-op resolver, which will
+        throw an exception to remind you to specify a real resolver.
+      </p>
+      <p>
+        The <a href="examples.html">Examples</a> section contains at least one example of a custom resolver and you
+        can find more examples in the <eM>riak-scala-client</em> unit tests.
       </p>
     </div>
 
