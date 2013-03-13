@@ -4,11 +4,26 @@ title: Home
 section: home
 ---
 <div class="container">
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <p>
+        <em>riak-scala-client</em> is a Scala client library for Riak based on <a href="http://akka.io" target="_blank">Akka</a>
+        and <a href="http://spray.io" target="_blank">Spray</a>. It aims to be easy to use, non-blocking, and fast, in that order.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div> <!-- /row -->
+
+
   <div class="row">
     <div class="span1"></div>
 
     <div class="span4">
-      <h2>Supported Riak API</h2>
+      <h3>Supported Riak API</h3>
       <div class="well well-transparent">
         <ul class="icons">
           <li><i class="icon-ok"></i>Fetch</li>
@@ -29,7 +44,7 @@ section: home
     </div>
 
     <div class="span6">
-      <h2>Features</h2>
+      <h3>Features</h3>
       <div class="well well-transparent">
         <ul class="icons">
           <li><i class="icon-ok"></i>Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray</li>
@@ -50,18 +65,13 @@ section: home
     </div>
 
     <div class="span1"></div>
-  </div>
-</div> <!-- /container -->
+  </div> <!-- /row -->
 
-<div class="container">
+
   <div class="row">
     <div class="span1"></div>
 
     <div class="span10">
-      <p>
-        <em>riak-scala-client</em> is a Scala client library for Riak based on <a href="http://akka.io" target="_blank">Akka</a>
-        and <a href="http://spray.io" target="_blank">Spray</a>. It aims to be easy to use, non-blocking, and fast, in that order.
-      </p>
       <p>
         This project was started in December 2012 out of frustration about the (then) lack of non-blocking
         Scala (or Java) client libraries for [Riak]. The first public version ({{ site.version }}) was
@@ -77,7 +87,8 @@ section: home
     </div>
 
     <div class="span1"></div>
-  </div>
+  </div> <!-- /row -->
+
 
   <div class="row">
     <div class="span1"></div>
@@ -112,12 +123,47 @@ libraryDependencies += "com.scalapenos" %% "riak-scala-client" % {{ site.version
       </p>
 
       <p>
-        After adding <em>riak-scala-client</em> to your project, have a look at the <a href="documentation.html">documentation</a>
-        for everything you need to get started using it.
+        Next, head on over to the <a href="documentation.html">documentation</a> section, which describes
+        everything else you need to get started.
       </p>
     </div>
     <div class="span1"></div>
   </div> <!-- /row -->
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Coming Soon</h3>
+      <p>
+        The following Riak API features have not been implemented yet:
+      </p>
+      <div class="well well-transparent">
+        <ul class="icons">
+          <li><i class="icon-ok"></i>Link Walking</li>
+          <li><i class="icon-ok"></i>Map Reduce</li>
+          <li><i class="icon-ok"></i>Listing all keys in a bucket</li>
+          <li><i class="icon-ok"></i>Listing all buckets</li>
+          <li><i class="icon-ok"></i>
+            Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
+            If-Modified-Since and If-Unmodified-Since for LastModified)
+          </li>
+          <li><i class="icon-ok"></i>Riak Node Status</li>
+        </ul>
+      </div>
+      <p>
+        These features will be implemented in future releases on the road to version 1.0.
+      </p>
+      <p>
+        If you think anything is missing from the above list, please go ahead and create an issue
+        or a pull request!
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div> <!-- /row -->
+
 
   <div class="row">
     <div class="span1"></div>
@@ -133,28 +179,11 @@ libraryDependencies += "com.scalapenos" %% "riak-scala-client" % {{ site.version
     </div>
 
     <div class="span1"></div>
-  </div>
+  </div> <!-- /row -->
 
-<!--   <div class="row">
-    <div class="span1"></div>
-
-    <div class="span10">
-      <h3>Why Such a Boring Name?</h3>
-      <p>
-        It seems all the cool and appropriate names, like <a href="https://github.com/xaleraz/Riaktive">riaktive</a>,
-        <a href="https://github.com/timperrett/riakka">riakka</a>, <a href="https://github.com/benmyles/riaktor">riaktor</a>,
-        <a href="https://github.com/ariejdl/scala-riak">scalariak</a>, etc. have already
-        been taken by other projects. But there seems to be a common riak-xxx-client naming
-        pattern used by Riak client libraries for other languages
-        so that's what ended up deciding the, admittedly boring, name.
-      </p></p>
-        If you come up with a cooler name, please let us know and eternal fame will be yours!
-      </p>
-    </div>
-
-    <div class="span1"></div>
-  </div> -->
 </div> <!-- /container -->
+
+
 
 <div class="container">
   <div class="row">
