@@ -18,7 +18,7 @@ package com.scalapenos.riak
 package resolvers
 
 
-case object LastValueWinsResolver extends ConflictResolver {
+case object LastValueWinsResolver extends RiakConflictsResolver {
   def resolve(values: Set[RiakValue]): RiakValue = {
     values.reduceLeft { (first, second) =>
       if (second.lastModified.isAfter(first.lastModified)) second

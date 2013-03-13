@@ -24,7 +24,7 @@ package internal
 
 private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: RiakServerInfo) extends RiakClient {
   def ping = helper.ping(server)
-  def bucket(name: String, resolver: ConflictResolver) = new RiakHttpBucket(helper, server, name, resolver)
+  def bucket(name: String, resolver: RiakConflictsResolver) = new RiakHttpBucket(helper, server, name, resolver)
 }
 
 
@@ -32,7 +32,7 @@ private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: R
 // RiakHttpBucket
 // ============================================================================
 
-private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, bucket: String, val resolver: ConflictResolver) extends RiakBucket {
+private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, bucket: String, val resolver: RiakConflictsResolver) extends RiakBucket {
   def fetch(key: String) = helper.fetch(server, bucket, key, resolver)
   def fetch(index: RiakIndex) = helper.fetch(server, bucket, index, resolver)
   def fetch(indexRange: RiakIndexRange) = helper.fetch(server, bucket, indexRange, resolver)

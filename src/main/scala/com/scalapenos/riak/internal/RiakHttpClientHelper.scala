@@ -71,7 +71,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: ConflictResolver): Future[Option[RiakValue]] = {
+  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[RiakValue]] = {
     httpRequest(Get(url(server, bucket, key))).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response))
@@ -83,7 +83,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: ConflictResolver): Future[List[RiakValue]] = {
+  def fetch(server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
     httpRequest(Get(indexUrl(server, bucket, index))).flatMap { response =>
       response.status match {
         case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
@@ -93,7 +93,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange, resolver: ConflictResolver): Future[List[RiakValue]] = {
+  def fetch(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
     httpRequest(Get(indexRangeUrl(server, bucket, indexRange))).flatMap { response =>
       response.status match {
         case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
@@ -116,7 +116,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
       httpRequest
   }
 
-  def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: ConflictResolver): Future[Unit] = {
+  def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[Unit] = {
     val request = createStoreHttpRequest(value)
 
     request(Put(url(server, bucket, key, NoQueryParameters), value)).flatMap { response =>
@@ -128,7 +128,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     }
   }
 
-  def storeAndFetch(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: ConflictResolver): Future[RiakValue] = {
+  def storeAndFetch(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[RiakValue] = {
     val request = createStoreHttpRequest(value)
 
     request(Put(url(server, bucket, key, StoreQueryParameters(true)), value)).flatMap { response =>
@@ -254,7 +254,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     implicit val format = jsonFormat1(RiakIndexQueryResponse.apply)
   }
 
-  private def fetchWithKeysReturnedByIndexLookup(server: RiakServerInfo, bucket: String, response: HttpResponse, resolver: ConflictResolver): Future[List[RiakValue]] = {
+  private def fetchWithKeysReturnedByIndexLookup(server: RiakServerInfo, bucket: String, response: HttpResponse, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
     response.entity.toOption.map { body =>
       import spray.json._
 
@@ -269,7 +269,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   // Conflict Resolution
   // ==========================================================================
 
-  private def resolveConflict(server: RiakServerInfo, bucket: String, key: String, response: HttpResponse, resolver: ConflictResolver): Future[RiakValue] = {
+  private def resolveConflict(server: RiakServerInfo, bucket: String, key: String, response: HttpResponse, resolver: RiakConflictsResolver): Future[RiakValue] = {
     import spray.http._
     import spray.httpx.unmarshalling._
 

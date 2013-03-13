@@ -43,11 +43,11 @@ package object riak {
   // Conflict Resolution
   // ============================================================================
 
-  trait ConflictResolver {
+  trait RiakConflictsResolver  {
     def resolve(values: Set[RiakValue]): RiakValue
   }
 
-  implicit def func2resolver(f: Set[RiakValue] => RiakValue): ConflictResolver = new ConflictResolver {
+  implicit def func2resolver(f: Set[RiakValue] => RiakValue): RiakConflictsResolver = new RiakConflictsResolver {
     def resolve(values: Set[RiakValue]) = f(values)
   }
 

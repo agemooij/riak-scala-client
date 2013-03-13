@@ -33,7 +33,7 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
     implicit val jsonFormat = jsonFormat1(TestEntityWithMergableList.apply)
   }
 
-  case object TestEntityWithMergableListResolver extends ConflictResolver {
+  case object TestEntityWithMergableListResolver extends RiakConflictsResolver {
     // this resolver merges the lists of things and removes any duplicates
     def resolve(values: Set[RiakValue]) = {
       val entities = values.map(_.asMeta[TestEntityWithMergableList])

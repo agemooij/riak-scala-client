@@ -22,10 +22,10 @@ trait RiakBucket {
   import internal._
 
   /**
-   * Every bucket has a default ConflictResolver that will be used when resolving
+   * Every bucket has a default RiakConflictsResolver that will be used when resolving
    * conflicts during fetches and stores (when returnBody is true).
    */
-  def resolver: ConflictResolver
+  def resolver: RiakConflictsResolver
 
   def fetch(key: String): Future[Option[RiakValue]]
 

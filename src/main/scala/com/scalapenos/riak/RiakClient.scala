@@ -45,7 +45,7 @@ trait RiakClient {
   // TODO: stats
 
   def ping: Future[Boolean]
-  def bucket(name: String, resolver: ConflictResolver = LastValueWinsResolver): RiakBucket
+  def bucket(name: String, resolver: RiakConflictsResolver = LastValueWinsResolver): RiakBucket
 }
 
 
