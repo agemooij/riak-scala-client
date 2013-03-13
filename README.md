@@ -33,9 +33,9 @@ Other features include:
 - Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray
 - Transparent integration with Akka projects through an Akka extension
 - An untyped RiakValue class for interacting with raw Riak values and their associated
-  meta data (vlock, etag, content type, last modified time, indexes, etc.)
+  meta data (vclock, etag, content type, last modified time, indexes, etc.)
 - A typed RiakMeta[T] class for interacting with deserialized values while retaining
-  their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)
+  their associated meta data (vclock, etag, content type, last modified time, indexes, etc.)
 - Customizable and strongly typed conflict resolution on all fetches (and stores when returnbody=true)
 - Automatic (de)serialization of Scala (case) classes using type classes
     - builtin spray-json (de)serializers
@@ -44,8 +44,8 @@ Other features include:
 
 The following Riak (http) API features are still under construction:
 
-- Map Reduce
 - link walking
+- Map Reduce
 - status
 - listing all buckets
 - listing all keys in a bucket
