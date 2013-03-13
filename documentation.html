@@ -145,9 +145,10 @@ trait RiakDeserializer[T] {
         <em>riak-scala-client</em> comes with out-of-the-box support for (de)serializing
         raw Strings (i.e no serialization at all, using text/plain as the content type) and
         any case classes with an associated <a href="https://github.com/spray/spray-json">spray-json</a>
-        <code>RootJsonFormat</code> (using application/json). See the <a href="examples.html">Examples</a>
-        section for examples using both <a href="https://github.com/spray/spray-json">spray-json</a>
-        and custom serialization.
+        <code>RootJsonFormat</code> (using application/json). These out-of-the-box implementations
+        will be used by default if you don't create your own serializers (and your classes fit the
+        criteria described above) See the <a href="examples.html">Examples</a>
+        section for examples using both builtin and custom serialization.
       </p>
     </div>
 
@@ -175,7 +176,7 @@ val bucket = client.bucket("my-first-bucket")
 {% endhighlight %}
       </p>
       <p>
-        Most functionality of <em>riak-scala-client</em> is exposed as methods on a <code>RiakBucket</code>
+        Most functionality of <em>riak-scala-client</em> is exposed as methods on a <code>RiakBucket</code>,
         as you will see below.
       </p>
     </div>
@@ -189,7 +190,7 @@ val bucket = client.bucket("my-first-bucket")
     <div class="span1"></div>
 
     <div class="span10">
-      <h3>Fetching</h3>
+      <h3>Fetching Values</h3>
       <p>
         As you would expect, fetching data from Riak is very simple indeed. Just call the <code>fetch</code>
         method on any bucket with a key fo your choice:
@@ -208,8 +209,11 @@ val value: Future[Option[RiakValue]] = bucket.fetch("some-awesome-key")
         <a href="examples.html">Examples</a> section has lots of examples of how to interact with Futures.
       </p>
       <p>
-        Obviously not all keys will be bound to a value in Riak so the <code>Future[Option[RiakValue]]</code>
+        Obviously not all keys will be bound to a value in Riak so the <code>Future</code>
         returned by <code>fetch</code> wraps an <code>Option[RiakValue]</code>.
+      </p>
+      <p>
+        Conflict resolution during fetch and fetching with secondary indexes will be discussed below.
       </p>
     </div>
 
@@ -222,17 +226,85 @@ val value: Future[Option[RiakValue]] = bucket.fetch("some-awesome-key")
     <div class="span1"></div>
 
     <div class="span10">
-      <h3>Storing</h3>
+      <h3>Storing Values</h3>
       <p>
-        bla bla bla
+        Storing values in Riak is almost as easy as fetching them. The most basic store operation
+        is one that takes a (<code>String</code>) key and a <code>RiakValue</code> and returns
+        a <code>Future[Unit]</code>.
       </p>
       <p>
 {% highlight scala %}
+val value: RiakValue = ...
 
+val result: Future[Unit] = bucket.store("some-awesome-key", value)
 {% endhighlight %}
       </p>
       <p>
-        bla bla bla
+        This is basically a fire-and-forget operation but you can use the returned Future to handle any
+        errors that might occur while <em>riak-scala-client</em> communicates with Riak. If you want to
+        have access to the value you just stored, or more probably to its meta data (i.e. to make sure you
+        are working a value based on the latest vclock), you can use the <code>storeAndFetch</code> method,
+        which will perform a Riak HTTP store operation using the <code>returnbody=true</code> query parameter.
+      </p>
+      <p>
+{% highlight scala %}
+val value: RiakValue = ...
+
+val result: Future[RiakValue] = bucket.storeAndFetch("some-awesome-key", value)
+{% endhighlight %}
+      </p>
+      <p>
+        Working with raw <code>RiakValue</code> instances is fine when you get them returned from a
+        <code>fetch</code> operation but when you want to store data it is often more convenient to work
+        with your own domain classes. To that end you can also <code>store</code> any type T for which
+        there is a <code>RiakSerializer[T]</code> and a <code>RiakIndexer[T]</code> in implicit scope.
+      </p>
+      <p>
+{% highlight scala %}
+val value: MyClass = ...
+
+val result: Future[RiakValue] = bucket.storeAndFetch("some-awesome-key", value)
+{% endhighlight %}
+      </p>
+      <p>
+        As long as the value is either a <code>String</code>, a class associated
+        with a <code>spray-json RootJsonFormat[T]</code>, or a class associated with a custom
+        <code>RiakSerializer[T]</code>, it will be automatically serialized and stored. The
+        <a href="examples.html">Examples</a> section has more details about how to use the builtin
+        serializers or how to define your own ones.
+      </p>
+      <p>
+        Don't worry about the indexer part for now since there is always a default indexer in scope
+        that will not index anything. See the section on secondary indexes below for more information.
+      </p>
+      <p>
+        Lastly, you can also store any instance of <code>RiakMeta[T]</code> directly without having
+        to convert it to a <code>RiakValue</code> yourself.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Deleting Values</h3>
+      <p>
+        Deleting values from Riak is probably the simplest operation you can perform. Just pass the key
+        to the <code>delete</code> method.
+      </p>
+      <p>
+{% highlight scala %}
+val result: Future[Unit] = bucket.delete("my-less-awesome-key")
+{% endhighlight %}
+      </p>
+      <p>
+        As with the fire-and-forget version of <code>store</code>, you can use the returned <code>Future</code>
+        to handle any possible errors gracefully.
       </p>
     </div>
 
