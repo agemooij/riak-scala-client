@@ -128,19 +128,6 @@ used classes from other libraries. For example, ContentType is an alias for
       </span>
       </h4>
       
-    </li><li name="com.scalapenos.riak.ConflictResolver" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ConflictResolverextendsObject"></a>
-      <a id="ConflictResolver:ConflictResolver"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">trait</span>
-      </span>
-      <span class="symbol">
-        <a href="package$$ConflictResolver.html"><span class="name">ConflictResolver</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      
     </li><li name="com.scalapenos.riak.ContentType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ContentType=spray.http.ContentType"></a>
       <a id="ContentType:ContentType"></a>
@@ -294,6 +281,19 @@ used classes from other libraries. For example, ContentType is an alias for
       </span>
       <span class="symbol">
         <a href="RiakClientExtension.html"><span class="name">RiakClientExtension</span></a><span class="result"> extends <span class="extype" name="akka.actor.Extension">Extension</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.scalapenos.riak.RiakConflictsResolver" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="RiakConflictsResolverextendsObject"></a>
+      <a id="RiakConflictsResolver:RiakConflictsResolver"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="package$$RiakConflictsResolver.html"><span class="name">RiakConflictsResolver</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       
@@ -651,15 +651,15 @@ type T to a Tuple2 of raw data (a String) and a ContentType.</p>
       </h4>
       
     </li><li name="com.scalapenos.riak.package#func2resolver" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="func2resolver(f:Set[com.scalapenos.riak.RiakValue]=&gt;com.scalapenos.riak.RiakValue):com.scalapenos.riak.package.ConflictResolver"></a>
-      <a id="func2resolver((Set[RiakValue])⇒RiakValue):ConflictResolver"></a>
+      <a id="func2resolver(f:Set[com.scalapenos.riak.RiakValue]=&gt;com.scalapenos.riak.RiakValue):com.scalapenos.riak.package.RiakConflictsResolver"></a>
+      <a id="func2resolver((Set[RiakValue])⇒RiakValue):RiakConflictsResolver"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">implicit </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">func2resolver</span><span class="params">(<span name="f">f: (<span class="extype" name="scala.Predef.Set">Set</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]) ⇒ <a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a></span>)</span><span class="result">: <a href="package$$ConflictResolver.html" class="extype" name="com.scalapenos.riak.ConflictResolver">ConflictResolver</a></span>
+        <span class="name">func2resolver</span><span class="params">(<span name="f">f: (<span class="extype" name="scala.Predef.Set">Set</span>[<a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a>]) ⇒ <a href="RiakValue.html" class="extype" name="com.scalapenos.riak.RiakValue">RiakValue</a></span>)</span><span class="result">: <a href="package$$RiakConflictsResolver.html" class="extype" name="com.scalapenos.riak.RiakConflictsResolver">RiakConflictsResolver</a></span>
       </span>
       </h4>
       
