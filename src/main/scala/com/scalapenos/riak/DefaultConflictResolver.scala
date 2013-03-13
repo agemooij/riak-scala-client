@@ -15,14 +15,13 @@
  */
 
 package com.scalapenos.riak
-package resolvers
 
 
-case object LastValueWinsResolver extends RiakConflictsResolver {
+class ConflicResolutionNotImplemented
+    extends RuntimeException("A bucket operation resulted in siblings but no conflict resolver was specified for the bucket.")
+
+case object DefaultConflictsResolver extends RiakConflictsResolver {
   def resolve(values: Set[RiakValue]): RiakValue = {
-    values.reduceLeft { (first, second) =>
-      if (second.lastModified.isAfter(first.lastModified)) second
-      else first
-    }
+    throw new ConflicResolutionNotImplemented()
   }
 }

@@ -48,12 +48,6 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
     }
   }
 
-  "When dealing with concurrent writes, a bucket configured with allow_mult = true and the default resolver" should {
-    "resolve any conflicts, store the resolved value back to Riak, and return the result" in {
-      pending
-    }
-  }
-
   "When dealing with concurrent writes, a bucket configured with allow_mult = true and a custom resolver" should {
     "resolve any conflicts, store the resolved value back to Riak, and return the result" in {
       val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver)
@@ -81,6 +75,31 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
       resolvedMeta.data.things must containTheSameElementsAs(updatedThings1 ++ updatedThings2)
 
       bucket.fetch(key).await must beEqualTo(resolvedValue)
+    }
+  }
+
+  "When dealing with concurrent writes, a bucket configured with allow_mult = true and the default resolver" should {
+    "throw a ConflicResolutionNotImplemented exception" in {
+      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey)
+      val key = randomKey
+
+      bucket.setAllowSiblings(true).await
+      bucket.allowSiblings.await must beTrue
+
+      val things = List("one", "two", "five")
+      val updatedThings1 = List("one", "three")
+      val updatedThings2 = List("two", "four")
+
+      val entity = TestEntityWithMergableList(things)
+
+      val storedValue = bucket.storeAndFetch(key, entity).await
+      val storedMeta = storedValue.asMeta[TestEntityWithMergableList]
+
+      // concurrent writes based on the same vclock
+      bucket.store(key, storedMeta.map(_.copy(updatedThings1))).await
+      bucket.store(key, storedMeta.map(_.copy(updatedThings2))).await
+
+      bucket.fetch(key).await must throwA[ConflicResolutionNotImplemented]
     }
   }
 
