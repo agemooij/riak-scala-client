@@ -137,7 +137,7 @@ libraryDependencies += "com.scalapenos" %% "riak-scala-client" % {{ site.version
     <div class="span10">
       <h3>Coming Soon</h3>
       <p>
-        The following Riak API features have not been implemented yet:
+        The following Riak API features still have to be implemented:
       </p>
       <div class="well well-transparent">
         <ul class="icons">
@@ -153,11 +153,16 @@ libraryDependencies += "com.scalapenos" %% "riak-scala-client" % {{ site.version
         </ul>
       </div>
       <p>
-        These features will be implemented in future releases on the road to version 1.0.
+        Other things that are on the roadmap for 1.0:
       </p>
+      <div class="well well-transparent">
+        <ul class="icons">
+          <li><i class="icon-ok"></i>Using Play Iteratees for all API methods that return multiple values</li>
+          <li><i class="icon-ok"></i>Implement streaming http response handling for all API methods that return multiple values</li>
+      </div>
       <p>
-        If you think anything is missing from the above list, please go ahead and create an issue
-        or a pull request!
+        If you think anything is missing from the above lists, please go ahead and let us know by
+        creating an issue or a pull request!
       </p>
     </div>
 

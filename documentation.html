@@ -382,7 +382,15 @@ trait RiakConflictResolver {
         versions of the <code>fetch</code> method for fetching data by either a single index or an index range.
         The result of such index fetches is always a <code>Future[List[RiakValue]]</code> where <em>riak-scala-client</em>
         takes care of fetching the individual values based on the keys returned by the HTTP index fetch.
-        Let's look at some examples:
+      </p>
+      <p>
+        Using a <code>Future[List[RiakValue]]</code> here is not ideal since the list of values might be very big
+        and might not even fit into available memory. You also have to wait (in a matter of speaking) until all
+        the values have been retrieved before you can do anything with them. The next version of <em>riak-scala-client</em>
+        will very probably use Play Iteratees to reimplement these methods (or to create streaming versions of them).
+      </p>
+      <p>
+        That being said, let's look at some examples:
       </p>
       <p>
 {% highlight scala %}
