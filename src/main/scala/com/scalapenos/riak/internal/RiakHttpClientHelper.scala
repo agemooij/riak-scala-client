@@ -103,19 +103,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     }
   }
 
-  private def createStoreHttpRequest(value: RiakValue) = {
-    val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock))
-    val etagHeader = value.etag.toOption.map(etag => RawHeader(`ETag`, etag))
-    val lastModifiedHeader = lastModifiedFromDateTime(value.lastModified)
-    val indexHeaders = value.indexes.map(toIndexHeader(_)).toList
-
-    addOptionalHeader(vclockHeader) ~>
-      addOptionalHeader(etagHeader) ~>
-      addHeader(lastModifiedHeader) ~>
-      addHeaders(indexHeaders) ~>
-      httpRequest
-  }
-
   def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[Unit] = {
     val request = createStoreHttpRequest(value)
 
@@ -194,6 +181,19 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     sendReceive(httpClient)
   }
 
+  private def createStoreHttpRequest(value: RiakValue) = {
+    val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock))
+    val etagHeader = value.etag.toOption.map(etag => RawHeader(`ETag`, etag))
+    val lastModifiedHeader = lastModifiedFromDateTime(value.lastModified)
+    val indexHeaders = value.indexes.map(toIndexHeader(_)).toList
+
+    addOptionalHeader(vclockHeader) ~>
+      addOptionalHeader(etagHeader) ~>
+      addHeader(lastModifiedHeader) ~>
+      addHeaders(indexHeaders) ~>
+      httpRequest
+  }
+
 
   // ==========================================================================
   // Response => RiakValue
@@ -212,8 +212,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     }
   }
 
-  def dateTimeFromLastModified(lm: `Last-Modified`): DateTime = fromSprayDateTime(lm.date)
-  def lastModifiedFromDateTime(dateTime: DateTime): `Last-Modified` = `Last-Modified`(toSprayDateTime(dateTime))
+  private def dateTimeFromLastModified(lm: `Last-Modified`): DateTime = fromSprayDateTime(lm.date)
+  private def lastModifiedFromDateTime(dateTime: DateTime): `Last-Modified` = `Last-Modified`(toSprayDateTime(dateTime))
 
 
   // ==========================================================================
