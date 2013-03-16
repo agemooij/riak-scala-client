@@ -9,12 +9,68 @@ section: examples
     <div class="span1"></div>
 
     <div class="span10">
-      <h3>A Basic RiakRepository Actor</h3>
       <p>
-        bla bla bla
+        The following examples have been bundled as a complete example mini-app, which can be found in the
+        <a href="https://github.com/agemooij/riak-scala-client/tree/master/examples">examples</a> folder
+        of the Github project.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>A RiakAlbumRepository Actor</h3>
+      <p>
+        For this example, let's shamelessly steal the domain used by the
+        <a href="https://github.com/zenexity/ReactiveMongo/">ReactiveMongo project</a> for their
+        <a href="https://github.com/zenexity/ReactiveMongo/blob/master/driver/samples/BSON.scala">BSON Example</a>,
+        i.e music albums and their artists.
       </p>
       <p>
-        bla bla
+        Let's start with the domain. For now we will be using the default <code>spray-json</code>
+        serialization support and not worry about any secondary indexes yet. A simplified domain would probably
+        look something like this:
+      </p>
+      <p>
+{% highlight scala %}
+import spray.json.DefaultJsonProtocol._
+
+case class Track (title: String)
+object Track {
+  implicit val jsonFormat = jsonFormat1(Track.apply)
+}
+
+case class Album (
+  title: String,
+  artist: String,
+  releasedIn: Int,
+  tracks: List[Track]
+)
+
+object Album {
+  implicit val jsonFormat = jsonFormat4(Album.apply)
+}
+{% endhighlight %}
+      </p>
+      <p>
+        A simple <code>RiakAlbumRepository</code> actor would need to respond to a number of messages
+        and reply with some other messages. Something like:
+      </p>
+      <p>
+{% highlight scala %}
+object AlbumRepositoryProtocol {
+  case class StoreAlbum(album: Album)
+  case class FetchAlbumByTitle(title: String)
+}
+{% endhighlight %}
+      </p>
+      <p>
+        Using the above domain and message protocol, let's write some failing unit tests for the
+        <code>RiakAlbumRepository</code>.
       </p>
       <p>
 {% highlight scala %}
@@ -22,7 +78,20 @@ section: examples
 {% endhighlight %}
       </p>
       <p>
-        bla
+
+      </p>
+      <p>
+{% highlight scala %}
+
+{% endhighlight %}
+      </p>
+      <p>
+
+      </p>
+      <p>
+{% highlight scala %}
+
+{% endhighlight %}
       </p>
     </div>
 
