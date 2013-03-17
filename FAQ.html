@@ -20,16 +20,25 @@ section: faq
     <div class="span1"></div>
 
     <div class="span10">
-      <h3>Why such a boring name?</h3>
+      <h3>Which version of Spray is <em>riak-scala-client</em> compatible with?</h3>
       <p>
-        It seems all the cool and appropriate names, like <a href="https://github.com/xaleraz/Riaktive">riaktive</a>,
-        <a href="https://github.com/timperrett/riakka">riakka</a>, <a href="https://github.com/benmyles/riaktor">riaktor</a>,
-        <a href="https://github.com/ariejdl/scala-riak">scalariak</a>, etc. have already
-        been taken by other projects. But there seems to be a common riak-xxx-client naming
-        pattern used by Riak client libraries for other languages
-        so that's what ended up deciding the, admittedly boring, name.
+        Version {{ site.version }} of <em>riak-scala-client</em> was developed in the
+        vacuum between Spray 1.1-M7 and 1.1-M8. The <code>spray-client</code> module
+        was heavily refactored early in the 1.1-M8 timeframe but then the Sray team
+        decided to go on a long refactoring and redesign binge and 1.1-M8 has not been
+        released since then.
+      </p><p>
+        While we all wait patiently for Spray 1.1-M8 to be released, <em>riak-scala-client</em>
+        depends on a nightly build of Spray 1.1, namely 1.1-20130123. This version is very close
+        to 1.1-M7 but includes the above-mentioned first refactoring of <code>spray-client</code>.
+      </p><p>
+        As soon as Spray 1.1-M8 (or later) is released, a compatible version of this library
+        will be released ASAP.
       </p></p>
-        If you come up with a cooler name, please let us know and eternal fame will be yours!
+        All of this will not affect you very much unless you want to use this library in
+        a project that depends on Spray, esspecially <code>spray-client</code>. In that case
+        unfortunately the only available choices are either to upgrade to the same nightly build
+        of Spray or to not use this library until Spray releases 1.1-M8 (or later).
       </p>
     </div>
 
@@ -53,5 +62,27 @@ section: faq
 
     <div class="span1"></div>
   </div>
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Why such a boring name?</h3>
+      <p>
+        It seems all the cool and appropriate names, like <a href="https://github.com/xaleraz/Riaktive">riaktive</a>,
+        <a href="https://github.com/timperrett/riakka">riakka</a>, <a href="https://github.com/benmyles/riaktor">riaktor</a>,
+        <a href="https://github.com/ariejdl/scala-riak">scalariak</a>, etc. have already
+        been taken by other projects. But there seems to be a common riak-xxx-client naming
+        pattern used by Riak client libraries for other languages
+        so that's what ended up deciding the, admittedly boring, name.
+      </p></p>
+        If you come up with a cooler name, please let us know and eternal fame will be yours!
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
 
 </div> <!-- /container -->
