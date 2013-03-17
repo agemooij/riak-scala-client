@@ -1,135 +1,207 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <title>Riak Scala Client by agemooij</title>
-  </head>
+---
+layout: main
+title: Home
+section: home
+---
+<div class="container">
 
-  <body>
-    <div id="container">
-      <div class="inner">
+  <div class="row">
+    <div class="span1"></div>
 
-        <header>
-          <h1>Riak Scala Client</h1>
-          <h2>A fast, non-blocking Scala client library for interacting with Riak</h2>
-        </header>
+    <div class="span10">
+      <p>
+        <em>riak-scala-client</em> is a Scala client library for Riak based on <a href="http://akka.io" target="_blank">Akka</a>
+        and <a href="http://spray.io" target="_blank">Spray</a>. It aims to be easy to use, non-blocking, and fast, in that order.
+      </p>
+    </div>
 
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/agemooij/riak-scala-client/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/agemooij/riak-scala-client/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/agemooij/riak-scala-client" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
+    <div class="span1"></div>
+  </div> <!-- /row -->
 
-        <hr>
 
-        <section id="main_content">
-          <h2>What is this?</h2>
+  <div class="row">
+    <div class="span1"></div>
 
-<p>A fast, non-blocking Scala client library for interacting with <a href="http://basho.com/riak/">Riak</a>.</p>
-
-<h2>Current Status (March 2013): Preparing for public release</h2>
-
-<p>A first stable public version, 0.8, is scheduled to be released to the Sonatype/Central
-repositories around mid-March 2013. We are currently adding the last finishing touches.</p>
-
-<p>This project was started in December 2012 out of frustration about the (then) lack of non-blocking
-Scala (or Java) client libraries for <a href="http://basho.com/riak/">Riak</a>.</p>
-
-<h2>Features</h2>
-
-<p>So far, the following Riak (http) API features are supported:</p>
-
-<ul>
-<li>Fetch</li>
-<li>Store</li>
-<li>Delete</li>
-<li>Secondary Indexes (2i)
-
-<ul>
-<li>Fetching exact matches</li>
-<li>Fetching ranges</li>
-<li>Storing with indexes</li>
-</ul>
-</li>
-<li>Getting/setting bucket properties</li>
-</ul><p>Other features include:</p>
-
-<ul>
-<li>Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray</li>
-<li>Transparent integration with Akka projects through an Akka extension</li>
-<li>An untyped RiakValue class for interacting with raw Riak values and their associated
-meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
-<li>A typed RiakMeta[T] class for interacting with deserialized values while retaining
-their associated meta data (vlock, etag, content type, last modified time, indexes, etc.)</li>
-<li>Customizable and strongly typed conflict resolution on all fetches (and stores when returnbody=true)</li>
-<li>Automatic (de)serialization of Scala (case) classes using type classes
-
-<ul>
-<li>builtin spray-json (de)serializers</li>
-</ul>
-</li>
-<li>Automatic indexing of Scala (case) classes using type classes</li>
-<li>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
-</ul><p>The following Riak (http) API features are still under construction:</p>
-
-<ul>
-<li>Map Reduce</li>
-<li>link walking</li>
-<li>ping</li>
-<li>status</li>
-<li>listing all buckets</li>
-<li>listing all keys in a bucket</li>
-<li>Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
-If-Modified-Since and If-Unmodified-Since for LastModified)</li>
-</ul><p>The riak-scala-client has been tested against <a href="http://basho.com/riak/">Riak</a> versions 1.2.x and 1.3.0.</p>
-
-<h2>Design goals</h2>
-
-<ul>
-<li>It should be non-blocking (i.e. all calls are handled asynchronously and result in Futures)</li>
-<li>It should not wrap the java client for Riak, since that only exposes a blocking API</li>
-<li>It should provide an idiomatic Scala client API without resorting to hard to learn DSLs</li>
-<li>It should integrate with Akka (using an Akka extension)</li>
-<li>It should be easy to use</li>
-</ul><p>The initial focus is on supporting the Riak HTTP API. Protobuf support might be added
-later but it has a low priority at the moment.</p>
-
-<h2>Design and Implementation</h2>
-
-<p>The <em>riak-scala-client</em> is based on <a href="http://akka.io/">Akka</a> 2.1 and and <a href="http://spray.io/">Spray</a> client 1.1.</p>
-
-<p>The client is implemented as an Akka extension, making it very easy to use
-from Akka-based applications, with some wrapper code to make sure non-Akka
-applications are not bothered by the underlying Akka layer.</p>
-
-<h2>Why such a boring name?</h2>
-
-<p>It seems all the cool names, like riactive, riakka, riaktor, scalariak, etc. have already
-been taken by other projects but there seems to be a common naming pattern used by client libraries
-for other languages so that's what ended up deciding the name.</p>
-
-<p>If you come up with a cooler name, please let us know and eternal fame will be yours!</p>
-
-<h2>License</h2>
-
-<p>The <em>riak-scala-client</em> is licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">APL 2.0</a>.</p>
-        </section>
-
-        <footer>
-          Riak Scala Client is maintained by <a href="https://github.com/agemooij">agemooij</a><br>
-          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
-        </footer>
-
-        
+    <div class="span4">
+      <h3>Supported Riak API</h3>
+      <div class="well well-transparent">
+        <ul class="icons">
+          <li><i class="icon-ok"></i>Fetch</li>
+          <li><i class="icon-ok"></i>Store</li>
+          <li><i class="icon-ok"></i>Delete</li>
+          <li><i class="icon-ok"></i>Secondary Indexes (2i)</li>
+          <li>
+            <ul class="icons">
+              <li><i class="icon-ok"></i>Fetching exact matches</li>
+              <li><i class="icon-ok"></i>Fetching ranges</li>
+              <li><i class="icon-ok"></i>Storing with indexes</li>
+            </ul>
+          </li>
+          <li><i class="icon-ok"></i>Getting/setting bucket properties</li>
+          <li><i class="icon-ok"></i>Ping</li>
+        </ul>
       </div>
     </div>
-  </body>
-</html>
+
+    <div class="span6">
+      <h3>Features</h3>
+      <div class="well well-transparent">
+        <ul class="icons">
+          <li><i class="icon-ok"></i>Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray</li>
+          <li><i class="icon-ok"></i>Transparent integration with Akka projects through an Akka extension</li>
+          <li><i class="icon-ok"></i>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vclock, etag, content type, last modified time, indexes, etc.)</li>
+          <li><i class="icon-ok"></i>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vclock, etag, content type, last modified time, indexes, etc.)</li>
+          <li><i class="icon-ok"></i>Customizable conflict resolution on all fetches (and stores when returnbody=true)</li>
+          <li><i class="icon-ok"></i>Automatic (de)serialization of Scala (case) classes using type classes</li>
+          <li>
+            <ul class="icons">
+              <li><i class="icon-ok"></i>builtin spray-json (de)serializers</li>
+            </ul>
+          </li>
+          <li><i class="icon-ok"></i>Automatic indexing of Scala (case) classes using type classes</li>
+          <li><i class="icon-ok"></i>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="span1"></div>
+  </div> <!-- /row -->
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <p>
+        This project was started in December 2012 out of frustration about the (then) lack of non-blocking
+        Scala (or Java) client libraries for <a href="http://basho.com/riak/">Riak</a>.
+        The first public version ({{ site.version }}) was released in March 2013 after several early beta
+        releases were tested internally to get feedback from external users on a commercial project.
+      </p>
+      <p>
+        <em>riak-scala-client</em> has been tested on single machine Riak installations and small(ish) clusters
+        of up to 7 nodes. It has not been used in production yet and, based on public feedback to the first
+        public beta version, there might be some minor API changes on the way towards 1.0. So please go ahead
+        and try it out or even battle test it in production as long as you are aware that the paint is barely dry.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div> <!-- /row -->
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Getting Started</h3>
+      <p>
+        <em>riak-scala-client</em> is available from the Maven Central and Sontatype Releases repositories.
+        The current version is <em>{{ site.version }}</em> and it is only available for Scala 2.10 (and later).
+      </p>
+
+      <p>
+        You can add <em>riak-scala-client</em> to your SBT project by including the following dependency:
+      </p>
+      <p>
+{% highlight scala %}
+libraryDependencies += "com.scalapenos" %% "riak-scala-client" % {{ site.version }}
+{% endhighlight %}
+      </p>
+
+      <p>
+        Or if you prefer Maven, you can add <em>riak-scala-client</em> to your Maven project by including the following dependency:
+      </p>
+      <p>
+{% highlight xml %}
+<dependency>
+  <groupId>com.scalapenos</groupId>
+  <artifactId>riak-scala-client_2.10</artifactId>
+  <version>{{ site.version }}</version>
+</dependency>
+{% endhighlight %}
+      </p>
+
+      <p>
+        Next, head on over to the <a href="documentation.html">documentation</a> section, which describes
+        everything else you need to get started.
+      </p>
+    </div>
+    <div class="span1"></div>
+  </div> <!-- /row -->
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Coming Soon</h3>
+      <p>
+        The following Riak API features still have to be implemented:
+      </p>
+      <div class="well well-transparent">
+        <ul class="icons">
+          <li><i class="icon-ok"></i>Link Walking</li>
+          <li><i class="icon-ok"></i>Map Reduce</li>
+          <li><i class="icon-ok"></i>Listing all keys in a bucket</li>
+          <li><i class="icon-ok"></i>Listing all buckets</li>
+          <li><i class="icon-ok"></i>
+            Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
+            If-Modified-Since and If-Unmodified-Since for LastModified)
+          </li>
+          <li><i class="icon-ok"></i>Riak Node Status</li>
+        </ul>
+      </div>
+      <p>
+        Other things that are on the roadmap for 1.0:
+      </p>
+      <div class="well well-transparent">
+        <ul class="icons">
+          <li><i class="icon-ok"></i>Using Play Iteratees for all API methods that return multiple values</li>
+          <li><i class="icon-ok"></i>Implement streaming http response handling for all API methods that return multiple values</li>
+          <li><i class="icon-ok"></i>Implement some micro-benchmarks to compare performance with other current Scala/Java clients</li>
+      </div>
+      <p>
+        If you think anything is missing from the above lists, please go ahead and let us know by
+        creating an issue or a pull request!
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div> <!-- /row -->
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Feedback Welcome!</h3>
+      <p>
+        Feedback is always good so please go ahead and fork the project, file issues (or complaints),
+        create pull requests, star the project on GitHub, or loudly proclaim your (dis)approval on
+        a mailing list of your choice (<a href="http://lists.basho.com/mailman/listinfo/riak-users_lists.basho.com">riak-users</a>
+        would be a good one to start with).
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div> <!-- /row -->
+
+</div> <!-- /container -->
+
+
+
+<div class="container">
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>License</h3>
+      <p>
+        This project is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0 open source license</a>.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+</div> <!-- /container -->

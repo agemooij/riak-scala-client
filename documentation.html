@@ -1,0 +1,481 @@
+---
+layout: main
+title: Home
+section: documentation
+---
+<div class="container">
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Initalizing an instance of RiakClient</h3>
+      <p>
+        Everything starts with creating an instance of <code>RiakClient</code>. <code>RiakClient</code>
+        takes two core arguments, namely a reference to an <a href="http://akka.io" target="_blank">Akka</a>
+        <code>ActorSystem</code> and the location of the Riak node you want to interact with.
+      </p>
+      <p>
+        If your app is not based on Akka and therefor has no access to an initialized actor system,
+        you can leave off the <code>ActorSystem</code> argument and one will be created for you
+        internally. The location of a riak node can be specified as either an HTTP url pointing
+        to root of your Riak node or a combination of a hostname and a port number.
+      </p>
+      <p>
+{% highlight scala %}
+// Specifying an existing ActorSystem
+val client = RiakClient(actorSystem, "localhost", 80)
+
+// or
+val client = RiakClient(actorSystem, "http://riak-node.com/")
+
+// Using an internal ActorSystem
+val client = RiakClient("localhost", 80)
+
+// or
+val client = RiakClient("http://riak-node.com/")
+{% endhighlight %}
+      </p>
+      <p>
+        It is important to note that internally <code>RiakClient</code> uses an
+        <a href="http://doc.akka.io/docs/akka/2.1.0/scala/extending-akka.html">Akka extension</a> to ensure there can
+        be only one instance of <code>RiakClient</code> per actor system. This means that you can <em>"create"</em>
+        as many instances of <code>RiakClient</code> as you want because under the surface they all point at the same
+        one.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>RiakValue and RiakMeta</h3>
+      <p>
+        Before we can fetch and store values, it might be a good idea to talk about how those values are represented.
+      </p>
+      <p>
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakValue" target="_blank">RiakValue</a></code>
+        represents the raw, serialized value stored in Riak and all its associated meta data,
+        such as its content type, its vclock, its etag, its last modified timestamp its indexes, etc.
+        Most interactions with Riak involve dealing with instances of <code>RiakValue</code> in one way or another.
+      </p>
+      <p>
+        Since dealing with raw, untyped data is usually not what you want when programming in Scala, any
+        <code>RiakValue</code> can be transformed into an instance of
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakMeta" target="_blank">RiakMeta[T]</a></code>,
+        which represents the same Riak meta data as <code>RiakValue</code> but now the raw data has been
+        deserialized into some type <code>T</code>. This is accomplished by calling its <code>asMeta[T]</code>
+        method.
+      </p>
+      <p>
+{% highlight scala %}
+val raw: RiakValue = ...
+
+val meta: RiakMeta[Myclass] = raw.asMeta[MyClass]
+{% endhighlight %}
+      </p>
+      <p>
+        The reverse transformation is just as simple. Just call the <code>toRiakValue</code> method
+        on any instance of <code>RiakMeta</code>.
+      </p>
+      <p>
+{% highlight scala %}
+val meta: RiakMeta[Myclass] = raw.asMeta[MyClass]
+
+val raw: RiakValue = meta.toRiakValue
+{% endhighlight %}
+      </p>
+      <p>
+        If you just want access to the deserialized T without any of the Riak meta data, you can call the
+        <code>as[T]</code> method on <code>RiakValue</code>:
+      </p>
+      <p>
+{% highlight scala %}
+val raw: RiakValue = ...
+
+val myClass: Myclass = raw.as[MyClass]
+{% endhighlight %}
+      </p>
+      <p>
+        This probably all seems pretty abstract to you. For a more integrated example of how to work with
+        <code>RiakValue</code> and <code>RiakMeta</code>, have a look at the <a href="examples.html">Examples</a>
+        section.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Serialization</h3>
+      <p>
+        Of course, these transformations between raw serialized data and typed deserialized
+        data don't happen by themselves. These transformations require compatible instances of the
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakSerializer" target="_blank">RiakSerializer[T]</a></code>
+        and <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakDeserializer" target="_blank">RiakDeserializer[T]</a></code>
+        type classes to be available in implicit scope. Let's have a look at their definitions:
+      </p>
+      <p>
+{% highlight scala %}
+/**
+ * A RiakSerializer is a type class trait for implementing serialization from some
+ * type T to a Tuple2 of raw data (a String) and a ContentType.
+ */
+@implicitNotFound(msg = "Cannot find RiakSerializer type class for ${T}")
+trait RiakSerializer[T] {
+  def serialize(t: T): (String, ContentType)
+}
+
+/**
+ * A RiakDeserializer is a type class trait for implementing deserialization from some
+ * raw data (a String) and a ContentType to a type T.
+ */
+@implicitNotFound(msg = "Cannot find RiakDeserializer type class for ${T}")
+trait RiakDeserializer[T] {
+  def deserialize(data: String, contentType: ContentType): T
+}
+{% endhighlight %}
+      </p>
+      <p>
+        <em>riak-scala-client</em> uses <code>String</code> as the lowest level
+        encoding, which means binary formats are not currently supported. This was a design choice
+        made to keep the API as simple as possible. Please let us know if you would like support
+        for binary formats!
+      </p>
+      <p>
+        <em>riak-scala-client</em> comes with out-of-the-box support for (de)serializing
+        raw Strings (i.e no serialization at all, using text/plain as the content type) and
+        any case classes with an associated <a href="https://github.com/spray/spray-json">spray-json</a>
+        <code>RootJsonFormat</code> (using application/json). These out-of-the-box implementations
+        will be used by default if you don't create your own serializers (and your classes fit the
+        criteria described above) See the <a href="examples.html">Examples</a>
+        section for examples using both builtin and custom serialization.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Buckets</h3>
+      <p>
+        Just like in Riak, buckets in <em>riak-scala-client</em> are just a way to namespace your keys.
+        You can get a reference to a particular bucket simply by calling the <code>bucket</code> method
+        of <code>RiakClient</code>, resulting in an instance of
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakBucket" target="_blank">RiakBucket</a></code>.
+      </p>
+      <p>
+{% highlight scala %}
+val client = RiakClient(actorSystem, "http://riak-node.com/")
+
+val bucket = client.bucket("my-first-bucket")
+{% endhighlight %}
+      </p>
+      <p>
+        Most functionality of <em>riak-scala-client</em> is exposed as methods on a <code>RiakBucket</code>,
+        as you will see below.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Fetching Values</h3>
+      <p>
+        As you would expect, fetching data from Riak is very simple indeed. Just call the <code>fetch</code>
+        method on any bucket with a key fo your choice:
+      </p>
+      <p>
+{% highlight scala %}
+val bucket = client.bucket("my-first-bucket")
+
+val value: Future[Option[RiakValue]] = bucket.fetch("some-awesome-key")
+{% endhighlight %}
+      </p>
+      <p>
+        As you can see, the return type of <code>fetch</code> is <code>Future[Option[RiakValue]]</code>.
+        All operations in <em>riak-scala-client</em> that interact with Riak are non-blocking so all of those
+        operations will result in some type of <code>Future</code> being produced. The
+        <a href="examples.html">Examples</a> section has lots of examples of how to interact with Futures.
+      </p>
+      <p>
+        Obviously not all keys will be bound to a value in Riak so the <code>Future</code>
+        returned by <code>fetch</code> wraps an <code>Option[RiakValue]</code>.
+      </p>
+      <p>
+        Conflict resolution during fetch and fetching with secondary indexes will be discussed below.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Storing Values</h3>
+      <p>
+        Storing values in Riak is almost as easy as fetching them. The most basic store operation
+        is one that takes a (<code>String</code>) key and a <code>RiakValue</code> and returns
+        a <code>Future[Unit]</code>.
+      </p>
+      <p>
+{% highlight scala %}
+val value: RiakValue = ...
+
+val result: Future[Unit] = bucket.store("some-awesome-key", value)
+{% endhighlight %}
+      </p>
+      <p>
+        This is basically a fire-and-forget operation but you can use the returned Future to handle any
+        errors that might occur while <em>riak-scala-client</em> communicates with Riak. If you want to
+        have access to the value you just stored, or more probably to its meta data (i.e. to make sure you
+        are working a value based on the latest vclock), you can use the <code>storeAndFetch</code> method,
+        which will perform a Riak HTTP store operation using the <code>returnbody=true</code> query parameter.
+      </p>
+      <p>
+{% highlight scala %}
+val value: RiakValue = ...
+
+val result: Future[RiakValue] = bucket.storeAndFetch("some-awesome-key", value)
+{% endhighlight %}
+      </p>
+      <p>
+        Working with raw <code>RiakValue</code> instances is fine when you get them returned from a
+        <code>fetch</code> operation but when you want to store data it is often more convenient to work
+        with your own domain classes. To that end you can also <code>store</code> any type T for which
+        there is a <code>RiakSerializer[T]</code> and a <code>RiakIndexer[T]</code> in implicit scope.
+      </p>
+      <p>
+{% highlight scala %}
+val value: MyClass = ...
+
+// this only compiles if both a RiakSerializer[MyClass] and a
+// RiakIndexer[MyClass] are implicitly available.
+val result: Future[RiakValue] = bucket.storeAndFetch("some-awesome-key", value)
+{% endhighlight %}
+      </p>
+      <p>
+        As long as the value is either a <code>String</code>, a class associated
+        with a <code>spray-json RootJsonFormat[T]</code>, or a class associated with a custom
+        <code>RiakSerializer[T]</code>, it will be automatically serialized and stored. The
+        <a href="examples.html">Examples</a> section has more details about how to use the builtin
+        serializers or how to define your own ones.
+      </p>
+      <p>
+        Don't worry about the indexer part for now since there is always a default indexer in scope
+        that will not index anything. See the section on secondary indexes below for more information.
+      </p>
+      <p>
+        Lastly, you can also store any instance of <code>RiakMeta[T]</code> directly without having
+        to convert it to a <code>RiakValue</code> yourself.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Deleting Values</h3>
+      <p>
+        Deleting values from Riak is probably the simplest operation you can perform. Just pass the key
+        to the <code>delete</code> method.
+      </p>
+      <p>
+{% highlight scala %}
+val result: Future[Unit] = bucket.delete("my-less-awesome-key")
+{% endhighlight %}
+      </p>
+      <p>
+        As with the fire-and-forget version of <code>store</code>, you can use the returned <code>Future</code>
+        to handle any possible errors gracefully.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Conflict Resolution</h3>
+      <p>
+        If you decide to turn on support for siblings for one (or more) of your buckets, which you can do using
+        the <code>allow_mult</code> bucket property (also available as <code>allowSiblings</code>), then any
+        <code>fetch</code> or <code>storeAndFetch</code> can result in a conflict to be resolved.
+        <em>riak-scala-client</em> allows you to solve these conflicts yourself by specifying
+        a <code><a href="scaladocs/index.html#com.scalapenos.riak.package$$RiakConflictsResolver" target="_blank">RiakConflictsResolver</a></code>
+        when getting a reference to a bucket.
+      </p>
+      <p>
+{% highlight scala %}
+val bucket = client.bucket("stuff", StuffConflictsResolver)
+
+// or
+val bucket = client.bucket("stuff", resolver = StuffConflictsResolver)
+{% endhighlight %}
+      </p>
+      <p>
+        Conflict resolvers are usually implemented as (case) objects since they are stateless.
+        To create a custom resolver you will need to extend from the <code>RiakConflictsResolver</code>
+        trait and implement the <code>resolve</code> method. <code>RiakConflictsResolver</code> is
+        defined as follows:
+      </p>
+      <p>
+{% highlight scala %}
+trait RiakConflictResolver {
+  def resolve(values: Set[RiakValue]): RiakValue
+}
+{% endhighlight %}
+      </p>
+      <p>
+        Your custom conflict resolver will be presented with a <code>Set</code> of <code>RiakValue</code> instances
+        and its job is to produce one <code>RiakValue</code> instance, which could be one from the set or a new one
+        created based on some combination of the values in the set.
+      </p>
+      <p>
+        If the bucket you are working with has sibling support turned on (i.e. <code>allow_mult == true</code>), you
+        should always specify a conflict resolver. Failing to do so will activate the default no-op resolver, which will
+        throw an exception to remind you to specify a real resolver.
+      </p>
+      <p>
+        The <a href="examples.html">Examples</a> section contains at least one example of a custom resolver and you
+        can find more examples in the <eM>riak-scala-client</em> unit tests.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Secondary Indexes (2i)</h3>
+      <p>
+        <em>riak-scala-client</em> fully supports Riak secondary indexes. Every <code>RiakValue</code> has a set of
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakIndex" target="_blank">RiakIndex</a></code>
+        instances representing the secondary indexes it should be stored with. There are also a number of extra
+        versions of the <code>fetch</code> method for fetching data by either a single index or an index range.
+        The result of such index fetches is always a <code>Future[List[RiakValue]]</code> where <em>riak-scala-client</em>
+        takes care of fetching the individual values based on the keys returned by the HTTP index fetch.
+      </p>
+      <p>
+        Using a <code>Future[List[RiakValue]]</code> here is not ideal since the list of values might be very big
+        and might not even fit into available memory. You also have to wait (in a matter of speaking) until all
+        the values have been retrieved before you can do anything with them. The next version of <em>riak-scala-client</em>
+        will very probably use Play Iteratees to reimplement these methods (or to create streaming versions of them).
+      </p>
+      <p>
+        That being said, let's look at some examples:
+      </p>
+      <p>
+{% highlight scala %}
+val values: Future[List[RiakValue]] = bucket.fetch("skill", "awesomeness")
+
+val values: Future[List[RiakValue]] = bucket.fetch("answer", 42)
+
+val values: Future[List[RiakValue]] = bucket.fetch("timestamp", "201301010000", "201302010000")
+
+val values: Future[List[RiakValue]] = bucket.fetch("size", 10000, 40000)
+{% endhighlight %}
+      </p>
+      <p>
+        <em>riak-scala-client</em> will add the appropriate type suffix (i.e. "_bin" or "_int") to the name
+        you specify for the index so you don't have to. All index names and index values will also be properly
+        URL encoded so your index names and values can contain non-ascii values.
+      </p>
+      <p>
+        Just like you can create a custom (de)serializer type class for your domain class, you can also
+        create a custom indexer by providing an implicit implementation of the <code>RiakIndexer[T]</code>
+        trait, which looks like this:
+      </p>
+      <p>
+{% highlight scala %}
+@implicitNotFound(msg = "Cannot find RiakIndex type class for ${T}")
+trait RiakIndexer[T] {
+  def index(t: T): Set[RiakIndex]
+}
+{% endhighlight %}
+      </p>
+      <p>
+        <em>riak-scala-client</em> provides a default implementation of <code>RiakIndexer[T]</code> for any
+        <code>T</code> that simply creates an empty set of indexes. This implementation is available from
+        the lowest possible implicit scopes so any custom implementation you make implicitly available will
+        always override it.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Bucket Properties</h3>
+      <p>
+        Next to the obvious methods for fetching, storing, and deleting values, <code>RiakBucket</code> also
+        exposes methods for getting and setting common bucket properties. Some examples:
+      </p>
+      <p>
+{% highlight scala %}
+// Get all bucket properties at once
+val props: Future[RiakBucketProperties] = bucket.properties
+
+// get an individual property
+val allowSiblings: Future[Boolean] = bucket.allowSiblings
+{% endhighlight %}
+      </p>
+      <p>
+        See the Scaladocs for
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakBucket" target="_blank">RiakBucket</a></code> and
+        <code><a href="scaladocs/index.html#com.scalapenos.riak.RiakBucketProperties" target="_blank">RiakBucketProperties</a></code>
+        for the full set of supported bucket properties.
+      </p>
+    </div>
+
+    <div class="span1"></div>
+  </div>
+
+  <div class="row">
+    <div class="span12"></div>
+  </div>
+
+</div> <!-- /container -->
