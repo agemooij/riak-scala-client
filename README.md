@@ -13,6 +13,8 @@ A first stable public version, 0.8, is scheduled to be released to the Sonatype/
 repositories around mid-March 2013. We are currently adding the last finishing touches
 and writing some proper documentation.
 
+See the [documentation site] for full [documentation], [examples], [scaladocs], and more.
+
 
 ## Features
 
@@ -44,13 +46,13 @@ Other features include:
 
 The following Riak (http) API features are still under construction:
 
-- link walking
+- Link walking
 - Map Reduce
-- status
-- listing all buckets
-- listing all keys in a bucket
+- Listing all keys in a bucket
+- Listing all buckets
 - Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
   If-Modified-Since and If-Unmodified-Since for LastModified)
+- Node Status
 
 The initial focus is on supporting the Riak HTTP API. Protobuf support might be added
 later but it has a low priority at the moment.
@@ -64,7 +66,7 @@ The riak-scala-client has been tested against [Riak] versions 1.2.x and 1.3.0.
   all matching keys. This means that this list of keys matching the specified index
   is currently read into memory in its entirety. Fetches with large (100k+) result sets can
   be slow because of this and might potentially cause memory problems. A future release
-  will solve this by streaming the key data using iteratees.
+  will solve this by streaming the data using Play iteratees.
 
 
 ## Why such a boring name?
@@ -81,11 +83,15 @@ If you come up with a cooler name, please let us know and eternal fame will be y
 
 The _riak-scala-client_ is licensed under [APL 2.0].
 
-  [Riak]:      http://basho.com/riak/
-  [Akka]:      http://akka.io/
-  [Spray]:     http://spray.io/
-  [APL 2.0]:   http://www.apache.org/licenses/LICENSE-2.0
-  [riaktive]:  https://github.com/xaleraz/Riaktive
-  [riakka]:    https://github.com/timperrett/riakka
-  [riaktor]:   https://github.com/benmyles/riaktor
-  [scalariak]: https://github.com/ariejdl/scala-riak
+  [documentation site]: http://riak.scalapenos.com/
+  [documentation]:      http://riak.scalapenos.com/
+  [examples]:           http://riak.scalapenos.com/examples.html
+  [scaladocs]:          http://riak.scalapenos.com/scaladocs/index.html#com.scalapenos.riak.package
+  [Riak]:               http://basho.com/riak/
+  [Akka]:               http://akka.io/
+  [Spray]:              http://spray.io/
+  [APL 2.0]:            http://www.apache.org/licenses/LICENSE-2.0
+  [riaktive]:           https://github.com/xaleraz/Riaktive
+  [riakka]:             https://github.com/timperrett/riakka
+  [riaktor]:            https://github.com/benmyles/riaktor
+  [scalariak]:          https://github.com/ariejdl/scala-riak
