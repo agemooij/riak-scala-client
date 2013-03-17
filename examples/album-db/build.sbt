@@ -4,7 +4,7 @@ version := "0.1-SNAPSHOT"
 
 organization := "com.scalapenos"
 
-scalaVersion := "2.10.0"
+scalaVersion := "2.10.1"
 
 scalacOptions := Seq("-encoding", "utf8",
                      "-target:jvm-1.6",
@@ -30,7 +30,7 @@ resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repo
                   "Spray Nightlies"     at "http://nightlies.spray.io/")
 
 libraryDependencies ++= {
-  val akkaVersion       = "2.1.1"
+  val akkaVersion       = "2.1.2"
   val sprayVersion      = "1.1-20130123"
   val riakClientVersion = "0.8-SNAPSHOT"
   Seq(
