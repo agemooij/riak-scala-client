@@ -19,9 +19,9 @@ package com.scalapenos.riak.examples.albums
 import spray.json.DefaultJsonProtocol._
 
 
-case class Track (title: String)
+case class Track (number: Int, title: String)
 object Track {
-  implicit val jsonFormat = jsonFormat1(Track.apply)
+  implicit val jsonFormat = jsonFormat2(Track.apply)
 }
 
 case class Album (

@@ -16,9 +16,10 @@
 
 package com.scalapenos.riak.examples.albums
 
-import org.specs2.mutable.Specification
+import org.specs2.mutable._
 import org.specs2.time.NoTimeConversions
 
+import scala.concurrent.duration._
 import akka.actor._
 import akka.testkit._
 import spray.util._
@@ -28,122 +29,150 @@ import com.scalapenos.riak._
 import AlbumRepositoryProtocol._
 
 
-class RiakAlbumPepositorySpec extends Specification with NoTimeConversions {
+class RiakAlbumRepositorySpec extends Specification with NoTimeConversions {
   val timeout = 2 seconds
 
-  // val activeRoute1 = Album(Some(Location(2001000, 42000000)))
-  // val activeRoute2 = Album(Some(Location(5005000, 42424242)))
+  val album1 = Album(
+    title = "Employment",
+    artist = "Kaiser Chiefs",
+    releasedIn = 2005,
+    tracks = List(
+      Track(1,  "Everyday I Love You Less and Less"),
+      Track(2,  "I Predict a Riot"),
+      Track(3,  "Modern Way"),
+      Track(4,  "Na Na Na Na Naa"),
+      Track(5,  "You Can Have It All"),
+      Track(6,  "Oh My God"),
+      Track(7,  "Born to Be a Dancer"),
+      Track(8,  "Saturday Night"),
+      Track(9,  "What Did I Ever Give You?"),
+      Track(10, "Time Honoured Tradition"),
+      Track(11, "Caroline, Yes"),
+      Track(12, "Team Mate")
+    )
+  )
 
 
-  "When receiving a FetchAlbumByTitle message, the RiakAlbumPepository" should {
-    "reply with a Some[Album] if the active route existed" in new AkkaTestkitContext {
-      val activeRouteStore = TestActorRef(Props[RiakAlbumPepository])
-      val userId = randomUUID
+  "When receiving a FetchAlbumByTitle message, the RiakAlbumRepository" should {
+    "reply with a Some[Album] if the album exists" in new AkkaTestkitContext {
+      val albumRepository = TestActorRef(Props[RiakAlbumRepository])
 
-      storeAlbumInDatabase(userId, activeRoute1)
+      storeAlbumInDatabase(album1)
 
       within(timeout) {
-        activeRouteStore ! FetchAlbumByTitle(userId)
+        albumRepository ! FetchAlbumByTitle(album1.title)
 
-        val activeRouteFromDb = expectMsgType[Option[RiakMeta[Album]]]
+        val albumFromDb = expectMsgType[Option[RiakMeta[Album]]]
 
-        activeRouteFromDb must beSome[RiakMeta[Album]]
-        activeRouteFromDb.get.data must beEqualTo(activeRoute1)
+        albumFromDb must beSome[RiakMeta[Album]]
+        albumFromDb.get.data must beEqualTo(album1)
       }
 
-      removeAlbumFromDatabase(userId)
+      removeAlbumFromDatabase(album1)
     }
 
-    "reply with a None if the active route doesn't exist" in new AkkaTestkitContext {
-      val activeRouteStore = TestActorRef(Props[RiakAlbumPepository])
-      val userId = randomUUID
+    "reply with a None if the album doesn't exist" in new AkkaTestkitContext {
+      val albumRepository = TestActorRef(Props[RiakAlbumRepository])
+      val title = "...Baby One More Time"
 
-      verifyAlbumDoesNotExistInDatabase(userId)
-
-      within(timeout) {
-        activeRouteStore ! FetchAlbumByTitle(userId)
-
-        val activeRouteFromDb = expectMsgType[Option[RiakMeta[Album]]]
-
-        activeRouteFromDb must beNone
-      }
-    }
-  }
-
-  "when receiving an UpdateAlbum message, the RiakAlbumPepository" should {
-    "update the active route in the database if it already existed" in new AkkaTestkitContext {
-      val activeRouteStore = TestActorRef(Props[RiakAlbumPepository])
-      val userId = randomUUID
-
-      storeAlbumInDatabase(userId, activeRoute1)
+      verifyAlbumDoesNotExistInDatabase(title)
 
       within(timeout) {
-        activeRouteStore ! UpdateAlbum(userId, activeRoute2)
+        albumRepository ! FetchAlbumByTitle(title)
 
-        val activeRouteFromDb = expectMsgType[Option[RiakMeta[Album]]]
+        val albumFromDb = expectMsgType[Option[RiakMeta[Album]]]
 
-        activeRouteFromDb must beSome[RiakMeta[Album]]
-        activeRouteFromDb.get.data must beEqualTo(activeRoute2)
-
-        verifyAlbumExistsInDatabase(userId, activeRoute2)
+        albumFromDb must beNone
       }
-
-      removeAlbumFromDatabase(userId)
-    }
-
-    "create the active route in the database if it did not already exist" in new AkkaTestkitContext {
-      val activeRouteStore = TestActorRef(Props[RiakAlbumPepository])
-      val userId = randomUUID
-
-      verifyAlbumDoesNotExistInDatabase(userId)
-
-      within(timeout) {
-        activeRouteStore ! UpdateAlbum(userId, activeRoute2)
-
-        val activeRouteFromDb = expectMsgType[Option[RiakMeta[Album]]]
-
-        activeRouteFromDb must beSome[RiakMeta[Album]]
-        activeRouteFromDb.get.data must beEqualTo(activeRoute2)
-
-        verifyAlbumExistsInDatabase(userId, activeRoute2)
-      }
-
-      removeAlbumFromDatabase(userId)
     }
   }
 
-  // TODO: when the riak client supports getting all keys for a bucket we can implement better cleaning
-  //step(removeAllAlbumsFromTheDatabase)
+  "when receiving a StoreAlbum message, the RiakAlbumRepository" should {
+    "store the album in the database" in new AkkaTestkitContext {
+      val albumRepository = TestActorRef(Props[RiakAlbumRepository])
+
+      verifyAlbumDoesNotExistInDatabase(album1.title)
+
+      within(timeout) {
+        albumRepository ! StoreAlbum(album1)
+
+        val albumFromDb = expectMsgType[RiakMeta[Album]]
+
+        albumFromDb.data must beEqualTo(album1)
+
+        verifyAlbumExistsInDatabase(album1)
+      }
+
+      removeAlbumFromDatabase(album1)
+    }
+  }
+
+  "when receiving an UpdateAlbum message, the RiakAlbumRepository" should {
+    "store the album in the database" in new AkkaTestkitContext {
+      val albumRepository = TestActorRef(Props[RiakAlbumRepository])
+      val updatedAlbum = album1.copy(tracks = Track(13, "I Heard It Through the Grapevine") +: album1.tracks)
+
+      storeAlbumInDatabase(album1)
+
+      within(timeout) {
+        albumRepository ! FetchAlbumByTitle(album1.title)
+
+        val albumFromDb = expectMsgType[Option[RiakMeta[Album]]]
+
+        albumFromDb must beSome[RiakMeta[Album]]
+        albumFromDb.get.data must beEqualTo(album1)
+
+        albumRepository ! UpdateAlbum(albumFromDb.get.map(_ => updatedAlbum))
+
+        val updatedAlbumFromDb = expectMsgType[RiakMeta[Album]]
+
+        updatedAlbumFromDb.data must beEqualTo(updatedAlbum)
+
+        verifyAlbumExistsInDatabase(updatedAlbum)
+      }
+
+      removeAlbumFromDatabase(updatedAlbum)
+    }
+  }
 
 
   // ==========================================================================
   // Test Helpers
   // ==========================================================================
 
-  private def storeAlbumInDatabase(userId: UUID, route: Album)(implicit system: ActorSystem) {
-    bucket.store(userId.toString, route).await
-
-    verifyAlbumExistsInDatabase(userId, route)
+  abstract class AkkaTestkitContext extends TestKit(ActorSystem()) with ImplicitSender with After {
+    def after {
+      system.shutdown()
+    }
   }
 
-  private def removeAlbumFromDatabase(userId: UUID)(implicit system: ActorSystem) {
-    bucket.delete(userId.toString).await
+  private def storeAlbumInDatabase(album: Album)(implicit system: ActorSystem) {
+    // we use the .await implit view from spray.)util to block on the outcome here.
+    // This is fine in unit tests to make them predictable but should never be used in production
+    // so this is NOT a best practise for how to use Futures!
+    bucket.store(album.title, album).await
 
-    verifyAlbumDoesNotExistInDatabase(userId)
+    verifyAlbumExistsInDatabase(album)
   }
 
-  private def verifyAlbumExistsInDatabase(userId: UUID, expectedRoute: Album)(implicit system: ActorSystem) {
-    val dbValue = bucket.fetch(userId.toString).await
+  private def removeAlbumFromDatabase(album: Album)(implicit system: ActorSystem) {
+    bucket.delete(album.title).await
+
+    verifyAlbumDoesNotExistInDatabase(album.title)
+  }
+
+  private def verifyAlbumExistsInDatabase(album: Album)(implicit system: ActorSystem) {
+    val dbValue = bucket.fetch(album.title).await
 
     dbValue must beSome[RiakValue]
 
-    val routeInDb = dbValue.get.as[Album]
+    val albumInDb = dbValue.get.as[Album]
 
-    routeInDb must beEqualTo(expectedRoute)
+    albumInDb must beEqualTo(album)
   }
 
-  private def verifyAlbumDoesNotExistInDatabase(userId: UUID)(implicit system: ActorSystem) {
-    bucket.fetch(userId.toString).await must beNone
+  private def verifyAlbumDoesNotExistInDatabase(title: String)(implicit system: ActorSystem) {
+    bucket.fetch(title).await must beNone
   }
 
   private def bucket(implicit system: ActorSystem) = RiakClient(system).bucket("albums")
