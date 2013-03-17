@@ -178,19 +178,11 @@ object AlbumRepositoryProtocol {
 class RiakAlbumRepository extends Actor with ActorLogging {
   ...
   def receive = {
-    case StoreAlbum(album)        => storeAlbum(album, sender)
-    case UpdateAlbum(album)       => updateAlbum(album, sender)
-    case FetchAlbumByTitle(title) => fetchAlbumByTitle(title, sender)
+    ...
+    case UpdateAlbum(album) => updateAlbum(album, sender)
   }
 
-  private def storeAlbum(album: Album, actor: ActorRef) {
-    albums.storeAndFetch(album.title, album)
-          .map(value => value.asMeta[Album])
-          .onSuccess {
-            case storedAlbumMeta => actor ! storedAlbumMeta
-          }
-  }
-
+  ...
   private def updateAlbum(albumMeta: RiakMeta[Album], actor: ActorRef) {
     albums.storeAndFetch(albumMeta.data.title, albumMeta)
           .map(value => value.asMeta[Album])
@@ -255,15 +247,52 @@ class RiakAlbumRepository extends Actor with ActorLogging {
     <div class="span10">
       <h3>Custom Serialization</h3>
       <p>
-        bla bla bla
+        So what if we want to customize the serialization format for some reason. Let's say you are writing
+        an enterprise app and some guy in the standards department absolutely insists on you storing all data
+        as XML (because it is a standard!)? After grumbling to your team mates and making fun of the guy, you
+        might come up with something like this:
       </p>
       <p>
 {% highlight scala %}
+object Album {
+  implicit object customXmlSerialization extends RiakSerializer[Album] with RiakDeserializer[Album] {
+    def serialize(album: Album): (String, ContentType) = {
+      val xml = <album>
+                  <title>{album.title}</title>
+                  <artist>{album.artist}</artist>
+                  <releasedin>{album.releasedIn}</releasedin>
+                  <tracks>
+                  {album.tracks.map(track => <track><number>{track.number}</number><title>{track.title}</title></track>)}
+                  </tracks>
+                </album>.toString
 
+       (xml, ContentType(`text/xml`))
+    }
+
+    def deserialize(data: String, contentType: ContentType): Album = {
+      import scala.xml._
+      def stringToXmlElem = XML.load(new java.io.StringReader(data))
+      def xmlElemToTrack(elem: Elem) = Track((elem \ "number").text.toInt, (elem \ "title").text)
+      def xmlElemToAlbum(elem: Elem) = Album(
+        (elem \ "title").text,
+        (elem \ "artist").text,
+        (elem \ "releasedin").text.toInt,
+        (elem \\ "track").toList.map(node => xmlElemToTrack(node.asInstanceOf[Elem]))
+      )
+
+      contentType match {
+        case ContentType(`text/xml`, _) => xmlElemToAlbum(stringToXmlElem)
+        case _ => throw RiakUnsupportedContentType(ContentType(`text/xml`), contentType)
+      }
+    }
+  }
+}
 {% endhighlight %}
       </p>
       <p>
-        bla bla bla
+        This is definitely not the best (de)serialization code ever written (e.g. absolutely
+        no error handling whatsoever) but hopefully it gives a good impression of what it
+        would take to write custom (de)serialization code.
       </p>
     </div>
 
@@ -275,17 +304,76 @@ class RiakAlbumRepository extends Actor with ActorLogging {
     <div class="span1"></div>
 
     <div class="span10">
-      <h3>Custom Indexers</h3>
+      <h3>Custom Indexes</h3>
       <p>
-        bla bla bla
+        Riak does not exactly offer the most powerfull query API and you probably knew that when you
+        selected Riak for your project. But sometimes a little is more than enough and, in the case of our
+        album repository, let's say all you need is some way to get a list of all albums for a certain artist and
+        all albums released in a certain period. Secondary indexes to the rescue!
+      </p>
+      <p>
+        Implementing some indexes for our Album class is very easy. Just add a <code>RiakIndexer[T}</code>
+        to the companion object (or anywhere else and import it where you need it). Something like:
       </p>
       <p>
 {% highlight scala %}
+object Album {
+  ...
 
+  implicit object indexer extends RiakIndexer[Album] {
+    def index(album: Album) = Set(RiakIndex("artist", album.artist),
+                                  RiakIndex("releasedIn", album.releasedIn))
+  }
+}
 {% endhighlight %}
       </p>
       <p>
-        bla bla bla
+        This custom indexer will be automatically used whenever an <code>Album</code> (or a <code>RiakMeta[Album]</code>)
+        gets stored using one of the <code>store</code> methods on <code>RiakBucket</code>.
+      </p>
+      <p>
+        Implementing index queries in our repository is now pretty simple:
+      </p>
+      <p>
+{% highlight scala %}
+object AlbumRepositoryProtocol {
+  ...
+  case class FetchAlbumsByArtist(artist: String)
+  case class FetchAlbumsReleasedBetween(startYear: Int, endYear: Int)
+}
+
+class RiakAlbumRepository extends Actor with ActorLogging {
+  ...
+
+  def receive = {
+    ...
+    case FetchAlbumsByArtist(artist) => fetchAlbumsByArtist(artist, sender)
+    case FetchAlbumsReleasedBetween(startYear, endYear) =>
+      fetchAlbumsReleasedBetween(startYear, endYear, sender)
+  }
+
+  ...
+
+  private def fetchAlbumsByArtist(artist: String, actor: ActorRef) {
+    albums.fetch("artists", artist)
+          .map(values => values.map(_.as[Album]))
+          .onSuccess {
+            case albums => actor ! albums
+          }
+  }
+
+  private def fetchAlbumsReleasedBetween(startYear: Int, endYear: Int, actor: ActorRef) {
+    albums.fetch("releasedIn", startYear, endYear)
+          .map(values => values.map(_.as[Album]))
+          .onSuccess {
+            case albums => actor ! albums
+          }
+  }
+}
+{% endhighlight %}
+      </p>
+      <p>
+        And that's it for our Riak albums repository.
       </p>
     </div>
 
