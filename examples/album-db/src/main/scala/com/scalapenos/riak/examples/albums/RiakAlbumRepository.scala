@@ -24,6 +24,8 @@ object AlbumRepositoryProtocol {
   case class StoreAlbum(album: Album)
   case class UpdateAlbum(album: RiakMeta[Album])
   case class FetchAlbumByTitle(title: String)
+  case class FetchAlbumsByArtist(artist: String)
+  case class FetchAlbumsReleasedBetween(startYear: Int, endYear: Int)
 }
 
 class RiakAlbumRepository extends Actor with ActorLogging {
@@ -33,9 +35,12 @@ class RiakAlbumRepository extends Actor with ActorLogging {
   private val albums = RiakClient(context.system, "localhost", 8098).bucket("albums")
 
   def receive = {
-    case StoreAlbum(album)        => storeAlbum(album, sender)
-    case UpdateAlbum(album)       => updateAlbum(album, sender)
-    case FetchAlbumByTitle(title) => fetchAlbumByTitle(title, sender)
+    case StoreAlbum(album)           => storeAlbum(album, sender)
+    case UpdateAlbum(album)          => updateAlbum(album, sender)
+    case FetchAlbumByTitle(title)    => fetchAlbumByTitle(title, sender)
+    case FetchAlbumsByArtist(artist) => fetchAlbumsByArtist(artist, sender)
+
+    case FetchAlbumsReleasedBetween(startYear, endYear) => fetchAlbumsReleasedBetween(startYear, endYear, sender)
   }
 
   private def storeAlbum(album: Album, actor: ActorRef) {
@@ -59,6 +64,22 @@ class RiakAlbumRepository extends Actor with ActorLogging {
           .map(valueOption => valueOption.map(_.asMeta[Album]))
           .onSuccess {
             case albumMetaOption => actor ! albumMetaOption
+          }
+  }
+
+  private def fetchAlbumsByArtist(artist: String, actor: ActorRef) {
+    albums.fetch("artists", artist)
+          .map(values => values.map(_.as[Album]))
+          .onSuccess {
+            case albums => actor ! albums
+          }
+  }
+
+  private def fetchAlbumsReleasedBetween(startYear: Int, endYear: Int, actor: ActorRef) {
+    albums.fetch("releasedIn", startYear, endYear)
+          .map(values => values.map(_.as[Album]))
+          .onSuccess {
+            case albums => actor ! albums
           }
   }
 }

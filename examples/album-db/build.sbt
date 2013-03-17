@@ -35,8 +35,6 @@ libraryDependencies ++= {
   val riakClientVersion = "0.8-SNAPSHOT"
   Seq(
     "com.scalapenos"          %%  "riak-scala-client"  % riakClientVersion,
-    "io.spray"                %   "spray-routing"      % sprayVersion,
-    "io.spray"                %   "spray-can"          % sprayVersion,
     "ch.qos.logback"          %   "logback-classic"    % "1.0.10",
     "com.typesafe.akka"       %%  "akka-testkit"       % akkaVersion    % "test",
     "io.spray"                %   "spray-testkit"      % sprayVersion   % "test",
