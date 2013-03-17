@@ -6,15 +6,10 @@ import scala.concurrent.Future
 import akka.actor._
 import akka.testkit._
 
-
-abstract class AkkaTestkitContext extends TestKit(ActorSystem()) with ImplicitSender with After {
-  def after = system.shutdown()
-}
-
-
 import org.specs2.execute.{Failure, FailureException}
 import org.specs2.specification.{Fragments, Step}
 import org.specs2.time.NoTimeConversions
+
 
 trait AkkaActorSystemSpecification extends Specification with NoTimeConversions {
   implicit val system = ActorSystem("tests")
