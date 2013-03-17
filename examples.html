@@ -10,7 +10,11 @@ section: examples
 
     <div class="span10">
       <p>
-        The following examples have been bundled as a complete example mini-app, which can be found in the
+        The examples described on this page are very simple and their only purpose is to indicate
+        how to use some features of <em>riak-scala-client</em>.
+      </p>
+      <p>
+        These examples have been bundled as a complete example mini-app, which can be found in the
         <a href="https://github.com/agemooij/riak-scala-client/tree/master/examples">examples</a> folder
         of the Github project.
       </p>
@@ -39,9 +43,9 @@ section: examples
 {% highlight scala %}
 import spray.json.DefaultJsonProtocol._
 
-case class Track (title: String)
+case class Track (number: Int, title: String)
 object Track {
-  implicit val jsonFormat = jsonFormat1(Track.apply)
+  implicit val jsonFormat = jsonFormat2(Track.apply)
 }
 
 case class Album (
@@ -69,28 +73,174 @@ object AlbumRepositoryProtocol {
 {% endhighlight %}
       </p>
       <p>
-        Using the above domain and message protocol, let's write some failing unit tests for the
+        Using the above domain and message protocol, let's write a failing unit test for the
         <code>RiakAlbumRepository</code>.
       </p>
       <p>
 {% highlight scala %}
+  "when receiving a StoreAlbum message, the RiakAlbumRepository" should {
+    "store the album in the database" in new AkkaTestkitContext {
+      val albumRepository = TestActorRef(Props[RiakAlbumRepository])
 
+      verifyAlbumDoesNotExistInDatabase(album1.title)
+
+      within(timeout) {
+        albumRepository ! StoreAlbum(album1)
+
+        val albumFromDb = expectMsgType[Album]
+
+        albumFromDb must beEqualTo(album1)
+
+        verifyAlbumExistsInDatabase(album1)
+      }
+
+      removeAlbumFromDatabase(album1)
+    }
+  }
 {% endhighlight %}
       </p>
       <p>
-
+        This is only one of the tests and without any of the test data or helper functions.
+        Have a look at the <a href="https://github.com/agemooij/riak-scala-client/blob/master/examples/album-db/src/test/scala/com/scalapenos/riak/examples/albums/RiakAlbumRepositorySpec.scala">full code for this unit test</a>
+        to see the rest.
+      </p>
+      <p>
+        With some failing unit tests in place, we can now implement the repository:
       </p>
       <p>
 {% highlight scala %}
+class RiakAlbumRepository extends Actor with ActorLogging {
+  import AlbumRepositoryProtocol._
+  import context.dispatcher
 
+  private val albums = RiakClient(context.system, "localhost", 8098).bucket("albums")
+
+  def receive = {
+    case StoreAlbum(album)        => storeAlbum(album, sender)
+    case FetchAlbumByTitle(title) => fetchAlbumByTitle(title, sender)
+  }
+
+  private def storeAlbum(album: Album, actor: ActorRef) {
+    albums.storeAndFetch(album.title, album)
+          .map(value => value.as[Album])
+          .onSuccess {
+            case storedAlbum => actor ! storedAlbum
+          }
+  }
+
+  private def fetchAlbumByTitle(title: String, actor: ActorRef) {
+    albums.fetch(title)
+          .map(valueOption => valueOption.map(_.as[Album]))
+          .onSuccess {
+            case albumOption => actor ! albumOption
+          }
+  }
+}
 {% endhighlight %}
       </p>
       <p>
+        In both cases, we convert raw <code>RiakValue</code> instances to instances of <code>Album</code>
+        (or <code>Option[Album]</code>) by mapping over the <code>Future</code> and then we register a callback
+        function to send the result to the actor that sent the request when the future completes successfully.
+      </p>
+      <p>
+        That's basically all it takes for a ery simple non-blocking Riak repository.
+      </p>
+    </div>
 
+    <div class="span1"></div>
+  </div>
+
+
+  <div class="row">
+    <div class="span1"></div>
+
+    <div class="span10">
+      <h3>Dealing with vclocks and other meta data</h3>
+      <p>
+        Note that in the above example, the <code>StoreAlbum</code> message takes an instance of <code>Album</code>.
+        This is fine for new albums but what if we wanted to update albums? The current implementation would not
+        send along any vclock information and, if the <code>albums</code> bucket is configured to allow siblings,
+        this will lead to conflicts that could have been prevented.
+      </p>
+      <p>
+        Depending on your situation, sometimes it is a good idea to keep the values returned from a low-level
+        class like our album repository boxed inside a <code>RiakMeta</code> instance so you can use the meta data
+        at a later time to perform an update. This would look something like:
       </p>
       <p>
 {% highlight scala %}
+object AlbumRepositoryProtocol {
+  ...
+  case class UpdateAlbum(album: RiakMeta[Album])
+}
 
+class RiakAlbumRepository extends Actor with ActorLogging {
+  ...
+  def receive = {
+    case StoreAlbum(album)        => storeAlbum(album, sender)
+    case UpdateAlbum(album)       => updateAlbum(album, sender)
+    case FetchAlbumByTitle(title) => fetchAlbumByTitle(title, sender)
+  }
+
+  private def storeAlbum(album: Album, actor: ActorRef) {
+    albums.storeAndFetch(album.title, album)
+          .map(value => value.asMeta[Album])
+          .onSuccess {
+            case storedAlbumMeta => actor ! storedAlbumMeta
+          }
+  }
+
+  private def updateAlbum(albumMeta: RiakMeta[Album], actor: ActorRef) {
+    albums.storeAndFetch(albumMeta.data.title, albumMeta)
+          .map(value => value.asMeta[Album])
+          .onSuccess {
+            case storedAlbumMeta => actor ! storedAlbumMeta
+          }
+  }
+
+  private def fetchAlbumByTitle(title: String, actor: ActorRef) {
+    albums.fetch(title)
+          .map(valueOption => valueOption.map(_.asMeta[Album]))
+          .onSuccess {
+            case albumMetaOption => actor ! albumMetaOption
+          }
+  }
+}
+{% endhighlight %}
+      </p>
+      <p>
+        And the unit tests would look something like this:
+      </p>
+      <p>
+{% highlight scala %}
+  "when receiving an UpdateAlbum message, the RiakAlbumRepository" should {
+    "store the album in the database" in new AkkaTestkitContext {
+      val albumRepository = TestActorRef(Props[RiakAlbumRepository])
+      val updatedAlbum = album1.copy(tracks = Track(13, "I Heard It Through the Grapevine") +: album1.tracks)
+
+      storeAlbumInDatabase(album1)
+
+      within(timeout) {
+        albumRepository ! FetchAlbumByTitle(album1.title)
+
+        val albumFromDb = expectMsgType[Option[RiakMeta[Album]]]
+
+        albumFromDb must beSome[RiakMeta[Album]]
+        albumFromDb.get.data must beEqualTo(album1)
+
+        albumRepository ! UpdateAlbum(albumFromDb.get.map(_ => updatedAlbum))
+
+        val updatedAlbumFromDb = expectMsgType[RiakMeta[Album]]
+
+        updatedAlbumFromDb.data must beEqualTo(updatedAlbum)
+
+        verifyAlbumExistsInDatabase(updatedAlbum)
+      }
+
+      removeAlbumFromDatabase(updatedAlbum)
+    }
+  }
 {% endhighlight %}
       </p>
     </div>
