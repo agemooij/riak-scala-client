@@ -91,6 +91,17 @@ val raw: RiakValue = meta.toRiakValue
 {% endhighlight %}
       </p>
       <p>
+        If you just want access to the deserialized T without any of the Riak meta data, you can call the
+        <code>as[T]</code> method on <code>RiakValue</code>:
+      </p>
+      <p>
+{% highlight scala %}
+val raw: RiakValue = ...
+
+val myClass: Myclass = raw.as[MyClass]
+{% endhighlight %}
+      </p>
+      <p>
         This probably all seems pretty abstract to you. For a more integrated example of how to work with
         <code>RiakValue</code> and <code>RiakMeta</code>, have a look at the <a href="examples.html">Examples</a>
         section.
