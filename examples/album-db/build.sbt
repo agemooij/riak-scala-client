@@ -32,7 +32,7 @@ resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repo
 libraryDependencies ++= {
   val akkaVersion       = "2.1.2"
   val sprayVersion      = "1.1-20130123"
-  val riakClientVersion = "0.8-SNAPSHOT"
+  val riakClientVersion = "0.8.0"
   Seq(
     "com.scalapenos"          %%  "riak-scala-client"  % riakClientVersion,
     "ch.qos.logback"          %   "logback-classic"    % "1.0.10",
