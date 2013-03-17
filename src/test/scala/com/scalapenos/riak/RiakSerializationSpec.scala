@@ -18,7 +18,7 @@ package com.scalapenos.riak
 
 import scala.util._
 import org.specs2.mutable._
-import spray.http.MediaTypes._
+import MediaTypes._
 
 
 class RiakSerializationSpec extends Specification {

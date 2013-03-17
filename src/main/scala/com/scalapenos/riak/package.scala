@@ -38,6 +38,8 @@ package object riak {
 
   type DateTime = org.joda.time.DateTime
 
+  val MediaTypes = spray.http.MediaTypes
+
 
   // ============================================================================
   // Conflict Resolution
