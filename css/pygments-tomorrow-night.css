@@ -1,7 +1,15 @@
 .highlight .hll { background-color: #373b41 }
 .highlight  { background: #1d1f21; color: #c5c8c6 }
-.highlight pre  { background: #1d1f21; color: #c5c8c6 }
+
+.highlight pre  {
+    background: #1d1f21;
+    color: #c5c8c6;
+    font-size: 12px;
+    font-family: "Source Code Pro",Menlo,Monaco,Consolas,"Courier New",monospace;
+}
+
 .highlight .lineno { font-style: italic; color: #555555; margin-right: 10px;} /* line numbers */
+
 .highlight .c { color: #969896 } /* Comment */
 .highlight .err { color: #cc6666 } /* Error */
 .highlight .k { color: #b294bb } /* Keyword */
