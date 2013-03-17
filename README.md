@@ -84,7 +84,7 @@ If you come up with a cooler name, please let us know and eternal fame will be y
 The _riak-scala-client_ is licensed under [APL 2.0].
 
   [documentation site]: http://riak.scalapenos.com/
-  [documentation]:      http://riak.scalapenos.com/
+  [documentation]:      http://riak.scalapenos.com/documentation.html
   [examples]:           http://riak.scalapenos.com/examples.html
   [scaladocs]:          http://riak.scalapenos.com/scaladocs/index.html#com.scalapenos.riak.package
   [Riak]:               http://basho.com/riak/
