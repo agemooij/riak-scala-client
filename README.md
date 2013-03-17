@@ -9,9 +9,8 @@ A fast, non-blocking Scala client library for interacting with [Riak].
 This project was started in December 2012 out of frustration about the (then) lack of non-blocking
 Scala (or Java) client libraries for [Riak].
 
-A first stable public version, 0.8, is scheduled to be released to the Sonatype/Central
-repositories around mid-March 2013. We are currently adding the last finishing touches
-and writing some proper documentation.
+A first stable public version, 0.8.0, was released to the Sonatype/Central
+repositories in March 2013. Work on the next release is already under way.
 
 See the [documentation site] for full [documentation], [examples], [scaladocs], and more.
 
