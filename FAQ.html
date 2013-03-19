@@ -24,9 +24,10 @@ section: faq
       <p>
         Version {{ site.version }} of <em>riak-scala-client</em> was developed in the
         vacuum between Spray 1.1-M7 and 1.1-M8. The <code>spray-client</code> module
-        was heavily refactored early in the 1.1-M8 timeframe but then the Sray team
-        decided to go on a long refactoring and redesign binge and 1.1-M8 has not been
-        released since then.
+        was heavily refactored early in the 1.1-M8 timeframe and we used the resulting new
+        features expecting a quick release of 1.1-M8. However the Spray team then (February 2013)
+        decided to start a massive refactoring and redesign process and as a result 1.1-M8
+        has not been released yet (mid-March 2013).
       </p><p>
         While we all wait patiently for Spray 1.1-M8 to be released, <em>riak-scala-client</em>
         depends on a nightly build of Spray 1.1, namely 1.1-20130123. This version is very close
@@ -36,9 +37,9 @@ section: faq
         will be released ASAP.
       </p></p>
         All of this will not affect you very much unless you want to use this library in
-        a project that depends on Spray, esspecially <code>spray-client</code>. In that case
+        a project that depends on Spray 1.1-M7, esspecially <code>spray-client</code>. In that case
         unfortunately the only available choices are either to upgrade to the same nightly build
-        of Spray or to not use this library until Spray releases 1.1-M8 (or later).
+        of Spray or to not use this library until Spray releases 1.1-M8.
       </p>
     </div>
 
