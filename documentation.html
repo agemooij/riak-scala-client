@@ -40,8 +40,8 @@ val client = RiakClient("http://riak-node.com/")
         It is important to note that internally <code>RiakClient</code> uses an
         <a href="http://doc.akka.io/docs/akka/2.1.0/scala/extending-akka.html">Akka extension</a> to ensure there can
         be only one instance of <code>RiakClient</code> per actor system. This means that you can <em>"create"</em>
-        as many instances of <code>RiakClient</code> as you want because under the surface they all point at the same
-        one.
+        as many instances of <code>RiakClient</code> as you want because under the surface they all point at one single
+        instance.
       </p>
     </div>
 
