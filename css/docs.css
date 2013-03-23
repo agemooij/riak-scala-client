@@ -3,13 +3,13 @@
 
 .logo-pepper-white {
   display: inline-block;
-  width: 15px;
+  width: 20px;
   height: 20px;
   margin-top: 0px;
   margin-right: 10px;
   /*line-height: 20px;*/
   /*vertical-align: text-top;*/
-  background-image: url("../img/pepper-inverse-20px.png");
+  background-image: url("../img/scalapeno-20-white.png");
   /*background-position: 0px 2px;*/
   background-repeat: no-repeat;
 }
