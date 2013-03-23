@@ -16,49 +16,6 @@
 
 package com.scalapenos.riak
 
-
-/*
-      "n_val": 3,
-      "allow_mult": true,
-      "last_write_wins": false,
-      "r": "quorum",
-      "w": "quorum",
-      "dw": "quorum",
-      "rw": "quorum",
-
-{
-    "props": {
-        "n_val": 3,
-        "allow_mult": true,
-        "last_write_wins": false,
-        "name": "riak-conflict-resolution-tests",
-        "dw": "quorum",
-        "pr": 0,
-        "pw": 0,
-        "r": "quorum",
-        "rw": "quorum",
-        "w": "quorum",
-        "notfound_ok": true,
-        "basic_quorum": false,
-        "precommit": [],
-        "postcommit": [],
-        "small_vclock": 50,
-        "big_vclock": 50,
-        "young_vclock": 20
-        "old_vclock": 86400,
-        "chash_keyfun": {
-            "fun": "chash_std_keyfun",
-            "mod": "riak_core_util"
-        },
-        "linkfun": {
-            "fun": "mapreduce_linkfun",
-            "mod": "riak_kv_wm_link_walker"
-        },
-    }
-}
-
-*/
-
 import spray.json._
 
 
@@ -110,31 +67,55 @@ sealed trait RiakBucketProperty[T] {
   override def hashCode: Int = name.hashCode
 }
 
-final class NumberOfReplicas(val value: Int) extends RiakBucketProperty[Int] {
+case class NumberOfReplicas(value: Int) extends RiakBucketProperty[Int] {
   require(value > 0, s"Number of replicas (n_val) must be an integer larger than 0. You specified $value.")
 
   def name = "n_val"
   def json = JsNumber(value)
 }
 
-object NumberOfReplicas {
-  def apply(value: Int): NumberOfReplicas = new NumberOfReplicas(value)
-}
-
-final class AllowSiblings(val value: Boolean) extends RiakBucketProperty[Boolean] {
+case class AllowSiblings(value: Boolean) extends RiakBucketProperty[Boolean] {
   def name = "allow_mult"
   def json = JsBoolean(value)
 }
 
-object AllowSiblings {
-  def apply(value: Boolean): AllowSiblings = new AllowSiblings(value)
-}
-
-final class LastWriteWins(val value: Boolean) extends RiakBucketProperty[Boolean] {
+case class LastWriteWins(value: Boolean) extends RiakBucketProperty[Boolean] {
   def name = "last_write_wins"
   def json = JsBoolean(value)
 }
 
-object LastWriteWins {
-  def apply(value: Boolean): LastWriteWins = new LastWriteWins(value)
+
+
+/*
+{
+    "props": {
+        "n_val": 3,
+        "allow_mult": true,
+        "last_write_wins": false,
+        "name": "riak-conflict-resolution-tests",
+        "dw": "quorum",
+        "pr": 0,
+        "pw": 0,
+        "r": "quorum",
+        "rw": "quorum",
+        "w": "quorum",
+        "notfound_ok": true,
+        "basic_quorum": false,
+        "precommit": [],
+        "postcommit": [],
+        "small_vclock": 50,
+        "big_vclock": 50,
+        "young_vclock": 20
+        "old_vclock": 86400,
+        "chash_keyfun": {
+            "fun": "chash_std_keyfun",
+            "mod": "riak_core_util"
+        },
+        "linkfun": {
+            "fun": "mapreduce_linkfun",
+            "mod": "riak_kv_wm_link_walker"
+        },
+    }
 }
+
+*/
