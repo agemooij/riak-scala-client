@@ -19,6 +19,7 @@ package com.scalapenos.riak.internal
 private[internal] object RiakHttpHeaders {
   val `X-Riak-ClientId` = "X-Riak-ClientId"
   val `X-Riak-Vclock`   = "X-Riak-Vclock"
+  val `X-Riak-Deleted`  = "X-Riak-Deleted"
   val `ETag`            = "ETag"
 
   val indexHeaderPrefix = "x-riak-index-"

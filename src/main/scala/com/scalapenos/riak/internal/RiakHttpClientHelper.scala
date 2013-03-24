@@ -278,11 +278,14 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     response.entity.as[MultipartContent] match {
       case Left(error) => throw new ConflictResolutionFailed(error.toString)
       case Right(multipartContent) => {
-        val values = multipartContent.parts.flatMap(part => toRiakValue(part.entity, vclockHeader ++ part.headers)).toSet
-        val value = resolver.resolve(values)
+        // TODO: make ignoring deleted values optional
+
+        val values = multipartContent.parts.filterNot(part => part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
+                                           .flatMap(part => toRiakValue(part.entity, vclockHeader ++ part.headers))
+                                           .toSet
 
         // Store the resolved value back to Riak and return the resulting RiakValue
-        storeAndFetch(server, bucket, key, value, resolver)
+        storeAndFetch(server, bucket, key, resolver.resolve(values), resolver)
       }
     }
   }

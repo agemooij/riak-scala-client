@@ -76,6 +76,35 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
 
       bucket.fetch(key).await must beEqualTo(resolvedValue)
     }
+
+    "not pass tombstoned siblings into the conflict resolver" in {
+      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver)
+      val key = randomKey
+
+      bucket.setAllowSiblings(true).await
+      bucket.allowSiblings.await must beTrue
+
+      val things = List("one", "two", "five")
+      val updatedThings1 = List("one", "three")
+      val updatedThings2 = List("two", "four")
+
+      val entity = TestEntityWithMergableList(things)
+
+      val storedValue = bucket.storeAndFetch(key, entity).await
+      val storedMeta = storedValue.asMeta[TestEntityWithMergableList]
+
+      // concurrent writes based on the same vclock
+      bucket.delete(key).await
+      bucket.store(key, storedMeta.map(_.copy(updatedThings1))).await
+      bucket.store(key, storedMeta.map(_.copy(updatedThings2))).await
+
+      val resolvedValue = bucket.fetch(key).await
+      val resolvedMeta = resolvedValue.get.asMeta[TestEntityWithMergableList]
+
+      resolvedMeta.data.things must containTheSameElementsAs(updatedThings1 ++ updatedThings2)
+
+      bucket.fetch(key).await must beEqualTo(resolvedValue)
+    }
   }
 
   "When dealing with concurrent writes, a bucket configured with allow_mult = true and the default resolver" should {
