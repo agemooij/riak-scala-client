@@ -248,6 +248,7 @@ only screen and (     -o-min-device-pixel-ratio: 2/1) {
   padding-left: 0;
   list-style: none;
 }
+
 .bs-docs-social-buttons li {
   display: inline-block;
   padding: 5px 8px;
@@ -258,13 +259,13 @@ only screen and (     -o-min-device-pixel-ratio: 2/1) {
 
 .bs-docs-social-buttons .count.btn {
   background: #fff;
-  font-weight: normal;
+  font-weight: bold;
 }
 
 .bs-docs-social-buttons .btn {
   font-weight: bold;
-  padding: 0 5px;
-  line-height: 17px;
+  padding: 0 7px;
+  line-height: 20px;
 }
 
 
