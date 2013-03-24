@@ -24,108 +24,45 @@ import java.util.UUID._
 
 
 class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
+  private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
 
   "A RiakBucket" should {
-    "support storing any class T if there is a Serializer[T] and a RiakIndexer[T]in scope" in {
-      pending
+    "be able to store and fetch an empty String value" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      bucket.store(key, "").await
+
+      val fetched = bucket.fetch(key).await
+
+      fetched should beSome[RiakValue]
+      fetched.get.data must beEqualTo("")
     }
 
-    "support getting the bucket properties" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
-      val properties = bucket.properties.await
+    "treat tombstone values as if they don't exist when allow_mult = false" in {
+      val bucket = randomBucket
+      val key = randomKey
 
-      properties.numberOfReplicas must beEqualTo(3)
-      properties.allowSiblings must beFalse
-      properties.lastWriteWins must beFalse
+      bucket.store(key, "value").await
+      bucket.delete(key).await
+
+      val fetched = bucket.fetch(key).await
+
+      fetched should beNone
     }
 
-    "support getting the 'n_val' bucket property directly" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
-
-      bucket.numberOfReplicas.await must beEqualTo(3)
-      bucket.n_val.await must beEqualTo(3)
-    }
-
-    "support getting the 'allow_mult' bucket property directly" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
-
-      bucket.allowSiblings.await must beFalse
-      bucket.allow_mult.await must beFalse
-    }
-
-    "support getting the 'last_write_wins' bucket property directly" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
-
-      bucket.lastWriteWins.await must beFalse
-      bucket.last_write_wins.await must beFalse
-    }
-
-    "support setting the bucket properties" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
-      val oldProperties = bucket.properties.await
-
-      (bucket.properties = Set(NumberOfReplicas(5), AllowSiblings(true), LastWriteWins(true))).await
-
-      val newProperties = bucket.properties.await
-
-      oldProperties.numberOfReplicas must not be equalTo(newProperties.numberOfReplicas)
-      oldProperties.allowSiblings must not be equalTo(newProperties.allowSiblings)
-      oldProperties.lastWriteWins must not be equalTo(newProperties.lastWriteWins)
-    }
-
-    "support setting the bucket properties with an empty set (nothing happens)" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
-      val oldProperties = bucket.properties.await
-
-      bucket.setProperties(Set()).await
-
-      val newProperties = bucket.properties.await
-
-      oldProperties must be equalTo(newProperties)
-    }
-
-    "support directly setting the 'n_val' bucket property" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
-
-      bucket.numberOfReplicas.await must beEqualTo(3)
-
-      (bucket.numberOfReplicas = 5).await
-
-      bucket.numberOfReplicas.await must beEqualTo(5)
-    }
-
-    "support directly setting the 'allow_mult' bucket property" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
-
-      bucket.allowSiblings.await must beFalse
+    "treat tombstone values as if they don't exist when allow_mult = true" in {
+      val bucket = randomBucket
+      val key = randomKey
 
       (bucket.allowSiblings = true).await
 
-      bucket.allowSiblings.await must beTrue
-    }
+      bucket.store(key, "value").await
+      bucket.delete(key).await
 
-    "support directly setting the 'last_write_wins' bucket property" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
+      val fetched = bucket.fetch(key).await
 
-      bucket.lastWriteWins.await must beFalse
-
-      (bucket.lastWriteWins = true).await
-
-      bucket.lastWriteWins.await must beTrue
-    }
-
-    "fail when directly setting the 'n_val' bucket property to any integer smaller than 1" in {
-      val bucket = client.bucket("riak-bucket-tests-" + randomKey)
-
-      (bucket.numberOfReplicas = 0).await must throwA[IllegalArgumentException]
-      (bucket.numberOfReplicas = -1).await must throwA[IllegalArgumentException]
-      (bucket.numberOfReplicas = -1000).await must throwA[IllegalArgumentException]
-    }
-
-    "fail when creating an instance of NumberOfReplicas (n_val) with any integer smaller than 1" in {
-      NumberOfReplicas(0) must throwA[IllegalArgumentException]
-      NumberOfReplicas(-1) must throwA[IllegalArgumentException]
-      NumberOfReplicas(-42) must throwA[IllegalArgumentException]
+      fetched should beNone
     }
   }
 
