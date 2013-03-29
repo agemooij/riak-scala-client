@@ -31,4 +31,4 @@ private[riak] trait DateTimeSupport {
   def fromSprayDateTime(sprayDateTime: SprayDateTime): DateTime = dateTimeUTC(sprayDateTime.clicks)
 }
 
-object DateTimeSupport extends DateTimeSupport
+private[riak] object DateTimeSupport extends DateTimeSupport
