@@ -17,6 +17,8 @@
 package com.scalapenos.riak
 
 import akka.actor._
+import scala.util.Try
+import spray.json.RootJsonReader
 
 
 // ============================================================================
@@ -45,6 +47,7 @@ trait RiakClient {
 
   def ping: Future[Boolean]
   def bucket(name: String, resolver: RiakConflictsResolver = DefaultConflictsResolver): RiakBucket
+  def mapReduce(input: RiakMapReduce.Input): RiakMapReduce
 }
 
 
