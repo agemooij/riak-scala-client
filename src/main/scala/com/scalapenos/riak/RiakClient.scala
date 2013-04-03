@@ -17,9 +17,6 @@
 package com.scalapenos.riak
 
 import akka.actor._
-import scala.util.Try
-import spray.json.RootJsonReader
-
 
 // ============================================================================
 // RiakClient - The main entry point

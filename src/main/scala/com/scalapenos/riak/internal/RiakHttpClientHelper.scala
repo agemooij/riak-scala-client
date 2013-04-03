@@ -182,7 +182,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
       )
     )
 
-    httpRequest(Post(s"${baseUrl(server)}mapred", entity)) map { response ⇒
+    httpRequest(Post(mapReduceUrl(server), entity)) map { response ⇒
       response.status match {
         case OK ⇒ response.entity.as[R] match {
           case Right(result) ⇒ result

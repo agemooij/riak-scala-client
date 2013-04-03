@@ -16,10 +16,10 @@ trait RiakMapReduceSerialization {
     }
   }
 
-  implicit object rmrInputWriter extends JsonWriter[RiakMapReduce.Input] {
+  implicit object RiakMapReduceInputWriter extends JsonWriter[Input] {
     def write(obj: Input) = obj match {
-      case input: RiakMapReduce.InputKeys    ⇒ JsArray(input.keys.map(k ⇒ JsArray(JsString(k._1), JsString(k._2))):_*)
-      case input: RiakMapReduce.InputKeyData ⇒ JsArray(input.keys.map(k ⇒ JsArray(JsString(k._1), JsString(k._2), JsString(k._3))):_*)
+      case input: RiakMapReduce.InputKeys    ⇒ JsArray(input.keys.map(k ⇒ JsArray(JsString(k._1), JsString(k._2))): _*)
+      case input: RiakMapReduce.InputKeyData ⇒ JsArray(input.keys.map(k ⇒ JsArray(JsString(k._1), JsString(k._2), JsString(k._3))): _*)
       case input: RiakMapReduce.Input2i      ⇒ JsObject(List(
         "bucket" → JsString(input.bucket),
         "index" → JsString(input.index)
@@ -27,7 +27,14 @@ trait RiakMapReduceSerialization {
         case Left(key) ⇒ List("key" → JsString(key))
         case Right((start, end)) ⇒ List("start" → JsNumber(start), "end" → JsNumber(end))
       }))
-      case input: RiakMapReduce.InputSearch  ⇒ ???
+      case input: RiakMapReduce.InputSearch  ⇒ {
+        var fields: List[JsField] = List(
+          "bucket" → JsString(input.bucket),
+          "query" → JsString(input.query)
+        )
+        input.filter.map(f ⇒ fields :+= "filter" → JsString(f))
+        JsObject(fields: _*)
+      }
       case input: RiakMapReduce.InputBucket  ⇒ input.keyFilters match {
         case Nil ⇒ JsString(input.bucket)
         case _   ⇒ JsObject(
