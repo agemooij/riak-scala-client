@@ -17,9 +17,6 @@
 package com.scalapenos.riak
 package internal
 
-import spray.json.RootJsonReader
-
-
 // ============================================================================
 // RiakHttpClient
 // ============================================================================
@@ -50,5 +47,7 @@ private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: R
 }
 
 private [riak] final class RiakHttpMapReduce(helper: RiakHttpClientHelper, server: RiakServerInfo, input: RiakMapReduce.Input) extends RiakMapReduce {
-  def query[R: RootJsonReader](map: Seq[RiakMapReduce.QueryPhase], reduce: RiakMapReduce.QueryPhase) = helper.mapReduce[R](server, input, map, reduce)
+  import spray.json.RootJsonReader
+  import com.scalapenos.riak.RiakMapReduce.QueryPhase
+  def query[R: RootJsonReader](phases: Seq[(QueryPhase.Value, QueryPhase)]) = helper.mapReduce[R](server, input, phases)
 }

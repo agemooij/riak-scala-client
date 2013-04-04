@@ -19,8 +19,6 @@ package internal
 
 import akka.actor._
 import spray.json.RootJsonReader
-import scala.concurrent.ExecutionContext
-
 
 private[riak] object RiakHttpClientHelper {
   import spray.http.HttpBody
@@ -169,7 +167,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     }
   }
 
-  def mapReduce[R: RootJsonReader](server: RiakServerInfo, input: RiakMapReduce.Input, map: Seq[RiakMapReduce.QueryPhase], reduce: RiakMapReduce.QueryPhase): Future[R] = {
+  def mapReduce[R: RootJsonReader](server: RiakServerInfo, input: RiakMapReduce.Input, phases: Seq[(RiakMapReduce.QueryPhase.Value, RiakMapReduce.QueryPhase)]): Future[R] = {
     import com.scalapenos.riak.serialization.RiakMapReduceSerialization._
     import spray.json._
     import spray.httpx.unmarshalling._
@@ -178,7 +176,9 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
     val entity = JsObject(
       "inputs" → input.toJson,
       "query"  → JsArray(
-        map.map(m ⇒ JsObject("map" → m.toJson)).toList :+ JsObject("reduce" → reduce.toJson)
+        (phases map {
+          case (op, spec) ⇒ JsObject(op.toString.toLowerCase → spec.toJson)
+        }).toList
       )
     )
 

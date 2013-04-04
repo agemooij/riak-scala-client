@@ -1,13 +1,31 @@
 package com.scalapenos.riak
 
-import spray.json.RootJsonReader
-import scala.concurrent.Future
+trait RiakMapReduceQueryBuilder {
+  import spray.json.RootJsonReader
+  import RiakMapReduce._
+  import scala.concurrent.Future
 
-trait RiakMapReduce {
+  def map(phase: QueryPhase): RiakMapReduceQueryBuilder
+  def reduce(phase: QueryPhase): RiakMapReduceQueryBuilder
+  def result[R: RootJsonReader]: Future[R]
+}
 
+trait RiakMapReduce extends RiakMapReduceQueryBuilder {
+  import spray.json.RootJsonReader
+  import scala.concurrent.Future
   import RiakMapReduce._
 
-  def query[R: RootJsonReader](map: Seq[QueryPhase], reduce: QueryPhase): Future[R]
+  def query[R: RootJsonReader](queryPhases: Seq[(QueryPhase.Value, QueryPhase)]): Future[R]
+
+  case class QueryBuilderImpl(queryPhases: Seq[(QueryPhase.Value, QueryPhase)]) extends RiakMapReduceQueryBuilder {
+    def map(phase: QueryPhase) = QueryBuilderImpl(queryPhases :+ (QueryPhase.Map → phase))
+    def reduce(phase: QueryPhase) = QueryBuilderImpl(queryPhases :+ (QueryPhase.Reduce → phase))
+    def result[R: RootJsonReader] = query(queryPhases)
+  }
+
+  def map(phase: QueryPhase) = QueryBuilderImpl(List(QueryPhase.Map → phase))
+  def reduce(phase: QueryPhase) = QueryBuilderImpl(List(QueryPhase.Reduce → phase))
+  def result[R: RootJsonReader] = query(Nil)
 }
 
 object RiakMapReduce {
@@ -32,6 +50,10 @@ object RiakMapReduce {
     val keep: Boolean
     val language: String
     val sourceFields: Seq[(String, String)]
+  }
+
+  object QueryPhase extends Enumeration {
+    val Map, Reduce = Value
   }
 
   sealed trait JsPhase extends QueryPhase {
