@@ -38,7 +38,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   import scala.concurrent.Future
   import scala.concurrent.Future._
 
-  import spray.client.HttpClient
   import spray.client.pipelining._
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
   import spray.http.StatusCodes._
@@ -53,9 +52,9 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
 
   import system.dispatcher
 
-  private val httpClient = system.actorOf(Props(new HttpClient()), "riak-http-client")
   private val settings = RiakClientExtension(system).settings
   private val log = LoggerFactory.getLogger(getClass)
+  private implicit val sys = system
 
 
   // ==========================================================================
@@ -106,7 +105,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[Unit] = {
     val request = createStoreHttpRequest(value)
 
-    request(Put(url(server, bucket, key, NoQueryParameters), value)).flatMap { response =>
+    request(Put(url(server, bucket, key), value)).flatMap { response =>
       response.status match {
         case NoContent => successful(())
         case other     => throw new BucketOperationFailed(s"Store of value '$value' for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
@@ -178,7 +177,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   private def httpRequest = {
     addOptionalHeader(clientIdHeader) ~>
     addHeader("Accept", "*/*, multipart/mixed") ~>
-    sendReceive(httpClient)
+    logRequest(request => println("====> " + request)) ~>
+    sendReceive
   }
 
   private def createStoreHttpRequest(value: RiakValue) = {
