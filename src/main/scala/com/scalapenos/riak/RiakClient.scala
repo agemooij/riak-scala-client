@@ -61,7 +61,7 @@ class RiakClientExtension(system: ExtendedActorSystem) extends Extension {
   import internal._
 
   private[riak] val settings = new RiakClientSettings(system.settings.config)
-  private[riak] lazy val httpHelper = new RiakHttpClientHelper(system: ActorSystem)
+  private[riak] lazy val httpHelper = new RiakHttpClientHelper(system)
 
   def connect(url: String): RiakClient = connect(RiakServerInfo(url))
   def connect(url: java.net.URL): RiakClient = connect(RiakServerInfo(url))
