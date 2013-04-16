@@ -32,6 +32,7 @@ libraryDependencies ++= {
     "com.typesafe.akka"       %%  "akka-slf4j"             % akkaVersion,
     "io.spray"                %   "spray-client"           % sprayVersion,
     "io.spray"                %%  "spray-json"             % "1.2.3",
+    "play"                    %%  "play-iteratees"         % "2.1.1",
     "com.github.nscala-time"  %%  "nscala-time"            % "0.4.0",
     "ch.qos.logback"          %   "logback-classic"        % "1.0.11"       % "provided",
     "com.typesafe.akka"       %%  "akka-testkit"           % akkaVersion    % "test",
