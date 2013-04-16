@@ -30,3 +30,4 @@ project/plugins/project/
 atlassian-ide-plugin.xml
 /.sublime/
 /sublime-config.sbt
+/custom-settings.sbt
