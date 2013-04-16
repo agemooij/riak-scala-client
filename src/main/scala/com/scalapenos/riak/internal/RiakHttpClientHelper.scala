@@ -226,6 +226,11 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
 
       val keys = body.asString.asJson.convertTo[RiakIndexQueryResponse].keys
 
+
+      // RiakCursor(this, server, bucket, keys, resolver)
+
+
+
       traverse(keys)(fetch(server, bucket, _, resolver)).map(_.flatten)
     }.getOrElse(successful(Nil))
   }
