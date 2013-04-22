@@ -38,12 +38,12 @@ trait RiakBucket {
   private[riak] def fetch(index: RiakIndexRange): Future[List[RiakValue]]
 
 
-  def store[T: RiakSerializer: RiakIndexer](key: String, value: T): Future[Unit] = store(key, RiakValue(value))
-  def store[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T]): Future[Unit] = store(key, RiakValue(meta))
+  def store[T: RiakSerializer: RiakIndexer: RiakLinker](key: String, value: T): Future[Unit] = store(key, RiakValue(value))
+  def store[T: RiakSerializer: RiakIndexer: RiakLinker](key: String, meta: RiakMeta[T]): Future[Unit] = store(key, RiakValue(meta))
   def store(key: String, value: RiakValue): Future[Unit]
 
-  def storeAndFetch[T: RiakSerializer: RiakIndexer](key: String, value: T): Future[RiakValue] = storeAndFetch(key, RiakValue(value))
-  def storeAndFetch[T: RiakSerializer: RiakIndexer](key: String, meta: RiakMeta[T]): Future[RiakValue] = storeAndFetch(key, RiakValue(meta))
+  def storeAndFetch[T: RiakSerializer: RiakIndexer: RiakLinker](key: String, value: T): Future[RiakValue] = storeAndFetch(key, RiakValue(value))
+  def storeAndFetch[T: RiakSerializer: RiakIndexer: RiakLinker](key: String, meta: RiakMeta[T]): Future[RiakValue] = storeAndFetch(key, RiakValue(meta))
   def storeAndFetch(key: String, value: RiakValue): Future[RiakValue]
 
 
