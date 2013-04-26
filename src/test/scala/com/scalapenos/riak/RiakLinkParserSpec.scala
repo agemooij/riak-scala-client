@@ -11,6 +11,12 @@ class RiakLinkParserSpec extends Specification {
       }
     }
 
+    "successfully parse a single link with url encoding" in {
+      RiakLinkParser("""</buckets/b/keys/%24k>; riaktag="v"""") must beLike {
+        case Success(List(RiakLink("b", Some("$k"), Some(("riaktag", "v"))))) ⇒ ok
+      }
+    }
+
     "successfully parse a single link with an old-style path" in {
       RiakLinkParser("""</riak/b/k>; riaktag="v"""") must beLike {
         case Success(List(RiakLink("b", Some("k"), Some(("riaktag", "v"))))) ⇒ ok

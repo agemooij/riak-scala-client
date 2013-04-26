@@ -46,7 +46,9 @@ object RiakLinkParser extends RegexParsers {
   /*
   Link: </riak/bucket/key>; attr1="value1", </riak/bucket/key>; attr2="value2"
   */
-  def word: Parser[String] = """[\w-]+""".r
+  def word: Parser[String] = """[a-zA-Z0-9%\-\.~_]+""".r ^^ {
+    case word ⇒ java.net.URLDecoder.decode(word, "UTF-8")
+  }
 
   def qWord: Parser[String] = "\"" ~> word <~ "\""
 
