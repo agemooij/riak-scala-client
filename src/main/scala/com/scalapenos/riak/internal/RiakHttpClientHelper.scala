@@ -18,7 +18,7 @@ package com.scalapenos.riak
 package internal
 
 import akka.actor._
-
+import spray.json.RootJsonReader
 
 private[riak] object RiakHttpClientHelper {
   import spray.http.HttpBody
@@ -163,6 +163,32 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
         case BadRequest           => throw new ParametersInvalid(s"Setting properties of bucket '$bucket' failed because the http request contained invalid data.")
         case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting properties of bucket '$bucket' failed because the content type of the http request was not 'application/json'.")
         case other                => throw new BucketOperationFailed(s"Setting properties of bucket '$bucket' produced an unexpected response code '$other'.")
+      }
+    }
+  }
+
+  def mapReduce[R: RootJsonReader](server: RiakServerInfo, input: RiakMapReduce.Input, phases: Seq[(RiakMapReduce.QueryPhase.Value, RiakMapReduce.QueryPhase)]): Future[R] = {
+    import com.scalapenos.riak.serialization.RiakMapReduceSerialization._
+    import spray.json._
+    import spray.httpx.unmarshalling._
+    import spray.httpx.SprayJsonSupport._
+
+    val entity = JsObject(
+      "inputs" → input.toJson,
+      "query"  → JsArray(
+        (phases map {
+          case (op, spec) ⇒ JsObject(op.toString.toLowerCase → spec.toJson)
+        }).toList
+      )
+    )
+
+    httpRequest(Post(mapReduceUrl(server), entity)) map { response ⇒
+      response.status match {
+        case OK ⇒ response.entity.as[R] match {
+          case Right(result) ⇒ result
+          case Left(error)   ⇒ throw new MapReduceOperationFailed(error.toString)
+        }
+        case other ⇒ throw new MapReduceOperationFailed(response.entity.asString)
       }
     }
   }

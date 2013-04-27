@@ -62,6 +62,10 @@ private[riak] trait RiakUrlSupport {
     s"${bucketUrl(server, bucket)}/props"
   }
 
+  def mapReduceUrl(server: RiakServerInfo): String = {
+    s"${baseUrl(server)}mapred"
+  }
+
   def indexUrl(server: RiakServerInfo, bucket: String, index: RiakIndex): String = {
     // both index name and String index values are double-urlEncoded because Riak eagerly urlDecodes the request
     // and then tries to match the urlDecoded value against our urlEncoded indexes
