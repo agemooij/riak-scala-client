@@ -19,6 +19,7 @@ package com.scalapenos.riak
 
 trait RiakBucket {
   import scala.concurrent.{ExecutionContext, Future}
+  import play.api.libs.iteratee.Iteratee
   import internal._
 
   /**
@@ -32,6 +33,10 @@ trait RiakBucket {
   def fetch(index: String, value: String): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
   def fetch(index: String, value: Int): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
   def fetch(index: RiakIndex): Future[List[RiakValue]]
+
+  def stream[A](index: String, value: String, consumer: Iteratee[RiakValue, A]): Future[Iteratee[RiakValue, A]] = stream(RiakIndex(index, value), consumer)
+  def stream[A](index: String, value: Int, consumer: Iteratee[RiakValue, A]): Future[Iteratee[RiakValue, A]] =  stream(RiakIndex(index, value), consumer)
+  def stream[A](index: RiakIndex, consumer: Iteratee[RiakValue, A]): Future[Iteratee[RiakValue, A]]
 
   def fetch(index: String, start: String, end: String): Future[List[RiakValue]] = fetch(RiakIndexRange(index, start, end))
   def fetch(index: String, start: Int, end: Int): Future[List[RiakValue]] = fetch(RiakIndexRange(index, start, end))

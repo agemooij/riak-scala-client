@@ -33,9 +33,13 @@ private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: R
 // ============================================================================
 
 private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, bucket: String, val resolver: RiakConflictsResolver) extends RiakBucket {
+  import play.api.libs.iteratee.Iteratee
+
   def fetch(key: String) = helper.fetch(server, bucket, key, resolver)
   def fetch(index: RiakIndex) = helper.fetch(server, bucket, index, resolver)
   def fetch(indexRange: RiakIndexRange) = helper.fetch(server, bucket, indexRange, resolver)
+
+  def stream[A](index: RiakIndex, consumer: Iteratee[RiakValue, A]) = helper.stream(server, bucket, index, resolver, consumer)
 
   def store(key: String, value: RiakValue) = helper.store(server, bucket, key, value, resolver)
   def storeAndFetch(key: String, value: RiakValue) = helper.storeAndFetch(server, bucket, key, value, resolver)
