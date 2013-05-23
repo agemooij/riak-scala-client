@@ -18,6 +18,8 @@ package com.scalapenos.riak
 package internal
 
 import akka.actor._
+import play.api.libs.iteratee.Iteratee
+import play.api.libs.iteratee.Enumerator
 
 
 private[riak] object RiakHttpClientHelper {
@@ -99,6 +101,16 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
         case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
         case BadRequest => throw new ParametersInvalid(s"""Invalid index name ("${indexRange.fullName}") or range ("${indexRange.start}" to "${indexRange.start}").""")
         case other      => throw new BucketOperationFailed(s"""Fetch for index "${indexRange.fullName}" with range "${indexRange.start}" to "${indexRange.start}" in bucket "${bucket}" produced an unexpected response code: ${other}.""")
+      }
+    }
+  }
+
+  def stream[A](server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: RiakConflictsResolver, consumer: Iteratee[RiakValue, A]): Future[Iteratee[RiakValue, A]] = {
+    httpRequest(Get(indexUrl(server, bucket, index))).flatMap { response =>
+      response.status match {
+        case OK         => streamWithKeysReturnedByIndexLookup(server, bucket, response, resolver, consumer)
+        case BadRequest => throw new ParametersInvalid(s"""Invalid index name ("${index.fullName}") or value ("${index.value}").""")
+        case other      => throw new BucketOperationFailed(s"""Fetch for index "${index.fullName}" with value "${index.value}" in bucket "${bucket}" produced an unexpected response code: ${other}.""")
       }
     }
   }
@@ -228,6 +240,24 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
 
       traverse(keys)(fetch(server, bucket, _, resolver)).map(_.flatten)
     }.getOrElse(successful(Nil))
+  }
+
+  private def streamWithKeysReturnedByIndexLookup[A](server: RiakServerInfo, bucket: String, response: HttpResponse, resolver: RiakConflictsResolver, consumer: Iteratee[RiakValue, A]): Future[Iteratee[RiakValue, A]] = {
+    response.entity.toOption.map { body =>
+      import spray.json._
+
+      val keys = body.asString.asJson.convertTo[RiakIndexQueryResponse].keys
+
+      val enumerator = Enumerator.unfoldM(keys) {
+        case Nil     => successful(None)
+        case x :: xs =>
+          val riakValueFuture = fetch(server, bucket, x, resolver)
+          riakValueFuture.map(_.map(xs -> _))
+      }
+
+      enumerator |>> consumer
+
+    }.getOrElse(successful(consumer))
   }
 
 

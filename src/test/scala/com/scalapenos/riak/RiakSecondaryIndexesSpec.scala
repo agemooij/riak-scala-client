@@ -22,6 +22,8 @@ import scala.util._
 
 import java.util.UUID._
 
+import play.api.libs.iteratee._
+
 
 class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySupport {
   // TODO: skip this test if the localhost backend does not support secondary indexes
@@ -71,6 +73,28 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       bucket.fetch(ClassWithConfigurableStringIndex.indexName, stringIndex).await must have size(numbers.size)
 
       Future.traverse(intIndexKeys ++ stringIndexKeys)(bucket.delete(_)).await must have size(numbers.size * 2)
+    }
+
+    "support storing multiple key/value pairs with the same index and streaming them by that index" in {
+      val numbers = (0 to 10).toList
+
+      val stringIndex = "foo"
+      val stringIndexKeys = numbers.map(n => "string-indexed-" + n)
+      val stringIndexValues = numbers.map(n => ClassWithConfigurableStringIndex("foo-string-" + n, stringIndex))
+      val stringIndexKvs = stringIndexKeys.zip(stringIndexValues)
+
+      val bucket = client.bucket("riak-index-tests-" + randomKey)
+      val storedValues = Future.traverse(stringIndexKvs)(kv => bucket.storeAndFetch(kv._1, kv._2)).await
+      storedValues must have size(numbers.size)
+
+      bucket.fetch(ClassWithConfigurableStringIndex.indexName, stringIndex).await must have size(numbers.size)
+
+      val consumer = Iteratee.getChunks[RiakValue]
+
+      val filledConsumer = bucket.stream(ClassWithConfigurableStringIndex.indexName, stringIndex, consumer).await
+      filledConsumer.run.await must have size(numbers.size)
+
+      Future.traverse(stringIndexKeys)(bucket.delete(_)).await must have size(numbers.size)
     }
 
     "support storing multiple key/value pairs with int indexes and fetching multiple values using index ranges" in {

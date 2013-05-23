@@ -36,8 +36,8 @@ libraryDependencies ++= {
     "ch.qos.logback"          %   "logback-classic"        % "1.0.11"       % "provided",
     "com.typesafe.akka"       %%  "akka-testkit"           % akkaVersion    % "test",
     "io.spray"                %   "spray-testkit"          % sprayVersion   % "test",
-    "org.specs2"              %%  "specs2"                 % "1.14"         % "test"
-  )
+    "org.specs2"              %%  "specs2"                 % "1.14"         % "test",
+    "play"                    %%  "play-iteratees"         % "2.1.1")
 }
 
 initialCommands in console += {
