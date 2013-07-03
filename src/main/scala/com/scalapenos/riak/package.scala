@@ -35,6 +35,7 @@ package object riak {
 
   type ContentType = spray.http.ContentType
   val ContentType = spray.http.ContentType
+  val ContentTypes = spray.http.ContentTypes
 
   type DateTime = org.joda.time.DateTime
 
