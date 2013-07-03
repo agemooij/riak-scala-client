@@ -21,7 +21,7 @@ import akka.actor._
 
 
 private[riak] object RiakHttpClientHelper {
-  import spray.http.HttpBody
+  import spray.http.HttpEntity
   import spray.httpx.marshalling._
 
   /**
@@ -29,7 +29,7 @@ private[riak] object RiakHttpClientHelper {
    */
   implicit val RiakValueMarshaller: Marshaller[RiakValue] = new Marshaller[RiakValue] {
     def apply(riakValue: RiakValue, ctx: MarshallingContext) {
-      ctx.marshalTo(HttpBody(riakValue.contentType, riakValue.data.getBytes(riakValue.contentType.charset.nioCharset)))
+      ctx.marshalTo(HttpEntity(riakValue.contentType, riakValue.data.getBytes(riakValue.contentType.charset.nioCharset)))
     }
   }
 }
