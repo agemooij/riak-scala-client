@@ -52,9 +52,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
 
   import system.dispatcher
 
-  private val settings = RiakClientExtension(system).settings
-  private val log = LoggerFactory.getLogger(getClass)
   private implicit val sys = system
+  private val settings = RiakClientExtension(system).settings
 
 
   // ==========================================================================
@@ -176,9 +175,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
 
   private def httpRequest = {
     addOptionalHeader(clientIdHeader) ~>
-    addHeader("Accept", "*/*, multipart/mixed") ~>
-    logRequest(request => println("====> " + request)) ~>
-    sendReceive
+      addHeader("Accept", "*/*, multipart/mixed") ~>
+      sendReceive
   }
 
   private def createStoreHttpRequest(value: RiakValue) = {
