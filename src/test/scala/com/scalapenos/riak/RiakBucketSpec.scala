@@ -27,16 +27,13 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
   private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
 
   "A RiakBucket" should {
-    "be able to store and fetch an empty String value" in {
+    "not be able to store an empty String value" in {
       val bucket = randomBucket
       val key = randomKey
 
-      bucket.store(key, "").await
-
-      val fetched = bucket.fetch(key).await
-
-      fetched should beSome[RiakValue]
-      fetched.get.data must beEqualTo("")
+      // Riak will reject the request with a 400 because the request will
+      // not have a body (because Spray doesn't allow empty bodies).
+      bucket.store(key, "").await must throwA[BucketOperationFailed]
     }
 
     "treat tombstone values as if they don't exist when allow_mult = false" in {

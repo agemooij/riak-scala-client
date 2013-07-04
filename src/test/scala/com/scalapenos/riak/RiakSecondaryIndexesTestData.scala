@@ -61,10 +61,13 @@ object RiakSecondaryIndexesTestData {
     val indexes: Set[RiakIndex] = Set(
       RiakIndex("foos", 1),
       RiakIndex("foos", 2),
-      RiakIndex("foos", "foos foos"),
-      RiakIndex("foos", "bars, bars"),
-      RiakIndex("bars", 42),
-      RiakIndex("foo bars", "bacon")
+      RiakIndex("foos", "bars"),
+      RiakIndex("foos", "barsbars"),
+      RiakIndex("bars", 42)
+      // these will not be supported until we find a better way to deal with encoding/decoding them in urls and headers
+      // RiakIndex("foos", "foos foos"),
+      // RiakIndex("foos", "bars, bars"),
+      // RiakIndex("foo bars", "bacon")
     )
 
     implicit def serializer = plainTextSerializer[ClassWithMixedIndexes](_.foo)
@@ -94,7 +97,7 @@ object RiakSecondaryIndexesTestData {
 
 
   def plainTextSerializer[T](ser: T => String) = new RiakSerializer[T] {
-    def serialize(t: T): (String, ContentType) = (ser(t), ContentType.`text/plain`)
+    def serialize(t: T): (String, ContentType) = (ser(t), ContentTypes.`text/plain`)
   }
 
   def planTextDeserializer[T](d: String => T) = new RiakDeserializer[T] {

@@ -41,10 +41,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
     "support storing and fetching a value with two Int indexes with the same index name (by key and each index)" in new
       StoreAndFetch[ClassWithTwoIntIndexesWithTheSameName](ClassWithTwoIntIndexesWithTheSameName("bar"), "bar", ClassWithTwoIntIndexesWithTheSameName.indexes) {}
 
-    "support storing and fetching a value with multiple mixed indexes, including double names (by key and each index)" in new
-      StoreAndFetch[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
-
-    "support storing and fetching a value with multiple mixed indexes, some containing special characters (by key and each index)" in new
+    "support storing and fetching a value with multiple mixed indexes" in new
       StoreAndFetch[ClassWithMixedIndexes](ClassWithMixedIndexes("bar"), "bar", ClassWithMixedIndexes.indexes) {}
 
     "support storing multiple key/value pairs with the same index and fetching them by that index" in {

@@ -21,19 +21,17 @@ package serialization
 trait SprayJsonSerialization {
   import scala.reflect.ClassTag
   import scala.util._
-
-  import spray.http.MediaTypes._
   import spray.json._
 
   class SprayJsonSerializer[T: RootJsonWriter] extends RiakSerializer[T] {
-    def serialize(t: T) = (implicitly[RootJsonWriter[T]].write(t).compactPrint, ContentType.`application/json`)
+    def serialize(t: T) = (implicitly[RootJsonWriter[T]].write(t).compactPrint, ContentTypes.`application/json`)
   }
 
   class SprayJsonDeserializer[T: RootJsonReader: ClassTag] extends RiakDeserializer[T] {
     def deserialize(data: String, contentType: ContentType) = {
       contentType match {
-        case ContentType(`application/json`, _) => parseAndConvert(data)
-        case _ => throw RiakUnsupportedContentType(ContentType.`application/json`, contentType)
+        case ContentType(MediaTypes.`application/json`, _) => parseAndConvert(data)
+        case _ => throw RiakUnsupportedContentType(ContentTypes.`application/json`, contentType)
       }
     }
 

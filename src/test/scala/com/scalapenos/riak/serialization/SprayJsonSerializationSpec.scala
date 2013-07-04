@@ -36,14 +36,14 @@ class SprayJsonSerializationSpec extends Specification {
 
   "SprayJsonDeserializer.deserialize(...)" should {
     "correctly deserialize valid JSON when the ContentType is ContentType.`application/json`." in {
-      val thingy = implicitly[RiakDeserializer[Thingy]].deserialize(validJson, ContentType.`application/json`)
+      val thingy = implicitly[RiakDeserializer[Thingy]].deserialize(validJson, ContentTypes.`application/json`)
 
       thingy.name must beEqualTo("Answer")
       thingy.number must beEqualTo(42)
     }
 
     "correctly deserialize valid JSON when the ContentType is ContentType(`application/json`)." in {
-      val thingy = implicitly[RiakDeserializer[Thingy]].deserialize(validJson, ContentType(`application/json`))
+      val thingy = implicitly[RiakDeserializer[Thingy]].deserialize(validJson, ContentTypes.`application/json`)
 
       thingy.name must beEqualTo("Answer")
       thingy.number must beEqualTo(42)
@@ -52,7 +52,7 @@ class SprayJsonSerializationSpec extends Specification {
     "fail when deserializing with ContentType.`application/json` but invalid JSON data" in {
       val deserializer = implicitly[RiakDeserializer[Thingy]]
 
-      deserializer.deserialize(invalidJson, ContentType.`application/json`) must throwA[RiakDeserializationFailed].like {
+      deserializer.deserialize(invalidJson, ContentTypes.`application/json`) must throwA[RiakDeserializationFailed].like {
         case exception: RiakDeserializationFailed => {
           exception.data must beEqualTo(invalidJson)
           exception.targetType must beEqualTo(classOf[Thingy].getName)
@@ -64,7 +64,7 @@ class SprayJsonSerializationSpec extends Specification {
     "fail when deserializing with an unsupported ContentType" in {
       val deserializer = implicitly[RiakDeserializer[Thingy]]
 
-      deserializer.deserialize(validJson, ContentType.`text/plain`) must throwA(RiakUnsupportedContentType(ContentType.`application/json`, ContentType.`text/plain`))
+      deserializer.deserialize(validJson, ContentTypes.`text/plain`) must throwA(RiakUnsupportedContentType(ContentTypes.`application/json`, ContentTypes.`text/plain`))
     }
   }
 
@@ -74,7 +74,7 @@ class SprayJsonSerializationSpec extends Specification {
       val (data, contentType) = implicitly[RiakSerializer[Thingy]].serialize(thingy)
 
       data must beEqualTo(validJson)
-      contentType must beEqualTo(ContentType.`application/json`)
+      contentType must beEqualTo(ContentTypes.`application/json`)
     }
   }
 

@@ -30,7 +30,7 @@ private[riak] class RiakClientSettings(config: Config) {
    * and will only be set once per instance of the RiakClientExtension (i.e.
    * per ActorSystem).
    *
-   * This value defaults to true.
+   * This value defaults to false.
    */
   final val AddClientIdHeader: Boolean = config.getBoolean("riak.add-client-id-header")
 

@@ -105,19 +105,19 @@ class RiakSerializationSpec extends Specification {
       val (data, contentType) = implicitly[RiakSerializer[String]].serialize(anyString)
 
       data must beEqualTo(anyString)
-      contentType must beEqualTo(ContentType.`text/plain`)
+      contentType must beEqualTo(ContentTypes.`text/plain`)
     }
 
     "deserialize to the raw string data" in {
       val data = "some string"
-      val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentType.`text/plain`)
+      val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentTypes.`text/plain`)
 
       out must beEqualTo(data)
     }
 
     "deserialize to the raw string data, ignoring the ContentType" in {
       val data = """{some: "string"}"""
-      val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentType(`application/json`))
+      val out = implicitly[RiakDeserializer[String]].deserialize(data, ContentTypes.`application/json`)
 
       out must beEqualTo(data)
     }
@@ -130,14 +130,14 @@ class RiakSerializationSpec extends Specification {
       val (data, contentType) = implicitly[RiakSerializer[ClassWithoutCustomSerialization]].serialize(t)
 
       data must beEqualTo(s"""{"a":"${t.a}","b":${t.b}}""")
-      contentType must beEqualTo(ContentType.`application/json`)
+      contentType must beEqualTo(ContentTypes.`application/json`)
     }
 
     "deserialize using any defined RootJsonReader[T] in scope" in {
       import CustomJsonFormatForClassWithoutCustomSerialization._
 
       val data = s"""{"a":"The answer is","b":42}"""
-      val out = implicitly[RiakDeserializer[ClassWithoutCustomSerialization]].deserialize(data, ContentType(`application/json`))
+      val out = implicitly[RiakDeserializer[ClassWithoutCustomSerialization]].deserialize(data, ContentTypes.`application/json`)
 
       out must beEqualTo(new ClassWithoutCustomSerialization("The answer is", 42))
     }
