@@ -17,29 +17,32 @@
 package com.scalapenos.riak
 package internal
 
+import RiakHttpHeaders._
 
-private[riak] trait RiakIndexSupport { self: RiakUrlSupport =>
+
+private[riak] object RiakIndexSupport {
+  val IndexNameAndType = (indexHeaderPrefix + "(.+)_(bin|int)$").r
+}
+
+private[riak] trait RiakIndexSupport {
   import spray.http.HttpHeader
   import spray.http.HttpHeaders._
-  import RiakHttpHeaders._
-
-  // TODO: declare a config setting for whether we url encode the index name and/or value
-  //       maybe even at the top-level (for bucket names and keys) so it matches the behaviour of the riak url compatibility setting
+  import RiakIndexSupport._
 
   private[riak] def toIndexHeader(index: RiakIndex): HttpHeader = {
     index match {
-      case l: RiakLongIndex   => RawHeader(indexHeaderPrefix + urlEncode(l.fullName), l.value.toString)
-      case s: RiakStringIndex => RawHeader(indexHeaderPrefix + urlEncode(s.fullName), urlEncode(s.value))
+      case l: RiakLongIndex   => RawHeader(indexHeaderPrefix + l.fullName, l.value.toString)
+      case s: RiakStringIndex => RawHeader(indexHeaderPrefix + s.fullName, s.value)
     }
   }
 
   private[riak] def toRiakIndexes(headers: List[HttpHeader]): Set[RiakIndex] = {
-    val IndexNameAndType = (indexHeaderPrefix + "(.+)_(bin|int)$").r
-
     def toRiakIndex(header: HttpHeader): Set[RiakIndex] = {
+      val values = header.value.split(',')
+
       header.lowercaseName match {
-        case IndexNameAndType(name, "int") => header.value.split(',').map(value => RiakIndex(urlDecode(name), value.trim.toLong)).toSet
-        case IndexNameAndType(name, "bin") => header.value.split(',').map(value => RiakIndex(urlDecode(name), urlDecode(value.trim))).toSet
+        case IndexNameAndType(name, "int") => values.map(value => RiakIndex(name, value.trim.toLong)).toSet
+        case IndexNameAndType(name, "bin") => values.map(value => RiakIndex(name, value.trim)).toSet
         case _                             => Set.empty[RiakIndex]
       }
     }

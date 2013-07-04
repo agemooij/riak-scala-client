@@ -34,7 +34,7 @@ private[riak] object RiakHttpClientHelper {
   }
 }
 
-private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSupport with RiakIndexSupport with DateTimeSupport {
+private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSupport with RiakIndexSupport with DateTimeSupport {
   import scala.concurrent.Future
   import scala.concurrent.Future._
 
@@ -61,7 +61,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   // ==========================================================================
 
   def ping(server: RiakServerInfo): Future[Boolean] = {
-    httpRequest(Get(pingUrl(server))).map { response =>
+    httpRequest(Get(PingUri(server))).map { response =>
       response.status match {
         case OK    => true
         case other => throw new OperationFailed(s"Ping on server '$server' produced an unexpected response code '$other'.")
@@ -70,7 +70,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[RiakValue]] = {
-    httpRequest(Get(url(server, bucket, key))).flatMap { response =>
+    httpRequest(Get(KeyUri(server, bucket, key))).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response))
         case NotFound        => successful(None)
@@ -82,7 +82,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
-    httpRequest(Get(indexUrl(server, bucket, index))).flatMap { response =>
+    httpRequest(Get(IndexUri(server, bucket, index))).flatMap { response =>
       response.status match {
         case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
         case BadRequest => throw new ParametersInvalid(s"""Invalid index name ("${index.fullName}") or value ("${index.value}").""")
@@ -92,7 +92,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
-    httpRequest(Get(indexRangeUrl(server, bucket, indexRange))).flatMap { response =>
+    httpRequest(Get(IndexRangeUri(server, bucket, indexRange))).flatMap { response =>
       response.status match {
         case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
         case BadRequest => throw new ParametersInvalid(s"""Invalid index name ("${indexRange.fullName}") or range ("${indexRange.start}" to "${indexRange.start}").""")
@@ -104,7 +104,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[Unit] = {
     val request = createStoreHttpRequest(value)
 
-    request(Put(url(server, bucket, key), value)).flatMap { response =>
+    request(Put(KeyUri(server, bucket, key), value)).flatMap { response =>
       response.status match {
         case NoContent => successful(())
         case other     => throw new BucketOperationFailed(s"Store of value '$value' for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
@@ -116,7 +116,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   def storeAndFetch(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[RiakValue] = {
     val request = createStoreHttpRequest(value)
 
-    request(Put(url(server, bucket, key, StoreQueryParameters(true)), value)).flatMap { response =>
+    request(Put(KeyUri(server, bucket, key, StoreQueryParameters(true)), value)).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response).getOrElse(throw new BucketOperationFailed(s"Store of value '$value' for key '$key' in bucket '$bucket' produced an unparsable reponse.")))
         case MultipleChoices => resolveConflict(server, bucket, key, response, resolver)
@@ -127,7 +127,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   }
 
   def delete(server: RiakServerInfo, bucket: String, key: String): Future[Unit] = {
-    httpRequest(Delete(url(server, bucket, key))).map { response =>
+    httpRequest(Delete(KeyUri(server, bucket, key))).map { response =>
       response.status match {
         case NoContent => ()
         case NotFound  => ()
@@ -139,7 +139,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
   def getBucketProperties(server: RiakServerInfo, bucket: String): Future[RiakBucketProperties] = {
     import spray.httpx.unmarshalling._
 
-    httpRequest(Get(bucketPropertiesUrl(server, bucket))).map { response =>
+    httpRequest(Get(PropertiesUri(server, bucket))).map { response =>
       response.status match {
         case OK => response.entity.as[RiakBucketProperties] match {
           case Right(properties) => properties
@@ -155,7 +155,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUrlSup
 
     val entity = JsObject("props" -> JsObject(newProperties.map(property => (property.name -> property.json)).toMap))
 
-    httpRequest(Put(bucketPropertiesUrl(server, bucket), entity)).map { response =>
+    httpRequest(Put(PropertiesUri(server, bucket), entity)).map { response =>
       response.status match {
         case NoContent            => ()
         case BadRequest           => throw new ParametersInvalid(s"Setting properties of bucket '$bucket' failed because the http request contained invalid data.")
