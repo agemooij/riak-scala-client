@@ -1,6 +1,6 @@
 name := "riak-scala-client"
 
-version := "0.9-SNAPSHOT"
+version := "0.8.1.1"
 
 organization := "com.scalapenos"
 
