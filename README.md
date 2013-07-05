@@ -3,16 +3,16 @@
 
 An easy to use, non-blocking Scala client library for interacting with [Riak].
 
+See the [project site] for full [documentation], [examples], [scaladocs], and more.
 
-## Current Status: 0.8.0 released!
 
-This project was started in December 2012 out of frustration about the (then) lack of non-blocking
-Scala (or Java) client libraries for [Riak].
+## Current Status
+The latest version is 0.8.1.1, which is compatible with Akka 2.1.4 and Spray 1.1-M8.
 
-A first stable public version, 0.8.0, was released to the Sonatype/Central
-repositories in March 2013. Work on the next release is already under way.
-
-See the [documentation site] for full [documentation], [examples], [scaladocs], and more.
+There is also a parallel release for people who have already moved to Akka 2.2.
+Version 0.8.1.2 is compatible with Akka 2.2-RC1 and Spray 1.2-M8. Please be aware
+that this version is __not__ compatible with Akka 2.2-RC2 because it is not backwards
+compatible with RC1 and therefor not compatible with Spray 1.2-M8.
 
 
 ## Features
@@ -56,7 +56,7 @@ The following Riak (http) API features are still under construction:
 The initial focus is on supporting the Riak HTTP API. Protobuf support might be added
 later but it has a low priority at the moment.
 
-The riak-scala-client has been tested against [Riak] versions 1.2.x and 1.3.0.
+The riak-scala-client has been tested against [Riak] versions 1.2.x and 1.3.x.
 
 
 ## Current Limitations
@@ -66,6 +66,11 @@ The riak-scala-client has been tested against [Riak] versions 1.2.x and 1.3.0.
   is currently read into memory in its entirety. Fetches with large (100k+) result sets can
   be slow because of this and might potentially cause memory problems. A future release
   will solve this by streaming the data using Play iteratees.
+- 2i index names and index values containing some special characters will not be handled
+  correctly. This is due to the way these have to be encoded for transmission over HTTP.
+  And earlier version did manual double URL encoding/decoding but that was not a
+  sustainable solution. Please avoid using characters like ' ', ',', '?', '&', etc.
+  in index names and index values for now.
 
 
 ## Why such a boring name?
@@ -82,7 +87,7 @@ If you come up with a cooler name, please let us know and eternal fame will be y
 
 The _riak-scala-client_ is licensed under [APL 2.0].
 
-  [documentation site]: http://riak.scalapenos.com/
+  [project site]:       http://riak.scalapenos.com/
   [documentation]:      http://riak.scalapenos.com/documentation.html
   [examples]:           http://riak.scalapenos.com/examples.html
   [scaladocs]:          http://riak.scalapenos.com/scaladocs/index.html#com.scalapenos.riak.package
