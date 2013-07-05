@@ -1,3 +1,6 @@
-safe: true
+safe:        true
+lsi:         false
+pygments:    true
+permalink:   date
 
 version: 0.8.0
