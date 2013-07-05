@@ -3,4 +3,4 @@ lsi:         false
 pygments:    true
 permalink:   date
 
-version: 0.8.0
+version: 0.8.1.1
