@@ -75,14 +75,15 @@ section: home
       <p>
         This project was started in December 2012 out of frustration about the (then) lack of non-blocking
         Scala (or Java) client libraries for <a href="http://basho.com/riak/">Riak</a>.
-        The first public version ({{ site.version }}) was released in March 2013 after several early beta
+        The first public version (0.8.0) was released in March 2013 after several early beta
         releases were tested internally to get feedback from external users on a commercial project.
+        The latest version is {{ site.version }}.
       </p>
       <p>
         <em>riak-scala-client</em> has been tested on single machine Riak installations and small(ish) clusters
-        of up to 7 nodes. It has not been used in production yet and, based on public feedback to the first
-        public beta version, there might be some minor API changes on the way towards 1.0. So please go ahead
-        and try it out or even battle test it in production as long as you are aware that the paint is barely dry.
+        of up to 7 nodes. There might be some minor API changes on the way towards 1.0 but things should be
+        pretty stable overall. So please go ahead and try it out or even battle test it in production as long
+        as you are aware that the paint is still drying.
       </p>
     </div>
 
@@ -97,7 +98,7 @@ section: home
       <h3>Getting Started</h3>
       <p>
         <em>riak-scala-client</em> is available from the Maven Central and Sontatype Releases repositories.
-        The current version is <em>{{ site.version }}</em> and it is only available for Scala 2.10 (and later).
+        The current version is <em>{{ site.version }}</em> and currently it is only available for Scala 2.10.x.
       </p>
 
       <p>
@@ -141,6 +142,7 @@ libraryDependencies += "com.scalapenos" %% "riak-scala-client" % {{ site.version
       </p>
       <div class="well well-transparent">
         <ul class="icons">
+          <li><i class="icon-ok"></i>Meta Properties</li>
           <li><i class="icon-ok"></i>Link Walking</li>
           <li><i class="icon-ok"></i>Map Reduce</li>
           <li><i class="icon-ok"></i>Listing all keys in a bucket</li>
