@@ -11,8 +11,8 @@ The latest version is 0.8.1.1, which is compatible with Akka 2.1.4 and Spray 1.1
 
 There is also a parallel release for people who have already moved to Akka 2.2.
 Version 0.8.1.2 is compatible with Akka 2.2-RC1 and Spray 1.2-M8. Please be aware
-that this version is __not__ compatible with Akka 2.2-RC2 because it is not backwards
-compatible with RC1 and therefor not compatible with Spray 1.2-M8.
+that this version is __not__ compatible with Akka 2.2-RC2 because that version
+is not backwards compatible with RC1 and therefor not compatible with Spray 1.2-M8.
 
 
 ## Features
