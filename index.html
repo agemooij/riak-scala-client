@@ -26,19 +26,19 @@ section: home
       <h3>Supported Riak API</h3>
       <div class="well well-transparent">
         <ul class="icons">
-          <li><i class="icon-ok"></i>Fetch</li>
-          <li><i class="icon-ok"></i>Store</li>
-          <li><i class="icon-ok"></i>Delete</li>
-          <li><i class="icon-ok"></i>Secondary Indexes (2i)</li>
+          <li>Fetch</li>
+          <li>Store</li>
+          <li>Delete</li>
+          <li>Secondary Indexes (2i)</li>
           <li>
             <ul class="icons">
-              <li><i class="icon-ok"></i>Fetching exact matches</li>
-              <li><i class="icon-ok"></i>Fetching ranges</li>
-              <li><i class="icon-ok"></i>Storing with indexes</li>
+              <li>Fetching exact matches</li>
+              <li>Fetching ranges</li>
+              <li>Storing with indexes</li>
             </ul>
           </li>
-          <li><i class="icon-ok"></i>Getting/setting bucket properties</li>
-          <li><i class="icon-ok"></i>Ping</li>
+          <li>Getting/setting bucket properties</li>
+          <li>Ping</li>
         </ul>
       </div>
     </div>
@@ -47,19 +47,19 @@ section: home
       <h3>Features</h3>
       <div class="well well-transparent">
         <ul class="icons">
-          <li><i class="icon-ok"></i>Completely non-blocking thanks to Scala 2.10 Futures, <a href="http://akka.io" target="_blank">Akka</a> and <a href="http://spray.io" target="_blank">Spray</a></li>
-          <li><i class="icon-ok"></i>Transparent integration with Akka projects through an Akka extension</li>
-          <li><i class="icon-ok"></i>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vclock, etag, content type, last modified time, indexes, etc.)</li>
-          <li><i class="icon-ok"></i>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vclock, etag, content type, last modified time, indexes, etc.)</li>
-          <li><i class="icon-ok"></i>Customizable conflict resolution on all fetches (and stores when returnbody=true)</li>
-          <li><i class="icon-ok"></i>Automatic (de)serialization of Scala (case) classes using type classes</li>
+          <li>Completely non-blocking thanks to Scala 2.10 Futures, <a href="http://akka.io" target="_blank">Akka</a> and <a href="http://spray.io" target="_blank">Spray</a></li>
+          <li>Transparent integration with Akka projects through an Akka extension</li>
+          <li>An untyped RiakValue class for interacting with raw Riak values and their associated meta data (vclock, etag, content type, last modified time, indexes, etc.)</li>
+          <li>A typed RiakMeta[T] class for interacting with deserialized values while retaining their associated meta data (vclock, etag, content type, last modified time, indexes, etc.)</li>
+          <li>Customizable conflict resolution on all fetches (and stores when returnbody=true)</li>
+          <li>Automatic (de)serialization of Scala (case) classes using type classes</li>
           <li>
             <ul class="icons">
-              <li><i class="icon-ok"></i>builtin spray-json (de)serializers</li>
+              <li>builtin spray-json (de)serializers</li>
             </ul>
           </li>
-          <li><i class="icon-ok"></i>Automatic indexing of Scala (case) classes using type classes</li>
-          <li><i class="icon-ok"></i>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
+          <li>Automatic indexing of Scala (case) classes using type classes</li>
+          <li>Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)</li>
         </ul>
       </div>
     </div>
@@ -127,16 +127,16 @@ libraryDependencies += "com.scalapenos" %% "riak-scala-client" % {{ site.version
       </p>
       <div class="well well-transparent">
         <ul class="icons">
-          <li><i class="icon-ok"></i>Meta Properties</li>
-          <li><i class="icon-ok"></i>Link Walking</li>
-          <li><i class="icon-ok"></i>Map Reduce</li>
-          <li><i class="icon-ok"></i>Listing all keys in a bucket</li>
-          <li><i class="icon-ok"></i>Listing all buckets</li>
-          <li><i class="icon-ok"></i>
+          <li>Meta Properties</li>
+          <li>Link Walking</li>
+          <li>Map Reduce</li>
+          <li>Listing all keys in a bucket</li>
+          <li>Listing all buckets</li>
+          <li>
             Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
             If-Modified-Since and If-Unmodified-Since for LastModified)
           </li>
-          <li><i class="icon-ok"></i>Riak Node Status</li>
+          <li>Riak Node Status</li>
         </ul>
       </div>
       <p>
@@ -144,9 +144,9 @@ libraryDependencies += "com.scalapenos" %% "riak-scala-client" % {{ site.version
       </p>
       <div class="well well-transparent">
         <ul class="icons">
-          <li><i class="icon-ok"></i>Using Play Iteratees for all API methods that return multiple values</li>
-          <li><i class="icon-ok"></i>Implement streaming http response handling for all API methods that return multiple values</li>
-          <li><i class="icon-ok"></i>Implement some micro-benchmarks to compare performance with other current Scala/Java clients</li>
+          <li>Using Play Iteratees for all API methods that return multiple values</li>
+          <li>Implement streaming http response handling for all API methods that return multiple values</li>
+          <li>Implement some micro-benchmarks to compare performance with other current Scala/Java clients</li>
       </div>
       <p>
         If you think anything is missing from the above lists, please go ahead and let us know by
