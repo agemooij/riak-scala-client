@@ -10,47 +10,17 @@ section: faq
 
     <div class="span10">
       <h2>Frequently Asked Questions</h2>
-    </div>
 
-    <div class="span1"></div>
-  </div>
-
-
-  <div class="row">
-    <div class="span1"></div>
-
-    <div class="span10">
-      <h3>Which version of Spray is <em>riak-scala-client</em> compatible with?</h3>
+      <h3>Which versions of Akka and Spray is <em>riak-scala-client</em> compatible with?</h3>
       <p>
-        Version {{ site.version }} of <em>riak-scala-client</em> was developed in the
-        vacuum between Spray 1.1-M7 and 1.1-M8. The <code>spray-client</code> module
-        was heavily refactored early in the 1.1-M8 timeframe and we used the resulting new
-        features expecting a quick release of 1.1-M8. However the Spray team then (February 2013)
-        decided to start a massive refactoring and redesign process and as a result 1.1-M8
-        has not been released yet (mid-March 2013).
+        Version {{ site.version }} of <em>riak-scala-client</em> is compatible with Akka 2.1.x
+        (currently tested against 2.1.4) and Spray 1.1-M8.
       </p><p>
-        While we all wait patiently for Spray 1.1-M8 to be released, <em>riak-scala-client</em>
-        depends on a nightly build of Spray 1.1, namely 1.1-20130123. This version is very close
-        to 1.1-M7 but includes the above-mentioned first refactoring of <code>spray-client</code>.
-      </p><p>
-        As soon as Spray 1.1-M8 (or later) is released, a compatible version of this library
-        will be released ASAP.
-      </p></p>
-        All of this will not affect you very much unless you want to use this library in
-        a project that depends on Spray 1.1-M7, esspecially <code>spray-client</code>. In that case
-        unfortunately the only available choices are either to upgrade to the same nightly build
-        of Spray or to not use this library until Spray releases 1.1-M8.
+        Because quite a few people are eagerly jumping on the Akka 2.2 bandwagon, there is also
+        a version 0.8.1.2, which is compatible with Aka 2.2-RC1 and Spray 1.2-M8.
       </p>
-    </div>
-
-    <div class="span1"></div>
-  </div>
 
 
-  <div class="row">
-    <div class="span1"></div>
-
-    <div class="span10">
       <h3>Will there ever be support for the Riak protobuf API?</h3>
       <p>
         You never know, but probably not. It is certainly not a priority for 1.0 unless
@@ -59,16 +29,8 @@ section: faq
         If you are one of those people, please make your wishes know by creating an issue
         or a pull request!.
       </p>
-    </div>
-
-    <div class="span1"></div>
-  </div>
 
 
-  <div class="row">
-    <div class="span1"></div>
-
-    <div class="span10">
       <h3>Why such a boring name?</h3>
       <p>
         It seems all the cool and appropriate names, like <a href="https://github.com/xaleraz/Riaktive">riaktive</a>,
@@ -84,6 +46,5 @@ section: faq
 
     <div class="span1"></div>
   </div>
-
 
 </div> <!-- /container -->
