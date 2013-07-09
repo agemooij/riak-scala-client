@@ -11,6 +11,8 @@
   background-repeat: no-repeat;
 }
 
+
+
 /*
   Bootstrap's documentation styles
   Special styles for presenting Bootstrap's documentation and examples
@@ -1088,5 +1090,21 @@ form.bs-docs-example {
   .footer {
     padding-top: 20px;
     padding-bottom: 20px;
+  }
+}
+
+/* Portrait phones
+------------------------- */
+@media (max-width: 320px) {
+  /* use a smaller logo */
+  .logo-pepper-white {
+    width: 230px;
+    height: 20px;
+    background-image: url("../img/scalapenos-riak-logo-white-small-20.png");
+  }
+
+  /* remove the margin after the logo to make room for the menu button. */
+  body > .navbar .brand {
+    margin-right: 0px;
   }
 }
