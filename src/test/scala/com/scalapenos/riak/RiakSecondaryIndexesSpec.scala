@@ -137,7 +137,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
 
   import org.specs2.specification.Scope
 
-  abstract class StoreAndFetch[T: RiakSerializer: RiakIndexer](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
+  abstract class StoreAndFetch[T: RiakMarshaller](constructor: => T, expectedData: String, expectedIndexes: Set[RiakIndex]) extends Scope {
     val key = randomKey
     val value = constructor
     val bucket = client.bucket("riak-index-tests-" + key)

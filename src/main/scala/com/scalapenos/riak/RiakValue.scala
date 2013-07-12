@@ -23,7 +23,7 @@ import internal.DateTimeSupport._
 // RiakMeta
 // ============================================================================
 
-final case class RiakMeta[T: RiakSerializer: RiakIndexer](
+final case class RiakMeta[T: RiakMarshaller](
   data: T,
   contentType: ContentType,
   vclock: VClock,
@@ -51,28 +51,28 @@ final case class RiakValue(
 ) {
   def withData(newData: String): RiakValue = copy(data = newData)
   def withData(newData: String, newContentType: ContentType): RiakValue = copy(data = newData, contentType = newContentType)
-  def withData[T: RiakSerializer: RiakIndexer](data: T): RiakValue = {
-    val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(data)
-    val indexes = implicitly[RiakIndexer[T]].index(data)
+  def withData[T: RiakMarshaller](data: T): RiakValue = {
+    val (dataAsString, contentType) = implicitly[RiakMarshaller[T]].serialize(data)
+    val indexes = implicitly[RiakMarshaller[T]].index(data)
 
     RiakValue(dataAsString, contentType, vclock, etag, lastModified, indexes)
   }
 
   def as[T: RiakDeserializer]: T = implicitly[RiakDeserializer[T]].deserialize(data, contentType)
-  def asMeta[T: RiakDeserializer: RiakSerializer: RiakIndexer]: RiakMeta[T] = RiakMeta(as[T], contentType, vclock, etag, lastModified, indexes)
+  def asMeta[T: RiakDeserializer: RiakMarshaller]: RiakMeta[T] = RiakMeta(as[T], contentType, vclock, etag, lastModified, indexes)
 }
 
 object RiakValue {
-  def apply[T: RiakSerializer: RiakIndexer](data: T): RiakValue = {
-    val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(data)
-    val indexes = implicitly[RiakIndexer[T]].index(data)
+  def apply[T: RiakMarshaller](data: T): RiakValue = {
+    val (dataAsString, contentType) = implicitly[RiakMarshaller[T]].serialize(data)
+    val indexes = implicitly[RiakMarshaller[T]].index(data)
 
     RiakValue(dataAsString, contentType, VClock.NotSpecified, ETag.NotSpecified, currentDateTimeUTC, indexes)
   }
 
-  def apply[T: RiakSerializer: RiakIndexer](meta: RiakMeta[T]): RiakValue = {
-    val (dataAsString, contentType) = implicitly[RiakSerializer[T]].serialize(meta.data)
-    val indexes = meta.indexes ++ implicitly[RiakIndexer[T]].index(meta.data)
+  def apply[T: RiakMarshaller](meta: RiakMeta[T]): RiakValue = {
+    val (dataAsString, contentType) = implicitly[RiakMarshaller[T]].serialize(meta.data)
+    val indexes = meta.indexes ++ implicitly[RiakMarshaller[T]].index(meta.data)
 
     RiakValue(dataAsString, contentType, meta.vclock, meta.etag, meta.lastModified, indexes)
   }
