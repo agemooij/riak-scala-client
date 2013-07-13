@@ -1,12 +1,16 @@
 name := "riak-scala-client"
 
-version := "0.8.1.2"
+version := "0.9.2-SNAPSHOT"
+
+scalaVersion := "2.10.2"
 
 organization := "com.scalapenos"
 
 organizationHomepage := Some(url("http://scalapenos.com/"))
 
-scalaVersion := "2.10.2"
+licenses := Seq("The Apache Software License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+
+homepage := Some(url("http://riak.scalapenos.com"))
 
 scalacOptions := Seq("-encoding", "utf8",
                      "-target:jvm-1.6",
@@ -42,47 +46,3 @@ libraryDependencies ++= {
 initialCommands in console += {
   List("import com.scalapenos.riak._", "import akka.actor._").mkString("\n")
 }
-
-
-// ============================================================================
-// Sonatype Deployment
-// ============================================================================
-
-licenses := Seq("The Apache Software License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
-
-homepage := Some(url("http://riak.scalapenos.com"))
-
-publishMavenStyle := true
-
-pomIncludeRepository := { repo => true }
-
-publishArtifact in Test := false
-
-pomExtra := (
-  <scm>
-    <url>git@github.com:agemooij/riak-scala-client.git</url>
-    <connection>scm:git@github.com:agemooij/riak-scala-client.git</connection>
-  </scm>
-  <developers>
-    <developer>
-      <id>agemooij</id>
-      <name>Age Mooij</name>
-      <url>http://github.com/agemooij</url>
-    </developer>
-  </developers>
-)
-
-publishTo <<= version { v =>
-  val nexus = "http://oss.sonatype.org/"
-  if (v.endsWith("-SNAPSHOT"))
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
-
-
-// ============================================================================
-// Plugin Settings
-// ============================================================================
-
-seq(ScctPlugin.instrumentSettings : _*)
