@@ -20,24 +20,6 @@ import internal.DateTimeSupport._
 
 
 // ============================================================================
-// RiakMeta
-// ============================================================================
-
-final case class RiakMeta[T: RiakMarshaller](
-  data: T,
-  contentType: ContentType,
-  vclock: VClock,
-  etag: ETag,
-  lastModified: DateTime,
-  indexes: Set[RiakIndex] = Set.empty[RiakIndex]
-) {
-  def map(f: T => T): RiakMeta[T] = RiakMeta(f(data), contentType, vclock, etag, lastModified)
-
-  def toRiakValue = RiakValue(this)
-}
-
-
-// ============================================================================
 // RiakValue
 // ============================================================================
 
@@ -76,4 +58,22 @@ object RiakValue {
 
     RiakValue(dataAsString, contentType, meta.vclock, meta.etag, meta.lastModified, indexes)
   }
+}
+
+
+// ============================================================================
+// RiakMeta
+// ============================================================================
+
+final case class RiakMeta[T: RiakMarshaller](
+  data: T,
+  contentType: ContentType,
+  vclock: VClock,
+  etag: ETag,
+  lastModified: DateTime,
+  indexes: Set[RiakIndex] = Set.empty[RiakIndex]
+) {
+  def map(f: T => T): RiakMeta[T] = RiakMeta(f(data), contentType, vclock, etag, lastModified)
+
+  def toRiakValue = RiakValue(this)
 }
