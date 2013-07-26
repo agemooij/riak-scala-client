@@ -1,6 +1,6 @@
 name := "riak-scala-client"
 
-version := "0.9.2-SNAPSHOT"
+version := "0.8.3.2-SNAPSHOT"
 
 scalaVersion := "2.10.2"
 
@@ -25,11 +25,12 @@ scalacOptions := Seq("-encoding", "utf8",
 
 resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repositories/releases",
                   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
-                  "Spray Repository"    at "http://repo.spray.io/")
+                  "Spray Repository"    at "http://repo.spray.io/",
+                  "Spray Nightlies"     at "http://nightlies.spray.io/")
 
 libraryDependencies ++= {
-  val akkaVersion  = "2.2.0-RC1"
-  val sprayVersion = "1.2-M8"
+  val akkaVersion  = "2.2.0"
+  val sprayVersion = "1.2-20130726"
   Seq(
     "com.typesafe.akka"       %%  "akka-actor"             % akkaVersion,
     "com.typesafe.akka"       %%  "akka-slf4j"             % akkaVersion,
@@ -39,7 +40,7 @@ libraryDependencies ++= {
     "ch.qos.logback"          %   "logback-classic"        % "1.0.13"       % "provided",
     "com.typesafe.akka"       %%  "akka-testkit"           % akkaVersion    % "test",
     "io.spray"                %   "spray-testkit"          % sprayVersion   % "test",
-    "org.specs2"              %%  "specs2"                 % "2.0"          % "test"
+    "org.specs2"              %%  "specs2"                 % "2.1.1"        % "test"
   )
 }
 
