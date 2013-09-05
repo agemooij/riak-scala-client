@@ -18,16 +18,16 @@ package com.scalapenos.riak
 package internal
 
 
-private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, bucket: String, val resolver: RiakConflictsResolver) extends RiakBucket {
-  def fetch(key: String) = helper.fetch(server, bucket, key, resolver)
-  def fetch(index: RiakIndex) = helper.fetch(server, bucket, index, resolver)
-  def fetch(indexRange: RiakIndexRange) = helper.fetch(server, bucket, indexRange, resolver)
+private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, name: String, val resolver: RiakConflictsResolver) extends RiakBucket {
+  def fetch(key: String) = helper.fetch(server, name, key, resolver)
+  def fetch(index: RiakIndex) = helper.fetch(server, name, index, resolver)
+  def fetch(indexRange: RiakIndexRange) = helper.fetch(server, name, indexRange, resolver)
 
-  def store(key: String, value: RiakValue) = helper.store(server, bucket, key, value, resolver)
-  def storeAndFetch(key: String, value: RiakValue) = helper.storeAndFetch(server, bucket, key, value, resolver)
+  def store(key: String, value: RiakValue) = helper.store(server, name, key, value, resolver)
+  def storeAndFetch(key: String, value: RiakValue) = helper.storeAndFetch(server, name, key, value, resolver)
 
-  def delete(key: String) = helper.delete(server, bucket, key)
+  def delete(key: String) = helper.delete(server, name, key)
 
-  def properties = helper.getBucketProperties(server, bucket)
-  def properties_=(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, bucket, newProperties)
+  def properties = helper.getBucketProperties(server, name)
+  def properties_=(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, name, newProperties)
 }
