@@ -21,7 +21,7 @@ class ConflicResolutionNotImplemented
     extends RuntimeException("A bucket operation resulted in siblings but no conflict resolver was specified for the bucket.")
 
 case object DefaultConflictsResolver extends RiakConflictsResolver {
-  def resolve(values: Set[RiakValue]): RiakValue = {
+  def resolve(values: Set[RiakValue]) = {
     throw new ConflicResolutionNotImplemented()
   }
 }
