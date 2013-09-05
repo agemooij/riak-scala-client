@@ -20,47 +20,32 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
   private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
 
   "A RiakBucket" should {
-    "support getting the bucket properties" in {
-      val bucket = randomBucket
-      val properties = bucket.properties.await
-
-      properties.numberOfReplicas must beEqualTo(3)
-      properties.allowSiblings must beFalse
-      properties.lastWriteWins must beFalse
-    }
-
-    "support getting the 'n_val' bucket property directly" in {
-      val bucket = randomBucket
-
-      bucket.numberOfReplicas.await must beEqualTo(3)
-      bucket.n_val.await must beEqualTo(3)
-    }
-
-    "support getting the 'allow_mult' bucket property directly" in {
-      val bucket = randomBucket
-
-      bucket.allowSiblings.await must beFalse
-      bucket.allow_mult.await must beFalse
-    }
-
-    "support getting the 'last_write_wins' bucket property directly" in {
-      val bucket = randomBucket
-
-      bucket.lastWriteWins.await must beFalse
-      bucket.last_write_wins.await must beFalse
-    }
-
-    "support setting the bucket properties" in {
+    "support setting and getting the bucket properties" in {
       val bucket = randomBucket
       val oldProperties = bucket.properties.await
 
-      (bucket.properties = Set(NumberOfReplicas(5), AllowSiblings(true), LastWriteWins(true))).await
+      val newNumberOfReplicas = oldProperties.numberOfReplicas + 1
+      val newAllowSiblings = !oldProperties.allowSiblings
+      val newLastWriteWins = !oldProperties.lastWriteWins
+
+      (bucket.properties = Set(NumberOfReplicas(newNumberOfReplicas),
+                               AllowSiblings(newAllowSiblings),
+                               LastWriteWins(newLastWriteWins))).await
 
       val newProperties = bucket.properties.await
 
-      oldProperties.numberOfReplicas must not be equalTo(newProperties.numberOfReplicas)
-      oldProperties.allowSiblings must not be equalTo(newProperties.allowSiblings)
-      oldProperties.lastWriteWins must not be equalTo(newProperties.lastWriteWins)
+      newProperties.numberOfReplicas must beEqualTo(newNumberOfReplicas)
+      newProperties.allowSiblings must beEqualTo(newAllowSiblings)
+      newProperties.lastWriteWins must beEqualTo(newLastWriteWins)
+
+      bucket.numberOfReplicas.await must beEqualTo(newNumberOfReplicas)
+      bucket.n_val.await must beEqualTo(newNumberOfReplicas)
+
+      bucket.allowSiblings.await must beEqualTo(newAllowSiblings)
+      bucket.allow_mult.await must beEqualTo(newAllowSiblings)
+
+      bucket.lastWriteWins.await must beEqualTo(newLastWriteWins)
+      bucket.last_write_wins.await must beEqualTo(newLastWriteWins)
     }
 
     "support setting the bucket properties with an empty set (nothing happens)" in {
@@ -77,31 +62,31 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
     "support directly setting the 'n_val' bucket property" in {
       val bucket = randomBucket
 
-      bucket.numberOfReplicas.await must beEqualTo(3)
-
       (bucket.numberOfReplicas = 5).await
-
       bucket.numberOfReplicas.await must beEqualTo(5)
+
+      (bucket.numberOfReplicas = 3).await
+      bucket.numberOfReplicas.await must beEqualTo(3)
     }
 
     "support directly setting the 'allow_mult' bucket property" in {
       val bucket = randomBucket
 
-      bucket.allowSiblings.await must beFalse
-
       (bucket.allowSiblings = true).await
-
       bucket.allowSiblings.await must beTrue
+
+      (bucket.allowSiblings = false).await
+      bucket.allowSiblings.await must beFalse
     }
 
     "support directly setting the 'last_write_wins' bucket property" in {
       val bucket = randomBucket
 
-      bucket.lastWriteWins.await must beFalse
-
       (bucket.lastWriteWins = true).await
-
       bucket.lastWriteWins.await must beTrue
+
+      (bucket.lastWriteWins = false).await
+      bucket.lastWriteWins.await must beFalse
     }
 
     "fail when directly setting the 'n_val' bucket property to any integer smaller than 1" in {
