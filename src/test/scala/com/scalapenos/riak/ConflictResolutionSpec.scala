@@ -66,7 +66,7 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
 
       resolvedMeta.data.things must containTheSameElementsAs(updatedThings1 ++ updatedThings2)
 
-      bucket.fetch(key).await must beEqualTo(resolvedValue)
+      client.bucket(bucket.name).fetch(key).await must beEqualTo(resolvedValue)
     }
 
     "not pass tombstoned siblings into the conflict resolver" in {
