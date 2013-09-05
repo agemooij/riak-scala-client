@@ -1,6 +1,6 @@
 name := "riak-scala-client"
 
-version := "0.8.1.1"
+version := "0.8.4.1-dev"
 
 scalaVersion := "2.10.2"
 
