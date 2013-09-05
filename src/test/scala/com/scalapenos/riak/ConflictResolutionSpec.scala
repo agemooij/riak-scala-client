@@ -16,15 +16,7 @@
 
 package com.scalapenos.riak
 
-import scala.concurrent._
-import scala.concurrent.Future._
-import scala.concurrent.duration._
-import scala.util._
-
 import spray.json.DefaultJsonProtocol._
-
-import akka.actor._
-
 
 class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySupport {
 
