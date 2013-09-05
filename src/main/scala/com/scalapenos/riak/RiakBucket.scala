@@ -21,6 +21,8 @@ trait RiakBucket {
   import scala.concurrent.{ExecutionContext, Future}
   import internal._
 
+  val name: String
+
   /**
    * Every bucket has a default RiakConflictsResolver that will be used when resolving
    * conflicts during fetches and stores (when returnBody is true).
