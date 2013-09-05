@@ -16,15 +16,6 @@
 
 package com.scalapenos.riak
 
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.util._
-
-import akka.actor._
-
-import spray.util._
-
-
 class BasicInteractionsSpec extends AkkaActorSystemSpecification {
   "The riak client" should {
     "be able to perform a simple get-put-get-delete-get CRUD flow" in {

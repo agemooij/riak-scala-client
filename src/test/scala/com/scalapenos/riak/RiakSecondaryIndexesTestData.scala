@@ -18,7 +18,6 @@ package com.scalapenos.riak
 
 
 object RiakSecondaryIndexesTestData {
-  import scala.util._
 
   case class ClassWithOneIntIndex(foo: String)
   object ClassWithOneIntIndex {

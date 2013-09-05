@@ -16,7 +16,6 @@
 
 package com.scalapenos.riak
 
-import scala.util._
 import org.specs2.mutable._
 import MediaTypes._
 
