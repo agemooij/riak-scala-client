@@ -23,6 +23,13 @@ import scala.util._
 import java.util.UUID._
 
 
+/*
+ * This test-suite assumes several things about your Riak server configuration. The default
+ * bucket properties must be:
+ *  - n_val: 3
+ *  - allow_mult: false
+ *  - last_write_wins: false
+ */
 class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySupport {
   private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
 
