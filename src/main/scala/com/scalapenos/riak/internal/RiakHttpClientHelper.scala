@@ -247,7 +247,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
                                            .toSet
 
         // Store the resolved value back to Riak and return the resulting RiakValue
-        val (result, writeBack) = ConflictResolution.unapply(resolver.resolve(values)).get
+        val ConflictResolution(result, writeBack) = resolver.resolve(values)
         if (writeBack) {
           storeAndFetch(server, bucket, key, result, resolver)
         } else {
