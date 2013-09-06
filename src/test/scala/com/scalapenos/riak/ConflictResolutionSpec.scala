@@ -25,7 +25,7 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
     implicit val jsonFormat = jsonFormat1(TestEntityWithMergableList.apply)
   }
 
-  case object TestEntityWithMergableListResolver extends RiakConflictsResolver {
+  case class TestEntityWithMergableListResolver(writeBack: Boolean) extends RiakConflictsResolver {
     // this resolver merges the lists of things and removes any duplicates
     def resolve(values: Set[RiakValue]) = {
       val entities = values.map(_.asMeta[TestEntityWithMergableList])
@@ -34,15 +34,16 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
          merged ++ entity.data.things.toSet
       }
 
-      entities.head
-              .map(_.copy(things = mergedThings.toList))
-              .toRiakValue
+      val value = entities.head
+                          .map(_.copy(things = mergedThings.toList))
+                          .toRiakValue
+      ConflictResolution(value, writeBack)
     }
   }
 
   "When dealing with concurrent writes, a bucket configured with allow_mult = true and a custom resolver" should {
-    "resolve any conflicts, store the resolved value back to Riak, and return the result" in {
-      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver)
+    "resolve any conflicts, store the resolved value back to Riak when requested, and return the result" in {
+      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver(true))
       val key = randomKey
 
       bucket.setAllowSiblings(true).await
@@ -69,8 +70,36 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
       client.bucket(bucket.name).fetch(key).await must beEqualTo(resolvedValue)
     }
 
+    "resolve any conflicts, not store the resolved value back to Riak if not requested, and return the result" in {
+      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver(false))
+      val key = randomKey
+
+      bucket.setAllowSiblings(true).await
+      bucket.allowSiblings.await must beTrue
+
+      val things = List("one", "two", "five")
+      val updatedThings1 = List("one", "three")
+      val updatedThings2 = List("two", "four")
+
+      val entity = TestEntityWithMergableList(things)
+
+      val storedValue = bucket.storeAndFetch(key, entity).await
+      val storedMeta = storedValue.asMeta[TestEntityWithMergableList]
+
+      // concurrent writes based on the same vclock
+      bucket.store(key, storedMeta.map(_.copy(updatedThings1))).await
+      bucket.store(key, storedMeta.map(_.copy(updatedThings2))).await
+
+      val resolvedValue = bucket.fetch(key).await
+      val resolvedMeta = resolvedValue.get.asMeta[TestEntityWithMergableList]
+
+      resolvedMeta.data.things must containTheSameElementsAs(updatedThings1 ++ updatedThings2)
+
+      client.bucket(bucket.name).fetch(key).await must throwA[ConflicResolutionNotImplemented]
+    }
+
     "not pass tombstoned siblings into the conflict resolver" in {
-      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver)
+      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver(true))
       val key = randomKey
 
       bucket.setAllowSiblings(true).await
