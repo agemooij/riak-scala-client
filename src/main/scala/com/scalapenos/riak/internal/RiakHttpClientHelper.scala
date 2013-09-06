@@ -251,7 +251,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
         if (writeBack) {
           storeAndFetch(server, bucket, key, result, resolver)
         } else {
-          Future.successful(result)
+          successful(result)
         }
       }
     }
