@@ -3,4 +3,4 @@ import JacocoPlugin._
 
 seq(jacoco.settings : _*)
 
-seq(ScctPlugin.instrumentSettings : _*)
+seq(sbt.scct.ScctPlugin.instrumentSettings : _*)
