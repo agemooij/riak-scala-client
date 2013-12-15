@@ -2,7 +2,7 @@ name := "riak-scala-client"
 
 version := "0.8.3.2-SNAPSHOT"
 
-scalaVersion := "2.10.2"
+scalaVersion := "2.10.3"
 
 organization := "com.scalapenos"
 
@@ -29,13 +29,13 @@ resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repo
                   "Spray Nightlies"     at "http://nightlies.spray.io/")
 
 libraryDependencies ++= {
-  val akkaVersion  = "2.2.0"
-  val sprayVersion = "1.2-20130726"
+  val akkaVersion  = "2.2.3"
+  val sprayVersion = "1.2.0"
   Seq(
     "com.typesafe.akka"       %%  "akka-actor"             % akkaVersion,
     "com.typesafe.akka"       %%  "akka-slf4j"             % akkaVersion,
     "io.spray"                %   "spray-client"           % sprayVersion,
-    "io.spray"                %%  "spray-json"             % "1.2.4",
+    "io.spray"                %%  "spray-json"             % "1.2.5",
     "com.github.nscala-time"  %%  "nscala-time"            % "0.4.2",
     "ch.qos.logback"          %   "logback-classic"        % "1.0.13"       % "provided",
     "com.typesafe.akka"       %%  "akka-testkit"           % akkaVersion    % "test",
