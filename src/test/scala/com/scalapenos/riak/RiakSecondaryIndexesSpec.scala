@@ -83,7 +83,7 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       storedValues must have size(indexes.size)
 
       bucket.fetch(indexName,  0, 60).await must have size(indexes.size)
-      bucket.fetch(indexName,  60, 0).await must have size(indexes.size)
+      bucket.fetch(indexName,  60, 0).await must have size(0)
       bucket.fetch(indexName,  0, 80).await must have size(indexes.size)
       bucket.fetch(indexName,-10, 80).await must have size(indexes.size)
       bucket.fetch(indexName,  0, 10).await must have size(11)
@@ -112,12 +112,12 @@ class RiakSecondaryIndexesSpec extends RiakClientSpecification with RandomKeySup
       storedValues must have size(indexes.size)
 
       bucket.fetch(indexName,  "0",   "9").await must have size(numberIndexes.size)
-      bucket.fetch(indexName,  "9",   "0").await must have size(numberIndexes.size)
+      bucket.fetch(indexName,  "9",   "0").await must have size(0)
       bucket.fetch(indexName,  "0",  "90").await must have size(numberIndexes.size)
       bucket.fetch(indexName, "00",  "90").await must have size(numberIndexes.size - 1)
       bucket.fetch(indexName,  "0",  "zz").await must have size(indexes.size)
       bucket.fetch(indexName,  "0", "zza").await must have size(indexes.size)
-      bucket.fetch(indexName, "zz",   "0").await must have size(indexes.size)
+      bucket.fetch(indexName, "zz",   "0").await must have size(0)
       bucket.fetch(indexName,  "a",  "zz").await must have size(8)
       bucket.fetch(indexName,  "a",   "z").await must have size(7)
       bucket.fetch(indexName, "aa",  "zz").await must have size(7)
