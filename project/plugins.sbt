@@ -1,8 +1,5 @@
-resolvers ++= Seq(
-  "scct-github-repository" at "http://mtkopone.github.com/scct/maven-repo",
-  Resolver.url("scalasbt", new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
-)
+addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8.1")
 
-addSbtPlugin("com.jsuereth" % "xsbt-gpg-plugin" % "0.6")
+addSbtPlugin("com.sqality.scct" % "sbt-scct" % "0.3")
 
-addSbtPlugin("de.johoop" % "jacoco4sbt" % "2.0.0")
+addSbtPlugin("de.johoop" % "jacoco4sbt" % "2.1.4")

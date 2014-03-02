@@ -46,11 +46,13 @@ package object riak {
   // Conflict Resolution
   // ============================================================================
 
+  case class ConflictResolution(result: RiakValue, writeBack: Boolean)
+
   trait RiakConflictsResolver  {
-    def resolve(values: Set[RiakValue]): RiakValue
+    def resolve(values: Set[RiakValue]): ConflictResolution
   }
 
-  implicit def func2resolver(f: Set[RiakValue] => RiakValue): RiakConflictsResolver = new RiakConflictsResolver {
+  implicit def func2resolver(f: Set[RiakValue] => ConflictResolution): RiakConflictsResolver = new RiakConflictsResolver {
     def resolve(values: Set[RiakValue]) = f(values)
   }
 

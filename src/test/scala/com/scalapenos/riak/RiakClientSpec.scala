@@ -16,13 +16,6 @@
 
 package com.scalapenos.riak
 
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.util._
-
-import java.util.UUID._
-
-
 class RiakClientSpec extends RiakClientSpecification {
 
   "A RiakClient" should {

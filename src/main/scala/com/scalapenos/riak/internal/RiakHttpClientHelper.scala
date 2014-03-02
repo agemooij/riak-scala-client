@@ -182,8 +182,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private def createStoreHttpRequest(value: RiakValue) = {
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock))
     val indexHeaders = value.indexes.map(toIndexHeader(_)).toList
-    // val etagHeader = value.etag.toOption.map(etag => RawHeader(`ETag`, etag))
-    // val lastModifiedHeader = lastModifiedFromDateTime(value.lastModified)
 
     addOptionalHeader(vclockHeader) ~>
       addHeaders(indexHeaders) ~>
@@ -247,7 +245,12 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
                                            .toSet
 
         // Store the resolved value back to Riak and return the resulting RiakValue
-        storeAndFetch(server, bucket, key, resolver.resolve(values), resolver)
+        val ConflictResolution(result, writeBack) = resolver.resolve(values)
+        if (writeBack) {
+          storeAndFetch(server, bucket, key, result, resolver)
+        } else {
+          successful(result)
+        }
       }
     }
   }

@@ -1,8 +1,8 @@
 name := "riak-scala-client"
 
-version := "0.8.4.2-dev"
+version := "0.9-dev"
 
-scalaVersion := "2.10.2"
+scalaVersion := "2.10.3"
 
 organization := "com.scalapenos"
 
@@ -25,22 +25,21 @@ scalacOptions := Seq("-encoding", "utf8",
 
 resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repositories/releases",
                   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
-                  "Spray Repository"    at "http://repo.spray.io/",
-                  "Spray Nightlies"     at "http://nightlies.spray.io/")
+                  "Spray Repository"    at "http://repo.spray.io/")
 
 libraryDependencies ++= {
-  val akkaVersion  = "2.2.0"
-  val sprayVersion = "1.2-20130726"
+  val akkaVersion  = "2.2.3"
+  val sprayVersion = "1.2.0"
   Seq(
     "com.typesafe.akka"       %%  "akka-actor"             % akkaVersion,
     "com.typesafe.akka"       %%  "akka-slf4j"             % akkaVersion,
     "io.spray"                %   "spray-client"           % sprayVersion,
-    "io.spray"                %%  "spray-json"             % "1.2.4",
-    "com.github.nscala-time"  %%  "nscala-time"            % "0.4.2",
-    "ch.qos.logback"          %   "logback-classic"        % "1.0.13"       % "provided",
+    "io.spray"                %%  "spray-json"             % "1.2.5",
+    "com.github.nscala-time"  %%  "nscala-time"            % "0.8.0",
+    "ch.qos.logback"          %   "logback-classic"        % "1.1.1"       % "provided",
     "com.typesafe.akka"       %%  "akka-testkit"           % akkaVersion    % "test",
     "io.spray"                %   "spray-testkit"          % sprayVersion   % "test",
-    "org.specs2"              %%  "specs2"                 % "2.1.1"        % "test"
+    "org.specs2"              %%  "specs2-core"            % "2.3.8"        % "test"
   )
 }
 
