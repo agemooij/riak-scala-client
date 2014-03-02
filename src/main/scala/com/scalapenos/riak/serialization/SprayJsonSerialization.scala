@@ -19,7 +19,7 @@ package serialization
 
 
 trait SprayJsonSerialization {
-  import scala.reflect.ClassTag
+  import scala.reflect._
   import scala.util._
   import spray.json._
 
@@ -35,10 +35,10 @@ trait SprayJsonSerialization {
       }
     }
 
-    private def parseAndConvert(data: String) = {
+    private def parseAndConvert(data: String): T = {
       Try(implicitly[RootJsonReader[T]].read(JsonParser(data))) match {
         case Success(t) => t
-        case Failure(throwable) => throw RiakDeserializationFailed(data, implicitly[ClassTag[T]].runtimeClass.getName, throwable)
+        case Failure(throwable) => throw RiakDeserializationFailed(data, classTag[T].runtimeClass.getName, throwable)
       }
     }
   }
