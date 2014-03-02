@@ -182,8 +182,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private def createStoreHttpRequest(value: RiakValue) = {
     val vclockHeader = value.vclock.toOption.map(vclock => RawHeader(`X-Riak-Vclock`, vclock))
     val indexHeaders = value.indexes.map(toIndexHeader(_)).toList
-    // val etagHeader = value.etag.toOption.map(etag => RawHeader(`ETag`, etag))
-    // val lastModifiedHeader = lastModifiedFromDateTime(value.lastModified)
 
     addOptionalHeader(vclockHeader) ~>
       addHeaders(indexHeaders) ~>
