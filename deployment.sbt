@@ -2,6 +2,10 @@
 // Sonatype Deployment
 // ============================================================================
 
+import SonatypeKeys._
+
+sonatypeSettings
+
 publishMavenStyle := true
 
 pomIncludeRepository := { repo => true }
@@ -21,11 +25,3 @@ pomExtra := (
     </developer>
   </developers>
 )
-
-publishTo <<= version { v =>
-  val nexus = "http://oss.sonatype.org/"
-  if (v.endsWith("-SNAPSHOT"))
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
