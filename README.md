@@ -1,4 +1,6 @@
 
+[![Build Status](https://api.travis-ci.org/agemooij/riak-scala-client.png?branch=master)](https://travis-ci.org/agemooij/riak-scala-client)
+
 ## What is this?
 
 An easy to use, non-blocking Scala client library for interacting with [Riak].

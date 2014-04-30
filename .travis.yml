@@ -1,0 +1,11 @@
+language: scala
+
+scala:
+  - 2.10.3
+
+jdk:
+  - openjdk7
+  - oraclejdk7
+
+services:
+  - riak
