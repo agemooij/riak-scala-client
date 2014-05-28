@@ -16,6 +16,8 @@
 
 package com.scalapenos.riak
 
+import spray.json.{JsValue, JsArray}
+
 
 trait RiakBucket {
   import scala.concurrent.{ExecutionContext, Future}
@@ -73,6 +75,14 @@ trait RiakBucket {
   def last_write_wins_=(value: Boolean): Future[Unit] = setLastWriteWins(value)
   def lastWriteWins_=(value: Boolean): Future[Unit] = setLastWriteWins(value)
   def setLastWriteWins(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
+
+  def precommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = preCommit
+  def preCommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = properties.map(_.preCommit)
+  def precommit_=(value: List[Map[String, Any]]): Future[Unit] = setPreCommit(value)
+  def preCommit_=(value: List[Map[String, Any]]): Future[Unit] = setPreCommit(value)
+  def setPreCommit(value: List[Map[String, Any]]): Future[Unit] = setProperties(Set(PreCommit(value)))
+
+  def solrSearch(query:RiakSolrQuery): Future[RiakSolrResult]
 
 }
 

@@ -17,6 +17,8 @@
 package com.scalapenos.riak
 
 import spray.json._
+import spray.httpx.SprayJsonSupport._
+import spray.json.DefaultJsonProtocol._
 
 
 // ============================================================================
@@ -26,7 +28,8 @@ import spray.json._
 final case class RiakBucketProperties (
   numberOfReplicas: Int,
   allowSiblings: Boolean,
-  lastWriteWins: Boolean //,
+  lastWriteWins: Boolean,
+  preCommit: List[Map[String, Any]]//,
   // readQuorum: RiakQuorum,
   // primaryReadQuorum: RiakQuorum,
   // writeQuorum: RiakQuorum,
@@ -39,9 +42,22 @@ object RiakBucketProperties {
   implicit object jsonReader extends RootJsonReader[RiakBucketProperties] {
     def read(value: JsValue): RiakBucketProperties = {
       value.asJsObject.fields.get("props").flatMap { props =>
-        props.asJsObject.getFields("n_val", "allow_mult", "last_write_wins") match {
-          case Seq(JsNumber(numberOfReplicas), JsBoolean(allowSiblings), JsBoolean(lastWriteWins)) =>
-            Some(new RiakBucketProperties(numberOfReplicas.toInt, allowSiblings, lastWriteWins))
+        props.asJsObject.getFields(
+          "n_val",
+          "allow_mult",
+          "last_write_wins",
+          "precommit") match {
+          case Seq(
+            JsNumber(numberOfReplicas),
+            JsBoolean(allowSiblings),
+            JsBoolean(lastWriteWins),
+            JsArray(preCommit)) =>
+              Some(RiakBucketProperties(
+                numberOfReplicas.toInt,
+                allowSiblings,
+                lastWriteWins,
+                preCommit.map{case x:JsObject => x.fields.toMap[String, Any]}
+                ))
           case _ => None
         }
       }.getOrElse(throw new DeserializationException(s"Invalid Riak properties document: ${value.compactPrint}"))
@@ -84,7 +100,10 @@ case class LastWriteWins(value: Boolean) extends RiakBucketProperty[Boolean] {
   def json = JsBoolean(value)
 }
 
-
+case class PreCommit(value:List[Map[String, Any]]) extends RiakBucketProperty[List[Map[String, Any]]] {
+  def name = "precommit"
+  def json = JsArray(value.map{case x:Map[String, String] => x.toJson})
+}
 
 /*
 {

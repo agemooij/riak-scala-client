@@ -165,6 +165,39 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
+  def solrSearch(server: RiakServerInfo, bucket: String, solrQuery:RiakSolrQuery): Future[RiakSolrResult] = {
+
+    val query:Map[String, String] = solrQuery.m.toMap
+    httpRequest(Get(SearchSolrUri(server, bucket, SolrQueryParameters(query)))).flatMap { response =>
+      response.status match {
+        case BadRequest => throw new ParametersInvalid(s"Invalid search or params (${solrQuery.m.toMap}) ")
+        case OK         => successful(toRiakSearch(response))
+        case other      => throw new BucketOperationFailed(s"Solr search '$query.toString' in bucket '$bucket' produced an unexpected response code '$other'.")
+      }
+    }
+  }
+
+
+  // ==========================================================================
+  // Solr Building
+  // ==========================================================================
+
+  private def toRiakSearch(response: HttpResponse):RiakSolrResult = toRiakSearch(response.entity, response.headers)
+  private def toRiakSearch(entity: HttpEntity, headers: List[HttpHeader]):RiakSolrResult = {
+    entity.toOption.map { body =>
+      import spray.json._
+
+      val responseHeader:JsObject =
+        body.asString.asJson.asJsObject.fields.get("responseHeader").get.asJsObject
+      val response:JsObject =
+        body.asString.asJson.asJsObject.fields.get("response").get.asJsObject
+
+      RiakSolrResult(
+        response=response.convertTo[RiakSolrSearchResponse],
+        responseHeader=responseHeader.convertTo[RiakSolrSearchResponseHeader])
+    }.get
+  }
+
 
   // ==========================================================================
   // Request building

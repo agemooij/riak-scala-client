@@ -30,4 +30,6 @@ private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: R
 
   def properties = helper.getBucketProperties(server, name)
   def properties_=(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, name, newProperties)
+
+  def solrSearch(query:RiakSolrQuery) =  helper.solrSearch(server, name, query)
 }
