@@ -23,12 +23,6 @@ import scala.concurrent.Future
 
 class RiakBucketSolrSearchSpec extends RiakClientSpecification with RandomKeySupport {
 
-
-  case class SongTest (number: Int, title: String)
-  object SongTest {
-    implicit val jsonFormat = jsonFormat2(SongTest.apply)
-  }
-
   case class SongTestComplex (number: Int, title: String, data:Map[String, String])
   object SongTestComplex {
     implicit val jsonFormat = jsonFormat3(SongTestComplex.apply)
@@ -37,7 +31,6 @@ class RiakBucketSolrSearchSpec extends RiakClientSpecification with RandomKeySup
   val logger = LoggerFactory.getLogger("com.scalapenos.riak")
 
   private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
-  //private def randomBucket = client.bucket("module")
 
   "A RiakBucket" should {
     "get an empty precommit and set precommit values for solr search" in {
@@ -67,7 +60,7 @@ class RiakBucketSolrSearchSpec extends RiakClientSpecification with RandomKeySup
 
   }
 
-  "enable solr search and make a simple query for one field" in {
+  "insert two elements and search with solr to get them back" in {
     val bucket = randomBucket
 
     bucket.setPreCommit(List(
@@ -77,19 +70,22 @@ class RiakBucketSolrSearchSpec extends RiakClientSpecification with RandomKeySup
       )
     )).await
 
-    bucket.store(s"$randomKey-song1", SongTestComplex(1, "titulo1", Map("test1" -> "datatest1"))).await
-    bucket.store(s"$randomKey-song2", SongTestComplex(2, "titulo2", Map("test1" -> "datatest1"))).await
+    val songComplex1 = SongTestComplex(1, "titulo1", Map("test1" -> "datatest1"))
+    bucket.store(s"$randomKey-song1", songComplex1).await
+
+    val songComplex2 = SongTestComplex(2, "titulo2", Map("test2" -> "datatest2"))
+    bucket.store(s"$randomKey-song2", songComplex2).await
 
     val solrQuery= RiakSolrQuery()
     solrQuery.wt(Some(JSONSolrFormat()))
     solrQuery.q(Some("title:titulo*"))
 
     val query = bucket.solrSearch(solrQuery).await
-    println(query.responseValues.values.map(_.map(_.get.as[SongTestComplex]).await))
+    val listValues =
+      query.responseValues.values.map(_.map(_.get.as[SongTestComplex]).await)
 
-    //println(query.response.as[SongTestComplex])
-
-    None must beNone
+    listValues.contains(songComplex1) must beTrue
+    listValues.contains(songComplex2) must beTrue
 
   }
 
