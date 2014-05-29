@@ -70,7 +70,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[RiakValue]] = {
-    println(Get(KeyUri(server, bucket, key)))
     httpRequest(Get(KeyUri(server, bucket, key))).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response))
