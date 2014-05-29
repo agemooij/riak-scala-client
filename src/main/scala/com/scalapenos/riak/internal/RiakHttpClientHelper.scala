@@ -70,6 +70,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[RiakValue]] = {
+    println(Get(KeyUri(server, bucket, key)))
     httpRequest(Get(KeyUri(server, bucket, key))).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response))
@@ -165,13 +166,13 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def solrSearch(server: RiakServerInfo, bucket: String, solrQuery:RiakSolrQuery): Future[RiakSolrResult] = {
+  def solrSearch(server: RiakServerInfo, bucket: String, solrQuery:RiakSolrQuery, resolver:RiakConflictsResolver): Future[RiakSolrResult] = {
 
     val query:Map[String, String] = solrQuery.m.toMap
     httpRequest(Get(SearchSolrUri(server, bucket, SolrQueryParameters(query)))).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"Invalid search or params (${solrQuery.m.toMap}) ")
-        case OK         => successful(toRiakSearch(response))
+        case OK         => successful(toRiakSearch(response, server, bucket, resolver))
         case other      => throw new BucketOperationFailed(s"Solr search '$query.toString' in bucket '$bucket' produced an unexpected response code '$other'.")
       }
     }
@@ -182,8 +183,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   // Solr Building
   // ==========================================================================
 
-  private def toRiakSearch(response: HttpResponse):RiakSolrResult = toRiakSearch(response.entity, response.headers)
-  private def toRiakSearch(entity: HttpEntity, headers: List[HttpHeader]):RiakSolrResult = {
+  private def toRiakSearch(response: HttpResponse, server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSolrResult = toRiakSearch(response.entity, response.headers, server, bucket, resolver)
+  private def toRiakSearch(entity: HttpEntity, headers: List[HttpHeader], server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSolrResult = {
     entity.toOption.map { body =>
       import spray.json._
 
@@ -192,9 +193,18 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       val response:JsObject =
         body.asString.asJson.asJsObject.fields.get("response").get.asJsObject
 
+      val responseObject = response.convertTo[RiakSolrSearchResponse]
+
+      //TODO: Fix double quote in string to avoid using replace
+      val responseValues = RiakSolrSearchValueResponse(
+        values=responseObject.docs.map(x => fetch(server, bucket, x.id.replace("\"",""), resolver)))
+
       RiakSolrResult(
-        response=response.convertTo[RiakSolrSearchResponse],
-        responseHeader=responseHeader.convertTo[RiakSolrSearchResponseHeader])
+        response=responseObject,
+        responseValues=responseValues,
+        responseHeader=responseHeader.convertTo[RiakSolrSearchResponseHeader],
+        contentType=body.contentType,
+        data=body.asString)
     }.get
   }
 

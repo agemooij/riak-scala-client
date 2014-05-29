@@ -3,9 +3,9 @@
 package com.scalapenos.riak
 
 import scala.collection._
-import spray.httpx.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol._
 import spray.json._
+import scala.concurrent.Future
 
 
 trait RiakSolrFormat{
@@ -71,7 +71,7 @@ case class RiakSolrQuery() {
      }
    }
 
-   implicit val ListMapStringFormat : JsonFormat[List[RiakSolrSearchDoc]] = new JsonFormat[List[RiakSolrSearchDoc]] {
+   implicit val RiakSolrSearchDocFormat : JsonFormat[List[RiakSolrSearchDoc]] = new JsonFormat[List[RiakSolrSearchDoc]] {
      //implementation
      def write(params: List[RiakSolrSearchDoc]) = {
        params.map{
@@ -96,23 +96,30 @@ case class RiakSolrQuery() {
    }
 }
 
-sealed case class RiakSolrSearchDoc(
+private[riak] sealed case class RiakSolrSearchDoc(
   id:String,
   index:String,
   fields:Map[String, Any],
-  props:Map[String, Any])
+  props:Map[String, Any]){
 
-sealed case class RiakSolrSearchResponse(
+
+}
+
+private[riak] sealed case class RiakSolrSearchResponse(
   numFound:Int,
   start: Int,
   maxScore:String,
   docs:List[RiakSolrSearchDoc])
 
+
+private[riak] sealed case class RiakSolrSearchValueResponse(
+  values:List[Future[Option[RiakValue]]])
+
 private[riak] object RiakSolrSearchResponse extends RiakSolrSearchJsonFormats{
   implicit val jsonFormat = jsonFormat4(RiakSolrSearchResponse.apply)
 }
 
-sealed case class RiakSolrSearchResponseHeader(
+private[riak] sealed case class RiakSolrSearchResponseHeader(
   status:Int,
   QTime: Int,
   params:Map[String, String])
@@ -123,5 +130,8 @@ private[riak] object RiakSolrSearchResponseHeader extends RiakSolrSearchJsonForm
 
 case class RiakSolrResult(
   responseHeader:RiakSolrSearchResponseHeader,
-  response:RiakSolrSearchResponse)
+  response:RiakSolrSearchResponse,
+  responseValues:RiakSolrSearchValueResponse,
+  contentType:ContentType,
+  data:String)
 

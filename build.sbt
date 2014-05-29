@@ -1,3 +1,6 @@
+import sbt.Keys._
+import scala.Some
+
 name := "riak-scala-client"
 
 version := "0.9.0"
@@ -13,7 +16,7 @@ licenses := Seq("The Apache Software License, Version 2.0" -> url("http://www.ap
 homepage := Some(url("http://riak.scalapenos.com"))
 
 scalacOptions := Seq("-encoding", "utf8",
-                     "-target:jvm-1.6",
+                     "-target:jvm-1.7",
                      "-feature",
                      "-language:implicitConversions",
                      "-language:postfixOps",

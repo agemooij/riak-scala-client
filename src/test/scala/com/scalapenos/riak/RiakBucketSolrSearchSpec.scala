@@ -19,6 +19,7 @@ package com.scalapenos.riak
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 import spray.json.JsString
+import scala.concurrent.Future
 
 class RiakBucketSolrSearchSpec extends RiakClientSpecification with RandomKeySupport {
 
@@ -81,10 +82,12 @@ class RiakBucketSolrSearchSpec extends RiakClientSpecification with RandomKeySup
 
     val solrQuery= RiakSolrQuery()
     solrQuery.wt(Some(JSONSolrFormat()))
-    solrQuery.q(Some("title:titulo1"))
+    solrQuery.q(Some("title:titulo*"))
 
     val query = bucket.solrSearch(solrQuery).await
-    println(query.response.docs)
+    println(query.responseValues.values.map(_.map(_.get.as[SongTestComplex]).await))
+
+    //println(query.response.as[SongTestComplex])
 
     None must beNone
 
