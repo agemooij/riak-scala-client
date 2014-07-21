@@ -3,9 +3,9 @@ import scala.Some
 
 name := "riak-scala-client"
 
-version := "0.9.0"
+version := "0.9.1"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.11.1"
 
 organization := "com.scalapenos"
 
@@ -23,7 +23,8 @@ scalacOptions := Seq("-encoding", "utf8",
                      "-unchecked",
                      "-deprecation",
                      "-Xlog-reflective-calls",
-                     "-Ywarn-adapted-args"
+                     "-Ywarn-adapted-args",
+		                 "-Xmax-classfile-name", "255"
                     )
 
 resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repositories/releases",
@@ -31,21 +32,23 @@ resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repo
                   "Spray Repository"    at "http://repo.spray.io/")
 
 libraryDependencies ++= {
-  val akkaVersion  = "2.2.3"
-  val sprayVersion = "1.2.0"
+  val akkaVersion  = "2.3.2"
+  val sprayVersion = "1.3.1"
   Seq(
     "com.typesafe.akka"       %%  "akka-actor"             % akkaVersion,
     "com.typesafe.akka"       %%  "akka-slf4j"             % akkaVersion,
-    "io.spray"                %   "spray-client"           % sprayVersion,
-    "io.spray"                %%  "spray-json"             % "1.2.5",
-    "com.github.nscala-time"  %%  "nscala-time"            % "0.8.0",
-    "ch.qos.logback"          %   "logback-classic"        % "1.1.1"        % "provided",
+    "io.spray"                %%  "spray-client"           % sprayVersion,
+    "io.spray"                %%  "spray-json"             % "1.2.6",
+    "com.github.nscala-time"  %%  "nscala-time"            % "1.2.0",
+    "ch.qos.logback"          %   "logback-classic"        % "1.1.2"        % "provided",
     "com.typesafe.akka"       %%  "akka-testkit"           % akkaVersion    % "test",
-    "io.spray"                %   "spray-testkit"          % sprayVersion   % "test",
-    "org.specs2"              %%  "specs2-core"            % "2.3.8"        % "test"
+    "io.spray"                %%  "spray-testkit"          % sprayVersion   % "test",
+    "org.specs2"              %%  "specs2-core"            % "2.3.11"       % "test"
   )
 }
 
 initialCommands in console += {
   List("import com.scalapenos.riak._", "import akka.actor._").mkString("\n")
 }
+
+net.virtualvoid.sbt.graph.Plugin.graphSettings

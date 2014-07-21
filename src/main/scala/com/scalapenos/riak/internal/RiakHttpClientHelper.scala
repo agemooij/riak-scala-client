@@ -18,6 +18,23 @@ package com.scalapenos.riak
 package internal
 
 import akka.actor._
+import spray.http._
+import spray.http.parser.HttpParser
+
+//Temporary fix for spray 1.3.1_2.11
+import java.io.{ ByteArrayOutputStream, ByteArrayInputStream }
+import org.jvnet.mimepull.{ MIMEMessage, MIMEConfig }
+import org.parboiled.common.FileUtils
+import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
+import spray.http.parser.HttpParser
+import spray.util._
+import MediaTypes._
+import MediaRanges._
+import HttpHeaders._
+import HttpCharsets._
+import spray.httpx.unmarshalling.Unmarshaller
+import spray.can.parsing.HttpHeaderParser
 
 
 private[riak] object RiakHttpClientHelper {
@@ -244,12 +261,12 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       val indexes            = toRiakIndexes(headers)
 
       for (vClock <- vClockOption; eTag <- eTagOption; lastModified <- lastModifiedOption)
-      yield RiakValue(body.asString, body.contentType, vClock, eTag, lastModified, indexes)
+      yield RiakValue(body.asString, body.contentType, vClock, eTag, fromSprayDateTime(lastModified), indexes)
     }
   }
 
-  private def dateTimeFromLastModified(lm: `Last-Modified`): DateTime = fromSprayDateTime(lm.date)
-  private def lastModifiedFromDateTime(dateTime: DateTime): `Last-Modified` = `Last-Modified`(toSprayDateTime(dateTime))
+  private def dateTimeFromLastModified(lm: `Last-Modified`): DateTime = toSprayDateTime(fromSprayDateTime(lm.date))
+  private def lastModifiedFromDateTime(dateTime: DateTime): `Last-Modified` = `Last-Modified`(dateTime)
 
 
   // ==========================================================================
@@ -260,7 +277,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     response.entity.toOption.map { body =>
       import spray.json._
 
-      val keys = body.asString.asJson.convertTo[RiakIndexQueryResponse].keys
+      val keys = body.asString.parseJson.convertTo[RiakIndexQueryResponse].keys
 
       traverse(keys)(fetch(server, bucket, _, resolver)).map(_.flatten)
     }.getOrElse(successful(Nil))
@@ -277,7 +294,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
-    response.entity.as[MultipartContent] match {
+    response.entity.as[MultipartContent](MultipartContentUnmarshaller) match {
       case Left(error) => throw new ConflictResolutionFailed(error.toString)
       case Right(multipartContent) => {
         // TODO: make ignoring deleted values optional
@@ -295,5 +312,59 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
         }
       }
     }
+  }
+
+  //Fix for avoiding errors when using unmarshal MultipartContent
+  //TODO: Remove this when Spray fix the problem
+  val mimeParsingConfig = {
+    val config = new MIMEConfig
+    config.setMemoryThreshold(-1) // use only in-memory parsing
+    config
+  }
+
+  implicit val MultipartContentUnmarshaller = multipartContentUnmarshaller(`UTF-8`)
+  def multipartContentUnmarshaller(defaultCharset: HttpCharset): Unmarshaller[MultipartContent] =
+    multipartPartsUnmarshaller[MultipartContent](`multipart/*`, defaultCharset, MultipartContent(_))
+
+  implicit val MultipartByteRangesUnmarshaller = multipartByteRangesUnmarshaller(`UTF-8`)
+  def multipartByteRangesUnmarshaller(defaultCharset: HttpCharset): Unmarshaller[MultipartByteRanges] =
+    multipartPartsUnmarshaller[MultipartByteRanges](`multipart/byteranges`, defaultCharset, MultipartByteRanges(_))
+
+  def multipartPartsUnmarshaller[T <: MultipartParts](mediaRange: MediaRange,
+                                                      defaultCharset: HttpCharset,
+                                                      create: Seq[BodyPart] ⇒ T): Unmarshaller[T] =
+
+    Unmarshaller[T](mediaRange) {
+      case HttpEntity.NonEmpty(contentType, data) =>
+        contentType.mediaType.parameters.get("boundary") match {
+          case None | Some("") =>
+            throw new Error("Content-Type with a multipart media type must have a non-empty 'boundary' parameter")
+          case Some(boundary) =>
+            val mimeMsg = new MIMEMessage(new ByteArrayInputStream(data.toByteArray), boundary, mimeParsingConfig)
+            create(convertMimeMessage(mimeMsg, defaultCharset))
+        }
+      case HttpEntity.Empty ⇒ create(Nil)
+    }
+
+  def convertMimeMessage(mimeMsg: MIMEMessage, defaultCharset: HttpCharset): Seq[BodyPart] = {
+    mimeMsg.getAttachments.asScala.map { part =>
+      val rawHeaders: List[HttpHeader] =
+        part.getAllHeaders.asScala.map(h => RawHeader(h.getName, h.getValue))(collection.breakOut)
+      HttpParser.parseHeaders(rawHeaders) match {
+        case (Nil, headers) =>
+          val contentType = headers.mapFind { case `Content-Type`(t) => Some(t); case _ ⇒ None }
+            .getOrElse(ContentType(`text/plain`, defaultCharset)) // RFC 2046 section 5.1
+          val outputStream = new ByteArrayOutputStream
+            FileUtils.copyAll(part.readOnce(), outputStream)
+            BodyPart(HttpEntity(contentType, outputStream.toByteArray), headers)
+
+        case (errors, headers) =>
+          val contentType = headers.mapFind { case `Content-Type`(t) => Some(t); case _ ⇒ None }
+            .getOrElse(ContentType(`text/plain`, defaultCharset)) // RFC 2046 section 5.1
+          val outputStream = new ByteArrayOutputStream
+            FileUtils.copyAll(part.readOnce(), outputStream)
+            BodyPart(HttpEntity(contentType, outputStream.toByteArray), headers)
+      }
+    }(collection.breakOut)
   }
 }
