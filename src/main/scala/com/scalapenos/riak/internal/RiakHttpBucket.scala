@@ -28,6 +28,8 @@ private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: R
 
   def delete(key: String) = helper.delete(server, name, key)
 
-  def properties = helper.getBucketProperties(server, name)
-  def properties_=(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, name, newProperties)
+  def getProperties = helper.getBucketProperties(server, name)
+  def setProperties(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, name, newProperties)
+
+  def search(query:RiakSearchQuery) =  helper.search(server, name, query, resolver)
 }

@@ -17,6 +17,8 @@
 package com.scalapenos.riak
 package internal
 
+import scala.collection.LinearSeq
+
 
 private[riak] trait RiakUriSupport {
   import spray.http.Uri
@@ -38,6 +40,10 @@ private[riak] trait RiakUriSupport {
     def query = ("returnbody", s"$returnBody") +: Query.Empty
   }
 
+  case class SolrQueryParameters(params:Map[String, String]) extends QueryParameters {
+    def query:Query = Query(params)
+  }
+
 
   // ==========================================================================
   // URL building and Query Parameters
@@ -56,8 +62,16 @@ private[riak] trait RiakUriSupport {
     uri(server, s"buckets/${bucket}/index/${index.fullName}/${index.value}")
 
   def IndexRangeUri(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange) =
-    uri(server, s"buckets/${bucket}/index/${indexRange.fullName}/${indexRange.start}/${indexRange.end}")
+  uri(server, s"buckets/${bucket}/index/${indexRange.fullName}/${indexRange.start}/${indexRange.end}")
 
+  def SearchSolrUri(server: RiakServerInfo, bucket: String, parameters: QueryParameters) =
+    uri(server, s"solr/${bucket}/select/", parameters.query)
+
+  def SearchIndexUri(server: RiakServerInfo, name: String) =
+    uri(server, s"search/index/${name}")
+
+  def ListSearchIndexUri(server: RiakServerInfo, name: String) =
+    uri(server, s"search/index/")
 
   private def uri(server: RiakServerInfo, path: String, query: Query = Query.Empty): Uri = {
     Uri.from(

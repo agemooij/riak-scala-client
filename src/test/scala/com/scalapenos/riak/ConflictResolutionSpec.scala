@@ -43,11 +43,12 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
 
   "When dealing with concurrent writes, a bucket configured with allow_mult = true and a custom resolver" should {
     "resolve any conflicts, store the resolved value back to Riak when requested, and return the result" in {
+
       val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver(true))
       val key = randomKey
 
-      bucket.setAllowSiblings(true).await
-      bucket.allowSiblings.await must beTrue
+      (bucket.allowMult = true).await
+      bucket.allowMult.await must beTrue
 
       val things = List("one", "two", "five")
       val updatedThings1 = List("one", "three")
@@ -74,8 +75,8 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
       val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver(false))
       val key = randomKey
 
-      bucket.setAllowSiblings(true).await
-      bucket.allowSiblings.await must beTrue
+      (bucket.allowMult = true).await
+      bucket.allowMult.await must beTrue
 
       val things = List("one", "two", "five")
       val updatedThings1 = List("one", "three")
@@ -102,8 +103,8 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
       val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver(true))
       val key = randomKey
 
-      bucket.setAllowSiblings(true).await
-      bucket.allowSiblings.await must beTrue
+      (bucket.allowMult = true).await
+      bucket.allowMult.await must beTrue
 
       val things = List("one", "two", "five")
       val updatedThings1 = List("one", "three")
@@ -133,8 +134,8 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
       val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey)
       val key = randomKey
 
-      bucket.setAllowSiblings(true).await
-      bucket.allowSiblings.await must beTrue
+      (bucket.allowMult = true).await
+      bucket.allowMult.await must beTrue
 
       val things = List("one", "two", "five")
       val updatedThings1 = List("one", "three")
