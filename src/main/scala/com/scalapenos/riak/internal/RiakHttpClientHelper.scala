@@ -21,7 +21,7 @@ import akka.actor._
 import spray.http._
 import spray.client.pipelining._
 import spray.http.parser.HttpParser
-import spray.json.{JsString, JsObject}
+import spray.json.{JsNumber, JsValue, JsString, JsObject}
 
 //Temporary fix for spray 1.3.1_2.11
 import java.io.{ ByteArrayOutputStream, ByteArrayInputStream }
@@ -192,9 +192,10 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def createSearchIndex(server: RiakServerInfo, name:String, schema:String): Future[Boolean] = {
+  def createSearchIndex(server: RiakServerInfo, name:String, nVal:Int, schema:String): Future[Boolean] = {
 
-    httpRequest(Put(SearchIndexUri(server, name), JsObject("schema" -> JsString(schema)))).flatMap { response =>
+    val props = JsObject("schema" -> JsString(schema), "n_val" -> JsNumber(nVal))
+    httpRequest(Put(SearchIndexUri(server, name), props)).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
         case OK         => successful(true)
@@ -203,41 +204,58 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def getSearchIndex(server: RiakServerInfo, name:String): Future[Option[RiakSearchIndex]] = {
-    httpRequest(Get(SearchIndexUri(server, name))).flatMap { response =>
+  def deleteSearchIndex(server: RiakServerInfo, name:String): Future[Boolean] = {
+
+    httpRequest(Delete(SearchIndexUri(server, name))).flatMap { response =>
       response.status match {
-        case BadRequest => throw new ParametersInvalid(s"There was a problem getting the search index because the http request contained invalid data.")
-        case OK         => parseSearchIndex(response.entity)
+        case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
+        case OK         => successful(true)
         case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
       }
     }
   }
 
-  /*def getSearchIndexList(server: RiakServerInfo, name:String): Future[List[RiakSearchIndex]] = {
+  def getSearchIndex(server: RiakServerInfo, name:String): Future[RiakSearchIndex] = {
     httpRequest(Get(SearchIndexUri(server, name))).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"There was a problem getting the search index because the http request contained invalid data.")
         case OK         => parseSearchIndex(response.entity)
-        case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
+        case other      => throw new OperationFailed(s"There was a problem creating the search index '$other'.")
       }
     }
-  }*/
+  }
+
+  def getSearchIndexList(server: RiakServerInfo): Future[List[RiakSearchIndex]] = {
+    httpRequest(Get(ListSearchIndexUri(server))).flatMap { response =>
+      response.status match {
+        case BadRequest => throw new ParametersInvalid(s"There was a problem getting the search index because the http request contained invalid data.")
+        case OK         => parseSearchIndexList(response.entity)
+        case other      => throw new OperationFailed(s"There was a problem creating the search index '$other'.")
+      }
+    }
+  }
 
 
   // ==========================================================================
   // Search utils
   // ==========================================================================
 
-  private def parseSearchIndex(entity: HttpEntity): Future[Option[RiakSearchIndex]] = {
+  private def parseSearchIndex(entity: HttpEntity): Future[RiakSearchIndex] = {
     import spray.httpx.unmarshalling._
-    val searchResult = entity.as[RiakSearchIndex]
-    val searchValue:Option[RiakSearchIndex] = if(searchResult.e.isRight) Some(searchResult.e.right.get) else None
-    successful(searchValue)
+    entity.as[RiakSearchIndex] match {
+      case Right(value) => successful(value)
+      case Left(error) => failed(throw new OperationFailed(s"There was a problem serializing the result"))
+    }
   }
 
-  /*private def parseSearchIndexList(entity:HttpEntity):Future[List[RiakSearchIndex]] = {
+  private def parseSearchIndexList(entity:HttpEntity):Future[List[RiakSearchIndex]] = {
+    import spray.httpx.unmarshalling._
+    entity.as[List[RiakSearchIndex]] match {
+      case Right(value) => successful(value)
+      case Left(error) => failed(throw new OperationFailed(s"There was a problem serializing the result"))
+    }
 
-  }*/
+  }
 
 
 

@@ -70,7 +70,7 @@ private[riak] trait RiakUriSupport {
   def SearchIndexUri(server: RiakServerInfo, name: String) =
     uri(server, s"search/index/${name}")
 
-  def ListSearchIndexUri(server: RiakServerInfo, name: String) =
+  def ListSearchIndexUri(server: RiakServerInfo) =
     uri(server, s"search/index/")
 
   private def uri(server: RiakServerInfo, path: String, query: Query = Query.Empty): Uri = {

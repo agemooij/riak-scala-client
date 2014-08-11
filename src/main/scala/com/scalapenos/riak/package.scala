@@ -16,6 +16,10 @@
 
 package com.scalapenos
 
+import spray.http.HttpMethods._
+import spray.http.{HttpMethods, HttpMethod}
+import spray.httpx.RequestBuilding
+
 /**
  * A fast, non-blocking Scala client library for interacting with Riak.
  *
@@ -40,7 +44,6 @@ package object riak {
   type DateTime = org.joda.time.DateTime
 
   val MediaTypes = spray.http.MediaTypes
-
 
   // ============================================================================
   // Conflict Resolution

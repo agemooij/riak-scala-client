@@ -30,16 +30,25 @@ class RiakBucketSearchSpec extends RiakClientSpecification with RandomKeySupport
 
   val logger = LoggerFactory.getLogger("com.scalapenos.riak")
 
+  val randomIndex = randomKey
+
   private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
+
 
   "A RiakClient" should {
     "create a search index" in {
-      pending
-      client.createSearchIndex("test").await must beTrue
+      client.createSearchIndex(randomIndex).await must beTrue
     }
     "get a search by name" in {
-      val test = client.getSearchIndex("test").await
+      val test = client.getSearchIndex(randomIndex).await
       true must beTrue
+    }
+    "get a list of all search index" in {
+      val test = client.getSearchIndexList.await
+      true must beTrue
+    }
+    "delete a search index" in {
+      client.deleteSearchIndex(randomIndex).await must beTrue
     }
   }
 

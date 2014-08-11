@@ -23,6 +23,8 @@ import scala.concurrent.Future
 private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: RiakServerInfo) extends RiakClient {
   def ping = helper.ping(server)
   def bucket(name: String, resolver: RiakConflictsResolver) = new RiakHttpBucket(helper, server, name, resolver)
-  def createSearchIndex(name: String , schema:String = "_yz_default")  = helper.createSearchIndex(server, name, schema)
+  def createSearchIndex(name: String , nVal:Int = 3, schema:String = "_yz_default")  = helper.createSearchIndex(server, name, nVal, schema)
   def getSearchIndex(name: String) = helper.getSearchIndex(server, name)
+  def getSearchIndexList = helper.getSearchIndexList(server)
+  def deleteSearchIndex(name: String) = helper.deleteSearchIndex(server, name)
 }

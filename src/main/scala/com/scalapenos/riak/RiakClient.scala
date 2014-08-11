@@ -45,8 +45,10 @@ trait RiakClient {
 
   def ping: Future[Boolean]
   def bucket(name: String, resolver: RiakConflictsResolver = DefaultConflictsResolver): RiakBucket
-  def createSearchIndex(name: String, schema:String = "_yz_default"): Future[Boolean]
-  def getSearchIndex(name: String): Future[Option[RiakSearchIndex]]
+  def createSearchIndex(name: String, nVal:Int = 3, schema:String = "_yz_default"): Future[Boolean]
+  def getSearchIndex(name: String): Future[RiakSearchIndex]
+  def getSearchIndexList:Future[List[RiakSearchIndex]]
+  def deleteSearchIndex(name: String):Future[Boolean]
 }
 
 

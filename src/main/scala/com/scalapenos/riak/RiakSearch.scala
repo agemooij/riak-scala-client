@@ -2,7 +2,8 @@
 
 package com.scalapenos.riak
 
-import spray.http.MediaTypes
+import com.scalapenos.riak.internal.SprayJsonSupport
+import MediaTypes._
 
 import scala.collection._
 import spray.json.DefaultJsonProtocol._
@@ -148,6 +149,10 @@ object RiakSearchIndex {
         case _ => throw new DeserializationException("riak search index json expected")
       }
     }
+  }
+
+  implicit object RiakSearchIndexListFormat extends RootJsonReader[List[RiakSearchIndex]] {
+    def read(value: JsValue) = value.asInstanceOf[JsArray].elements.map(_.convertTo[RiakSearchIndex])
   }
 
 }
