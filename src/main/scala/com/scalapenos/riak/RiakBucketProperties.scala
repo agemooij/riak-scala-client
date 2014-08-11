@@ -26,8 +26,8 @@ import spray.json.DefaultJsonProtocol._
 // ============================================================================
 
 final case class RiakBucketProperties (
-  numberOfReplicas: Int,
-  allowSiblings: Boolean,
+  nVal: Int,
+  allowMult: Boolean,
   lastWriteWins: Boolean,
   preCommit: List[Map[String, Any]]//,
   // readQuorum: RiakQuorum,
@@ -90,7 +90,7 @@ case class NumberOfReplicas(value: Int) extends RiakBucketProperty[Int] {
   def json = JsNumber(value)
 }
 
-case class AllowSiblings(value: Boolean) extends RiakBucketProperty[Boolean] {
+case class AllowMult(value: Boolean) extends RiakBucketProperty[Boolean] {
   def name = "allow_mult"
   def json = JsBoolean(value)
 }

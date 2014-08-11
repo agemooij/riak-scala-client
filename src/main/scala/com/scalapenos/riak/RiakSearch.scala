@@ -2,64 +2,66 @@
 
 package com.scalapenos.riak
 
+import spray.http.MediaTypes
+
 import scala.collection._
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 import scala.concurrent.Future
 
 
-trait RiakSolrFormat{
+trait RiakSearchFormat{
   private[riak] val fmt:String
 }
 
-case class JSONSolrFormat() extends RiakSolrFormat {
+case class JSONSearchFormat() extends RiakSearchFormat {
   private[riak] val fmt:String = "json"
 }
 
-case class XMLSolrFormat() extends RiakSolrFormat {
+case class XMLSearchFormat() extends RiakSearchFormat {
   private[riak] val fmt:String = "xml"
 }
 
-case class RiakSolrQuery() {
+case class RiakSearchQuery() {
 
   private[riak] val m:mutable.Map[String, String] = mutable.Map.empty
 
   def index(value:Option[String]) =
-    if(!value.isEmpty) m("index") = value.get
+    if(value.nonEmpty) m("index") = value.get
     else m.remove("index")
   def q(value:Option[String]) =
-    if(!value.isEmpty) m("q") = value.get
+    if(value.nonEmpty) m("q") = value.get
     else m.remove("q")
   def df(value:Option[String]) =
-    if(!value.isEmpty) m("df") = value.get
+    if(value.nonEmpty) m("df") = value.get
     else m.remove("df")
   def q_op(value:Option[String]) =
-    if(!value.isEmpty) m("q_op") = value.get
+    if(value.nonEmpty) m("q_op") = value.get
     else m.remove("q_op")
   def start(value:Option[Long]) =
-    if(!value.isEmpty) m("q_op") = value.get.toString
+    if(value.nonEmpty) m("q_op") = value.get.toString
     else m.remove("q_op")
   def rows(value:Option[Long]) =
-    if(!value.isEmpty) m("rows") = value.get.toString
+    if(value.nonEmpty) m("rows") = value.get.toString
     else m.remove("rows")
   def sort(value:Option[Long]) =
-    if(!value.isEmpty) m("sort") = value.get.toString
+    if(value.nonEmpty) m("sort") = value.get.toString
     else m.remove("sort")
-  def wt(value:Option[RiakSolrFormat]) =
-    if(!value.isEmpty) m("wt") = value.get.fmt
+  def wt(value:Option[RiakSearchFormat]) =
+    if(value.nonEmpty) m("wt") = value.get.fmt
     else m.remove("wt")
   def filter(value:Option[String]) =
-    if(!value.isEmpty) m("filter") = value.get
+    if(value.nonEmpty) m("filter") = value.get
     else m.remove("filter")
   def presort(value:Option[String]) =
-    if(!value.isEmpty) m("presort") = value.get
+    if(value.nonEmpty) m("presort") = value.get
     else m.remove("presort")
 
   override def toString = s"${m.toString}"
 
 }
 
- private[riak] trait RiakSolrSearchJsonFormats {
+ private[riak] trait RiakSearchJsonFormats {
    implicit val mapStringFormat : JsonFormat[Map[String, String]] = new JsonFormat[Map[String, String]] {
      //implementation
      def write(params: Map[String, String]) = {
@@ -71,9 +73,9 @@ case class RiakSolrQuery() {
      }
    }
 
-   implicit val RiakSolrSearchDocFormat : JsonFormat[List[RiakSolrSearchDoc]] = new JsonFormat[List[RiakSolrSearchDoc]] {
+   implicit val RiakSolrSearchDocFormat : JsonFormat[List[RiakSearchDoc]] = new JsonFormat[List[RiakSearchDoc]] {
      //implementation
-     def write(params: List[RiakSolrSearchDoc]) = {
+     def write(params: List[RiakSearchDoc]) = {
        params.map{
          x => JsObject(
          "id" -> JsString(x.id),
@@ -86,7 +88,7 @@ case class RiakSolrQuery() {
      def read(value: JsValue) = {
 
        value.asInstanceOf[JsArray].elements.map{
-         x => RiakSolrSearchDoc(
+         x => RiakSearchDoc(
            x.asJsObject.fields.get("id").get.toString,
            x.asJsObject.fields.get("index").get.toString,
            x.asJsObject.fields.get("fields").get.asJsObject.fields.toMap,
@@ -96,7 +98,7 @@ case class RiakSolrQuery() {
    }
 }
 
-private[riak] sealed case class RiakSolrSearchDoc(
+private[riak] sealed case class RiakSearchDoc(
   id:String,
   index:String,
   fields:Map[String, Any],
@@ -105,33 +107,47 @@ private[riak] sealed case class RiakSolrSearchDoc(
 
 }
 
-private[riak] sealed case class RiakSolrSearchResponse(
+private[riak] sealed case class RiakSearchResponse(
   numFound:Int,
   start: Int,
   maxScore:String,
-  docs:List[RiakSolrSearchDoc])
+  docs:List[RiakSearchDoc])
 
 
-private[riak] sealed case class RiakSolrSearchValueResponse(
+private[riak] sealed case class RiakSearchValueResponse(
   values:List[Future[Option[RiakValue]]])
 
-private[riak] object RiakSolrSearchResponse extends RiakSolrSearchJsonFormats{
-  implicit val jsonFormat = jsonFormat4(RiakSolrSearchResponse.apply)
+private[riak] object RiakSearchResponse extends RiakSearchJsonFormats{
+  implicit val jsonFormat = jsonFormat4(RiakSearchResponse.apply)
 }
 
-private[riak] sealed case class RiakSolrSearchResponseHeader(
+private[riak] sealed case class RiakSearchResponseHeader(
   status:Int,
   QTime: Int,
   params:Map[String, String])
 
-private[riak] object RiakSolrSearchResponseHeader extends RiakSolrSearchJsonFormats{
-  implicit val jsonFormat = jsonFormat3(RiakSolrSearchResponseHeader.apply)
+private[riak] object RiakSearchResponseHeader extends RiakSearchJsonFormats{
+  implicit val jsonFormat = jsonFormat3(RiakSearchResponseHeader.apply)
 }
 
-case class RiakSolrResult(
-  responseHeader:RiakSolrSearchResponseHeader,
-  response:RiakSolrSearchResponse,
-  responseValues:RiakSolrSearchValueResponse,
+case class RiakSearchResult(
+  responseHeader:RiakSearchResponseHeader,
+  response:RiakSearchResponse,
+  responseValues:RiakSearchValueResponse,
   contentType:ContentType,
   data:String)
 
+case class RiakSearchIndex(name:String, nVal:Number, schema:String)
+
+object RiakSearchIndex {
+  implicit object RiakSearchIndexFormat extends RootJsonReader[RiakSearchIndex] {
+    def read(value: JsValue) = {
+      value.asJsObject.getFields("name", "n_val", "schema") match {
+        case Seq(JsString(name), JsNumber(nVal), JsString(schema)) =>
+          RiakSearchIndex (name, nVal, schema)
+        case _ => throw new DeserializationException("riak search index json expected")
+      }
+    }
+  }
+
+}

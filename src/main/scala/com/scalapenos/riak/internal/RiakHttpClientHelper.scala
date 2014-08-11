@@ -19,14 +19,15 @@ package internal
 
 import akka.actor._
 import spray.http._
+import spray.client.pipelining._
 import spray.http.parser.HttpParser
+import spray.json.{JsString, JsObject}
 
 //Temporary fix for spray 1.3.1_2.11
 import java.io.{ ByteArrayOutputStream, ByteArrayInputStream }
 import org.jvnet.mimepull.{ MIMEMessage, MIMEConfig }
 import org.parboiled.common.FileUtils
 import scala.collection.JavaConverters._
-import scala.util.control.NonFatal
 import spray.http.parser.HttpParser
 import spray.util._
 import MediaTypes._
@@ -34,7 +35,6 @@ import MediaRanges._
 import HttpHeaders._
 import HttpCharsets._
 import spray.httpx.unmarshalling.Unmarshaller
-import spray.can.parsing.HttpHeaderParser
 
 
 private[riak] object RiakHttpClientHelper {
@@ -54,8 +54,6 @@ private[riak] object RiakHttpClientHelper {
 private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSupport with RiakIndexSupport with DateTimeSupport {
   import scala.concurrent.Future
   import scala.concurrent.Future._
-
-  import spray.client.pipelining._
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
   import spray.http.StatusCodes._
   import spray.http.HttpHeaders._
@@ -182,7 +180,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def solrSearch(server: RiakServerInfo, bucket: String, solrQuery:RiakSolrQuery, resolver:RiakConflictsResolver): Future[RiakSolrResult] = {
+  def search(server: RiakServerInfo, bucket: String, solrQuery:RiakSearchQuery, resolver:RiakConflictsResolver): Future[RiakSearchResult] = {
 
     val query:Map[String, String] = solrQuery.m.toMap
     httpRequest(Get(SearchSolrUri(server, bucket, SolrQueryParameters(query)))).flatMap { response =>
@@ -194,31 +192,83 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
+  def createSearchIndex(server: RiakServerInfo, name:String, schema:String): Future[Boolean] = {
+
+    httpRequest(Put(SearchIndexUri(server, name), JsObject("schema" -> JsString(schema)))).flatMap { response =>
+      response.status match {
+        case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
+        case OK         => successful(true)
+        case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
+      }
+    }
+  }
+
+  def getSearchIndex(server: RiakServerInfo, name:String): Future[Option[RiakSearchIndex]] = {
+    httpRequest(Get(SearchIndexUri(server, name))).flatMap { response =>
+      response.status match {
+        case BadRequest => throw new ParametersInvalid(s"There was a problem getting the search index because the http request contained invalid data.")
+        case OK         => parseSearchIndex(response.entity)
+        case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
+      }
+    }
+  }
+
+  /*def getSearchIndexList(server: RiakServerInfo, name:String): Future[List[RiakSearchIndex]] = {
+    httpRequest(Get(SearchIndexUri(server, name))).flatMap { response =>
+      response.status match {
+        case BadRequest => throw new ParametersInvalid(s"There was a problem getting the search index because the http request contained invalid data.")
+        case OK         => parseSearchIndex(response.entity)
+        case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
+      }
+    }
+  }*/
+
+
+  // ==========================================================================
+  // Search utils
+  // ==========================================================================
+
+  private def parseSearchIndex(entity: HttpEntity): Future[Option[RiakSearchIndex]] = {
+    import spray.httpx.unmarshalling._
+    val searchResult = entity.as[RiakSearchIndex]
+    val searchValue:Option[RiakSearchIndex] = if(searchResult.e.isRight) Some(searchResult.e.right.get) else None
+    successful(searchValue)
+  }
+
+  /*private def parseSearchIndexList(entity:HttpEntity):Future[List[RiakSearchIndex]] = {
+
+  }*/
+
+
 
   // ==========================================================================
   // Solr Building
   // ==========================================================================
 
-  private def toRiakSearch(response: HttpResponse, server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSolrResult = toRiakSearch(response.entity, response.headers, server, bucket, resolver)
-  private def toRiakSearch(entity: HttpEntity, headers: List[HttpHeader], server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSolrResult = {
+
+
+
+
+  private def toRiakSearch(response: HttpResponse, server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSearchResult = toRiakSearch(response.entity, response.headers, server, bucket, resolver)
+  private def toRiakSearch(entity: HttpEntity, headers: List[HttpHeader], server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSearchResult = {
     entity.toOption.map { body =>
       import spray.json._
 
       val responseHeader:JsObject =
-        body.asString.asJson.asJsObject.fields.get("responseHeader").get.asJsObject
+        body.asString.parseJson.asJsObject.fields.get("responseHeader").get.asJsObject
       val response:JsObject =
-        body.asString.asJson.asJsObject.fields.get("response").get.asJsObject
+        body.asString.parseJson.asJsObject.fields.get("response").get.asJsObject
 
-      val responseObject = response.convertTo[RiakSolrSearchResponse]
+      val responseObject = response.convertTo[RiakSearchResponse]
 
       //TODO: Fix double quote in string to avoid using replace
-      val responseValues = RiakSolrSearchValueResponse(
+      val responseValues = RiakSearchValueResponse(
         values=responseObject.docs.map(x => fetch(server, bucket, x.id.replace("\"",""), resolver)))
 
-      RiakSolrResult(
+      RiakSearchResult(
         response=responseObject,
         responseValues=responseValues,
-        responseHeader=responseHeader.convertTo[RiakSolrSearchResponseHeader],
+        responseHeader=responseHeader.convertTo[RiakSearchResponseHeader],
         contentType=body.contentType,
         data=body.asString)
     }.get
@@ -232,7 +282,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private lazy val clientId = java.util.UUID.randomUUID().toString
   private val clientIdHeader = if (settings.AddClientIdHeader) Some(RawHeader(`X-Riak-ClientId`, clientId)) else None
 
-  private def httpRequest = {
+  private def httpRequest:SendReceive = {
     addOptionalHeader(clientIdHeader) ~>
       addHeader("Accept", "*/*, multipart/mixed") ~>
       sendReceive

@@ -16,70 +16,72 @@
 
 package com.scalapenos.riak
 
+import spray.json.JsString
+
 class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySupport {
   private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
 
   "A RiakBucket" should {
     "support setting and getting the bucket properties" in {
       val bucket = randomBucket
-      val oldProperties = bucket.properties.await
+      val oldProperties = bucket.getProperties.await
 
-      val newNumberOfReplicas = oldProperties.numberOfReplicas + 1
-      val newAllowSiblings = !oldProperties.allowSiblings
+      val newNumberOfReplicas = oldProperties.nVal + 1
+      val newAllowSiblings = !oldProperties.allowMult
       val newLastWriteWins = !oldProperties.lastWriteWins
 
-      (bucket.properties = Set(NumberOfReplicas(newNumberOfReplicas),
-                               AllowSiblings(newAllowSiblings),
+      bucket.setProperties(Set(NumberOfReplicas(newNumberOfReplicas),
+                               AllowMult(newAllowSiblings),
                                LastWriteWins(newLastWriteWins))).await
 
-      val newProperties = bucket.properties.await
+      val newProperties = bucket.getProperties.await
 
-      newProperties.numberOfReplicas must beEqualTo(newNumberOfReplicas)
-      newProperties.allowSiblings must beEqualTo(newAllowSiblings)
+      newProperties.nVal must beEqualTo(newNumberOfReplicas)
+      newProperties.allowMult must beEqualTo(newAllowSiblings)
       newProperties.lastWriteWins must beEqualTo(newLastWriteWins)
 
-      bucket.numberOfReplicas.await must beEqualTo(newNumberOfReplicas)
-      bucket.n_val.await must beEqualTo(newNumberOfReplicas)
+      bucket.nVal.await must beEqualTo(newNumberOfReplicas)
+      bucket.nVal.await must beEqualTo(newNumberOfReplicas)
 
-      bucket.allowSiblings.await must beEqualTo(newAllowSiblings)
-      bucket.allow_mult.await must beEqualTo(newAllowSiblings)
+      bucket.allowMult.await must beEqualTo(newAllowSiblings)
+      bucket.allowMult.await must beEqualTo(newAllowSiblings)
 
       bucket.lastWriteWins.await must beEqualTo(newLastWriteWins)
-      bucket.last_write_wins.await must beEqualTo(newLastWriteWins)
+      bucket.lastWriteWins.await must beEqualTo(newLastWriteWins)
     }
 
     "support setting the bucket properties with an empty set (nothing happens)" in {
       val bucket = randomBucket
-      val oldProperties = bucket.properties.await
+      val oldProperties = bucket.getProperties.await
 
       bucket.setProperties(Set()).await
 
-      val newProperties = bucket.properties.await
+      val newProperties = bucket.getProperties.await
 
       oldProperties must be equalTo(newProperties)
     }
 
-    "support directly setting the 'n_val' bucket property" in {
+    "support directly setting the 'nVal' bucket property" in {
       val bucket = randomBucket
 
-      (bucket.numberOfReplicas = 5).await
-      bucket.numberOfReplicas.await must beEqualTo(5)
+      (bucket.nVal = 5).await
+      bucket.nVal.await must beEqualTo(5)
 
-      (bucket.numberOfReplicas = 3).await
-      bucket.numberOfReplicas.await must beEqualTo(3)
+      (bucket.nVal = 3).await
+      bucket.nVal.await must beEqualTo(3)
     }
 
-    "support directly setting the 'allow_mult' bucket property" in {
+    "support directly setting the 'allowMult' bucket property" in {
       val bucket = randomBucket
 
-      (bucket.allowSiblings = true).await
-      bucket.allowSiblings.await must beTrue
+      (bucket.allowMult = true).await
+      bucket.allowMult.await must beTrue
 
-      (bucket.allowSiblings = false).await
-      bucket.allowSiblings.await must beFalse
+      (bucket.allowMult = false).await
+      bucket.allowMult.await must beFalse
     }
 
-    "support directly setting the 'last_write_wins' bucket property" in {
+    "support directly setting the 'lastWriteWins' bucket property" in {
       val bucket = randomBucket
 
       (bucket.lastWriteWins = true).await
@@ -89,19 +91,46 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
       bucket.lastWriteWins.await must beFalse
     }
 
-    "fail when directly setting the 'n_val' bucket property to any integer smaller than 1" in {
+    "fail when directly setting the 'nVal' bucket property to any integer smaller than 1" in {
       val bucket = randomBucket
 
-      (bucket.numberOfReplicas = 0).await must throwA[IllegalArgumentException]
-      (bucket.numberOfReplicas = -1).await must throwA[IllegalArgumentException]
-      (bucket.numberOfReplicas = -1000).await must throwA[IllegalArgumentException]
+      (bucket.nVal = 0).await must throwA[IllegalArgumentException]
+      (bucket.nVal = -1).await must throwA[IllegalArgumentException]
+      (bucket.nVal = -1000).await must throwA[IllegalArgumentException]
     }
 
-    "fail when creating an instance of NumberOfReplicas (n_val) with any integer smaller than 1" in {
+    "fail when creating an instance of NumberOfReplicas (nVal) with any integer smaller than 1" in {
       NumberOfReplicas(0) must throwA[IllegalArgumentException]
       NumberOfReplicas(-1) must throwA[IllegalArgumentException]
       NumberOfReplicas(-42) must throwA[IllegalArgumentException]
     }
+
+    "get an empty precommit and set precommit values for old solr search as example" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      val properties = bucket.getProperties.await
+
+      properties.preCommit must beEqualTo(List.empty[Map[String, Any]])
+
+      val precommitValues = List(
+        Map(
+          "mod" -> "riak_search_kv_hook",
+          "fun" -> "precommit"
+        )
+      )
+
+      (bucket.preCommit = precommitValues).await
+
+      val propertiesNew = bucket.getProperties.await
+
+      val searchHook = precommitValues(0)
+
+      propertiesNew.preCommit.contains(
+        searchHook.mapValues(JsString(_))) must beTrue
+    }
+
+
   }
 
 }

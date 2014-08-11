@@ -53,36 +53,23 @@ trait RiakBucket {
 
   def delete(key: String): Future[Unit]
 
+  def search(query:RiakSearchQuery): Future[RiakSearchResult]
 
-  def properties: Future[RiakBucketProperties]
-  def properties_=(newProperties: Set[RiakBucketProperty[_]]): Future[Unit]
-  def setProperties(newProperties: Set[RiakBucketProperty[_]]): Future[Unit] = properties_=(newProperties)
 
-  def n_val(implicit ec: ExecutionContext): Future[Int] = numberOfReplicas
-  def numberOfReplicas(implicit ec: ExecutionContext): Future[Int] = properties.map(_.numberOfReplicas)
-  def n_val_=(number: Int): Future[Unit] = setNumberOfReplicas(number)
-  def numberOfReplicas_=(number: Int): Future[Unit] = setNumberOfReplicas(number)
-  def setNumberOfReplicas(number: Int): Future[Unit] = setProperties(Set(NumberOfReplicas(number)))
+  def getProperties: Future[RiakBucketProperties]
+  def setProperties(newProperties: Set[RiakBucketProperty[_]]): Future[Unit]
 
-  def allow_mult(implicit ec: ExecutionContext): Future[Boolean] = allowSiblings
-  def allowSiblings(implicit ec: ExecutionContext): Future[Boolean] = properties.map(_.allowSiblings)
-  def allow_mult_=(value: Boolean): Future[Unit] = setAllowSiblings(value)
-  def allowSiblings_=(value: Boolean): Future[Unit] = setAllowSiblings(value)
-  def setAllowSiblings(value: Boolean): Future[Unit] = setProperties(Set(AllowSiblings(value)))
+  def nVal(implicit ec: ExecutionContext): Future[Int] = getProperties.map(_.nVal)
+  def nVal_=(number: Int): Future[Unit] = setProperties(Set(NumberOfReplicas(number)))
 
-  def last_write_wins(implicit ec: ExecutionContext): Future[Boolean] = lastWriteWins
-  def lastWriteWins(implicit ec: ExecutionContext): Future[Boolean] = properties.map(_.lastWriteWins)
-  def last_write_wins_=(value: Boolean): Future[Unit] = setLastWriteWins(value)
-  def lastWriteWins_=(value: Boolean): Future[Unit] = setLastWriteWins(value)
-  def setLastWriteWins(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
+  def allowMult(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.allowMult)
+  def allowMult_=(value: Boolean): Future[Unit] = setProperties(Set(AllowMult(value)))
 
-  def precommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = preCommit
-  def preCommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = properties.map(_.preCommit)
-  def precommit_=(value: List[Map[String, Any]]): Future[Unit] = setPreCommit(value)
-  def preCommit_=(value: List[Map[String, Any]]): Future[Unit] = setPreCommit(value)
-  def setPreCommit(value: List[Map[String, Any]]): Future[Unit] = setProperties(Set(PreCommit(value)))
+  def lastWriteWins(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.lastWriteWins)
+  def lastWriteWins_=(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
 
-  def solrSearch(query:RiakSolrQuery): Future[RiakSolrResult]
+  def preCommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = getProperties.map(_.preCommit)
+  def preCommit_=(value: List[Map[String, Any]]): Future[Unit] = setProperties(Set(PreCommit(value)))
 
 }
 

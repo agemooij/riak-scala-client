@@ -45,7 +45,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       val bucket = randomBucket
       val key = randomKey
 
-      (bucket.allowSiblings = true).await
+      (bucket.allowMult = true).await
 
       bucket.store(key, "value").await
       bucket.delete(key).await
