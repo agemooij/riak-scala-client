@@ -198,18 +198,17 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     httpRequest(Put(SearchIndexUri(server, name), props)).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
-        case OK         => successful(true)
+        case NoContent  => successful(true)
         case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
       }
     }
   }
 
   def deleteSearchIndex(server: RiakServerInfo, name:String): Future[Boolean] = {
-
     httpRequest(Delete(SearchIndexUri(server, name))).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
-        case OK         => successful(true)
+        case NoContent  => successful(true)
         case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
       }
     }

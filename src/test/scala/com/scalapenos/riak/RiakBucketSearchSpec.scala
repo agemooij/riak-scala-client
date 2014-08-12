@@ -20,6 +20,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 import spray.json.JsString
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class RiakBucketSearchSpec extends RiakClientSpecification with RandomKeySupport {
 
@@ -37,15 +38,17 @@ class RiakBucketSearchSpec extends RiakClientSpecification with RandomKeySupport
 
   "A RiakClient" should {
     "create a search index" in {
-      client.createSearchIndex(randomIndex).await must beTrue
+      client.createSearchIndex(randomIndex, 4).await must beTrue
     }
+
     "get a search by name" in {
-      val test = client.getSearchIndex(randomIndex).await
-      true must beTrue
+      Thread.sleep(10.seconds.toMillis)
+      //To let riak make available the index to read
+
+      client.getSearchIndex(randomIndex).await must beAnInstanceOf[RiakSearchIndex]
     }
     "get a list of all search index" in {
-      val test = client.getSearchIndexList.await
-      true must beTrue
+      client.getSearchIndexList.await must beAnInstanceOf[List[RiakSearchIndex]]
     }
     "delete a search index" in {
       client.deleteSearchIndex(randomIndex).await must beTrue
