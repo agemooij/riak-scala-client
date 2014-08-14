@@ -1,8 +1,8 @@
 name := "riak-scala-client"
 
-version := "0.9.0"
+version := "0.9.5"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.11.2"
 
 organization := "com.scalapenos"
 
@@ -31,15 +31,12 @@ libraryDependencies ++= {
    val sprayVersion = "1.3.1"
    val akkaVersion = "2.3.4"
   Seq(
-    "com.typesafe.akka"       %%  "akka-actor"             % akkaVersion,
-    "com.typesafe.akka"       %%  "akka-slf4j"             % akkaVersion,
-    "io.spray"                %   "spray-client"           % sprayVersion,
-    "io.spray"                %%  "spray-json"             % "1.2.5",
-    "com.github.nscala-time"  %%  "nscala-time"            % "0.8.0",
-    "ch.qos.logback"          %   "logback-classic"        % "1.1.1"        % "provided",
-    "com.typesafe.akka"       %%  "akka-testkit"           % akkaVersion    % "test",
-    "io.spray"                %   "spray-testkit"          % sprayVersion   % "test",
-    "org.specs2"              %%  "specs2-core"            % "2.3.8"        % "test"
+     "com.typesafe.akka" % "akka-actor_2.11" % akkaVersion,
+     "com.typesafe.akka"       %%  "akka-slf4j"             % akkaVersion,
+     "io.spray" % "spray-client_2.11" % sprayVersion,
+     "io.spray" %%  "spray-json" % "1.2.6",
+     "com.github.nscala-time" %% "nscala-time" % "1.2.0",
+     "ch.qos.logback"          %   "logback-classic"        % "1.1.1"        % "provided"
   )
 }
 
