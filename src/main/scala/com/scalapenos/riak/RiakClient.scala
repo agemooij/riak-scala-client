@@ -17,6 +17,8 @@
 package com.scalapenos.riak
 
 import akka.actor._
+import com.scalapenos.riak.RiakBucketType
+import com.scalapenos.riak.internal.RiakHttpBucketType
 
 
 // ============================================================================
@@ -44,7 +46,13 @@ trait RiakClient {
   // TODO: stats
 
   def ping: Future[Boolean]
-  def bucket(name: String, resolver: RiakConflictsResolver = DefaultConflictsResolver): RiakBucket
+
+  //Bucket
+  def bucket(name: String, resolver: RiakConflictsResolver = DefaultConflictsResolver)(implicit riakBucket: RiakBucketType = bucketType("default")): RiakBucket
+  def bucketType(name: String): RiakBucketType
+
+
+  //Search
   def createSearchIndex(name: String, nVal:Int = 3, schema:String = "_yz_default"): Future[Boolean]
   def getSearchIndex(name: String): Future[RiakSearchIndex]
   def getSearchIndexList:Future[List[RiakSearchIndex]]

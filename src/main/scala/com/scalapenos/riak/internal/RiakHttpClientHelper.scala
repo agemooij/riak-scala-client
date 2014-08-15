@@ -84,42 +84,42 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[RiakValue]] = {
-    httpRequest(Get(KeyUri(server, bucket, key))).flatMap { response =>
+  def fetch(server: RiakServerInfo, bucket: String, bucketType:String, key: String, resolver: RiakConflictsResolver): Future[Option[RiakValue]] = {
+    httpRequest(Get(KeyUri(server, bucket, bucketType, key))).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response))
         case NotFound        => successful(None)
-        case MultipleChoices => resolveConflict(server, bucket, key, response, resolver).map(Some(_))
+        case MultipleChoices => resolveConflict(server, bucket, bucketType, key, response, resolver).map(Some(_))
         case other           => throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case NotModified => successful(None)
       }
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
+  def fetch(server: RiakServerInfo, bucket: String, bucketType:String, index: RiakIndex, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
     httpRequest(Get(IndexUri(server, bucket, index))).flatMap { response =>
       response.status match {
-        case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
+        case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, bucketType, response, resolver)
         case BadRequest => throw new ParametersInvalid(s"""Invalid index name ("${index.fullName}") or value ("${index.value}").""")
         case other      => throw new BucketOperationFailed(s"""Fetch for index "${index.fullName}" with value "${index.value}" in bucket "${bucket}" produced an unexpected response code: ${other}.""")
       }
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
+  def fetch(server: RiakServerInfo, bucket: String, bucketType:String, indexRange: RiakIndexRange, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
     httpRequest(Get(IndexRangeUri(server, bucket, indexRange))).flatMap { response =>
       response.status match {
-        case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
+        case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, bucketType, response, resolver)
         case BadRequest => throw new ParametersInvalid(s"""Invalid index name ("${indexRange.fullName}") or range ("${indexRange.start}" to "${indexRange.start}").""")
         case other      => throw new BucketOperationFailed(s"""Fetch for index "${indexRange.fullName}" with range "${indexRange.start}" to "${indexRange.start}" in bucket "${bucket}" produced an unexpected response code: ${other}.""")
       }
     }
   }
 
-  def store(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[Unit] = {
+  def store(server: RiakServerInfo, bucket: String, bucketType:String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[Unit] = {
     val request = createStoreHttpRequest(value)
 
-    request(Put(KeyUri(server, bucket, key), value)).flatMap { response =>
+    request(Put(KeyUri(server, bucket, bucketType, key), value)).flatMap { response =>
       response.status match {
         case NoContent => successful(())
         case other     => throw new BucketOperationFailed(s"Store of value '$value' for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
@@ -128,21 +128,21 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def storeAndFetch(server: RiakServerInfo, bucket: String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[RiakValue] = {
+  def storeAndFetch(server: RiakServerInfo, bucket: String, bucketType:String, key: String, value: RiakValue, resolver: RiakConflictsResolver): Future[RiakValue] = {
     val request = createStoreHttpRequest(value)
 
-    request(Put(KeyUri(server, bucket, key, StoreQueryParameters(true)), value)).flatMap { response =>
+    request(Put(KeyUri(server, bucket, bucketType, key, StoreQueryParameters(true)), value)).flatMap { response =>
       response.status match {
         case OK              => successful(toRiakValue(response).getOrElse(throw new BucketOperationFailed(s"Store of value '$value' for key '$key' in bucket '$bucket' produced an unparsable reponse.")))
-        case MultipleChoices => resolveConflict(server, bucket, key, response, resolver)
+        case MultipleChoices => resolveConflict(server, bucket, bucketType, key, response, resolver)
         case other           => throw new BucketOperationFailed(s"Store of value '$value' for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
         // TODO: case PreconditionFailed => ... // needed when we support conditional request semantics
       }
     }
   }
 
-  def delete(server: RiakServerInfo, bucket: String, key: String): Future[Unit] = {
-    httpRequest(Delete(KeyUri(server, bucket, key))).map { response =>
+  def delete(server: RiakServerInfo, bucket: String, bucketType:String, key: String): Future[Unit] = {
+    httpRequest(Delete(KeyUri(server, bucket, bucketType, key))).map { response =>
       response.status match {
         case NoContent => ()
         case NotFound  => ()
@@ -151,34 +151,46 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def getBucketProperties(server: RiakServerInfo, bucket: String): Future[RiakBucketProperties] = {
+  def getRiakBucketOrTypeProperties(server: RiakServerInfo, uri:Uri , bucketOrType: String): Future[RiakBucketProperties] = {
     import spray.httpx.unmarshalling._
 
-    httpRequest(Get(PropertiesUri(server, bucket))).map { response =>
+    httpRequest(Get(uri)).map { response =>
       response.status match {
         case OK => response.entity.as[RiakBucketProperties] match {
           case Right(properties) => properties
-          case Left(error)       => throw new BucketOperationFailed(s"Fetching properties of bucket '$bucket' failed because the response entity could not be parsed.")
+          case Left(error)       => throw new BucketOperationFailed(s"Fetching properties of '$bucketOrType' failed because the response entity could not be parsed.")
         }
-        case other => throw new BucketOperationFailed(s"Fetching properties of bucket '$bucket' produced an unexpected response code '$other'.")
+        case other => throw new BucketOperationFailed(s"Fetching properties of '$bucketOrType' produced an unexpected response code '$other'.")
       }
     }
   }
 
-  def setBucketProperties(server: RiakServerInfo, bucket: String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] = {
+  def setRiakBucketOrTypeProperties(server: RiakServerInfo, uri:Uri , bucketOrType: String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] = {
     import spray.json._
 
-    val entity = JsObject("props" -> JsObject(newProperties.map(property => (property.name -> property.json)).toMap))
+    val properties = JsObject("props" -> JsObject(newProperties.map(property => (property.name -> property.json)).toMap))
 
-    httpRequest(Put(PropertiesUri(server, bucket), entity)).map { response =>
+    httpRequest(Put(uri, properties)).map { response =>
       response.status match {
         case NoContent            => ()
-        case BadRequest           => throw new ParametersInvalid(s"Setting properties of bucket '$bucket' failed because the http request contained invalid data.")
-        case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting properties of bucket '$bucket' failed because the content type of the http request was not 'application/json'.")
-        case other                => throw new BucketOperationFailed(s"Setting properties of bucket '$bucket' produced an unexpected response code '$other'.")
+        case BadRequest           => throw new ParametersInvalid(s"Setting properties of '$bucketOrType' failed because the http request contained invalid data.")
+        case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting properties of '$bucketOrType' failed because the content type of the http request was not 'application/json'.")
+        case other                => throw new BucketOperationFailed(s"Setting properties of '$bucketOrType' produced an unexpected response code '$other'.")
       }
     }
   }
+
+
+  //TODO: Implement a cleaner way to handle buckets and type buckets
+  def setBucketProperties(server: RiakServerInfo, bucket: String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] =
+    setRiakBucketOrTypeProperties(server, BucketPropertiesUri(server,bucket), bucket, newProperties)
+  def getBucketProperties(server: RiakServerInfo, bucket: String): Future[RiakBucketProperties] =
+    getRiakBucketOrTypeProperties(server, BucketPropertiesUri(server,bucket), bucket)
+
+  def setBucketTypeProperties(server: RiakServerInfo, bucketType:String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] =
+    setRiakBucketOrTypeProperties(server, BucketTypePropertiesUri(server, bucketType), bucketType, newProperties)
+  def getBucketTypeProperties(server: RiakServerInfo, bucketType:String): Future[RiakBucketProperties] =
+    getRiakBucketOrTypeProperties(server, BucketTypePropertiesUri(server, bucketType), bucketType)
 
   def search(server: RiakServerInfo, bucket: String, solrQuery:RiakSearchQuery, resolver:RiakConflictsResolver): Future[RiakSearchResult] = {
 
@@ -186,7 +198,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     httpRequest(Get(SearchSolrUri(server, bucket, SolrQueryParameters(query)))).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"Invalid search or params (${solrQuery.m.toMap}) ")
-        case OK         => successful(toRiakSearch(response, server, bucket, resolver))
+        case OK         => throw new Error(s"Disabled for now")//successful(toRiakSearch(response, server, bucket, resolver))
         case other      => throw new BucketOperationFailed(s"Solr search '$query.toString' in bucket '$bucket' produced an unexpected response code '$other'.")
       }
     }
@@ -195,6 +207,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   def createSearchIndex(server: RiakServerInfo, name:String, nVal:Int, schema:String): Future[Boolean] = {
 
     val props = JsObject("schema" -> JsString(schema), "n_val" -> JsNumber(nVal))
+    println(Put(SearchIndexUri(server, name), props))
     httpRequest(Put(SearchIndexUri(server, name), props)).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
@@ -266,7 +279,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
 
 
-  private def toRiakSearch(response: HttpResponse, server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSearchResult = toRiakSearch(response.entity, response.headers, server, bucket, resolver)
+  /*private def toRiakSearch(response: HttpResponse, server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSearchResult = toRiakSearch(response.entity, response.headers, server, bucket, resolver)
   private def toRiakSearch(entity: HttpEntity, headers: List[HttpHeader], server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSearchResult = {
     entity.toOption.map { body =>
       import spray.json._
@@ -289,7 +302,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
         contentType=body.contentType,
         data=body.asString)
     }.get
-  }
+  }*/
 
 
   // ==========================================================================
@@ -340,13 +353,13 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   // Index result fetching
   // ==========================================================================
 
-  private def fetchWithKeysReturnedByIndexLookup(server: RiakServerInfo, bucket: String, response: HttpResponse, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
+  private def fetchWithKeysReturnedByIndexLookup(server: RiakServerInfo, bucket: String, bucketType:String, response: HttpResponse, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
     response.entity.toOption.map { body =>
       import spray.json._
 
       val keys = body.asString.parseJson.convertTo[RiakIndexQueryResponse].keys
 
-      traverse(keys)(fetch(server, bucket, _, resolver)).map(_.flatten)
+      traverse(keys)(fetch(server, bucket, bucketType, _, resolver)).map(_.flatten)
     }.getOrElse(successful(Nil))
   }
 
@@ -355,7 +368,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   // Conflict Resolution
   // ==========================================================================
 
-  private def resolveConflict(server: RiakServerInfo, bucket: String, key: String, response: HttpResponse, resolver: RiakConflictsResolver): Future[RiakValue] = {
+  private def resolveConflict(server: RiakServerInfo, bucket: String, bucketType:String, key: String, response: HttpResponse, resolver: RiakConflictsResolver): Future[RiakValue] = {
     import spray.http._
     import spray.httpx.unmarshalling._
 
@@ -373,7 +386,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
         // Store the resolved value back to Riak and return the resulting RiakValue
         val ConflictResolution(result, writeBack) = resolver.resolve(values)
         if (writeBack) {
-          storeAndFetch(server, bucket, key, result, resolver)
+          storeAndFetch(server, bucket, bucketType, key, result, resolver)
         } else {
           successful(result)
         }

@@ -18,15 +18,15 @@ package com.scalapenos.riak
 package internal
 
 
-private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, val name: String, val resolver: RiakConflictsResolver) extends RiakBucket {
-  def fetch(key: String) = helper.fetch(server, name, key, resolver)
-  def fetch(index: RiakIndex) = helper.fetch(server, name, index, resolver)
-  def fetch(indexRange: RiakIndexRange) = helper.fetch(server, name, indexRange, resolver)
+private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, val name: String, val resolver: RiakConflictsResolver)(implicit val bucketType:RiakBucketType) extends RiakBucket {
+  def fetch(key: String) = helper.fetch(server, name, bucketType.name, key, resolver)
+  def fetch(index: RiakIndex) = helper.fetch(server, name, bucketType.name, index, resolver)
+  def fetch(indexRange: RiakIndexRange) = helper.fetch(server, name, bucketType.name, indexRange, resolver)
 
-  def store(key: String, value: RiakValue) = helper.store(server, name, key, value, resolver)
-  def storeAndFetch(key: String, value: RiakValue) = helper.storeAndFetch(server, name, key, value, resolver)
+  def store(key: String, value: RiakValue) = helper.store(server, name, bucketType.name, key, value, resolver)
+  def storeAndFetch(key: String, value: RiakValue) = helper.storeAndFetch(server, name, bucketType.name, key, value, resolver)
 
-  def delete(key: String) = helper.delete(server, name, key)
+  def delete(key: String) = helper.delete(server, name, bucketType.name, key)
 
   def getProperties = helper.getBucketProperties(server, name)
   def setProperties(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, name, newProperties)

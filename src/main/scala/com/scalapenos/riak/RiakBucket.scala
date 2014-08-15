@@ -16,14 +16,37 @@
 
 package com.scalapenos.riak
 
-import spray.json.{JsValue, JsArray}
+import scala.concurrent.{ExecutionContext, Future}
+import internal._
 
 
-trait RiakBucket {
-  import scala.concurrent.{ExecutionContext, Future}
-  import internal._
+trait RiakPropsEssential {
+
 
   val name: String
+
+  def getProperties: Future[RiakBucketProperties]
+  def setProperties(newProperties: Set[RiakBucketProperty[_]]): Future[Unit]
+
+  def nVal(implicit ec: ExecutionContext): Future[Int] = getProperties.map(_.nVal)
+  def nVal_=(number: Int): Future[Unit] = setProperties(Set(NumberOfReplicas(number)))
+
+  def allowMult(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.allowMult)
+  def allowMult_=(value: Boolean): Future[Unit] = setProperties(Set(AllowMult(value)))
+
+  def lastWriteWins(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.lastWriteWins)
+  def lastWriteWins_=(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
+
+  def preCommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = getProperties.map(_.preCommit)
+  def preCommit_=(value: List[Map[String, Any]]): Future[Unit] = setProperties(Set(PreCommit(value)))
+
+}
+
+trait RiakBucketType extends RiakPropsEssential {
+
+}
+
+trait RiakBucket extends RiakPropsEssential {
 
   /**
    * Every bucket has a default RiakConflictsResolver that will be used when resolving
@@ -56,20 +79,6 @@ trait RiakBucket {
   def search(query:RiakSearchQuery): Future[RiakSearchResult]
 
 
-  def getProperties: Future[RiakBucketProperties]
-  def setProperties(newProperties: Set[RiakBucketProperty[_]]): Future[Unit]
-
-  def nVal(implicit ec: ExecutionContext): Future[Int] = getProperties.map(_.nVal)
-  def nVal_=(number: Int): Future[Unit] = setProperties(Set(NumberOfReplicas(number)))
-
-  def allowMult(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.allowMult)
-  def allowMult_=(value: Boolean): Future[Unit] = setProperties(Set(AllowMult(value)))
-
-  def lastWriteWins(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.lastWriteWins)
-  def lastWriteWins_=(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
-
-  def preCommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = getProperties.map(_.preCommit)
-  def preCommit_=(value: List[Map[String, Any]]): Future[Unit] = setProperties(Set(PreCommit(value)))
 
 }
 

@@ -42,5 +42,4 @@ class BasicInteractionsSpec extends AkkaActorSystemSpecification {
       fetchAfterDelete must beNone
     }
   }
-
 }
