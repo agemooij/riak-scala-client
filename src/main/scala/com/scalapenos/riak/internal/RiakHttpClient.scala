@@ -17,7 +17,6 @@
 package com.scalapenos.riak
 package internal
 
-
 private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: RiakServerInfo) extends RiakClient {
   def ping = helper.ping(server)
   def bucket(name: String, resolver: RiakConflictsResolver) = new RiakHttpBucket(helper, server, name, resolver)

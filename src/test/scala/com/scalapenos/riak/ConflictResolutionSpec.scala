@@ -30,13 +30,13 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
     def resolve(values: Set[RiakValue]) = {
       val entities = values.map(_.asMeta[TestEntityWithMergableList])
 
-      val mergedThings = entities.foldLeft(Set[String]()) { (merged, entity) =>
-         merged ++ entity.data.things.toSet
+      val mergedThings = entities.foldLeft(Set[String]()) { (merged, entity) ⇒
+        merged ++ entity.data.things.toSet
       }
 
       val value = entities.head
-                          .map(_.copy(things = mergedThings.toList))
-                          .toRiakValue
+        .map(_.copy(things = mergedThings.toList))
+        .toRiakValue
       ConflictResolution(value, writeBack)
     }
   }

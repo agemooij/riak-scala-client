@@ -17,9 +17,8 @@
 package com.scalapenos.riak
 package internal
 
-
 private[riak] trait DateTimeSupport {
-  import spray.http.{DateTime => SprayDateTime}
+  import spray.http.{ DateTime ⇒ SprayDateTime }
   import org.joda.time.chrono.ISOChronology
 
   private val utcChronology = ISOChronology.getInstanceUTC

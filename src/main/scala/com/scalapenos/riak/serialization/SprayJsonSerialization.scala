@@ -17,7 +17,6 @@
 package com.scalapenos.riak
 package serialization
 
-
 trait SprayJsonSerialization {
   import scala.reflect._
   import scala.util._
@@ -30,15 +29,15 @@ trait SprayJsonSerialization {
   class SprayJsonDeserializer[T: RootJsonReader: ClassTag] extends RiakDeserializer[T] {
     def deserialize(data: String, contentType: ContentType) = {
       contentType match {
-        case ContentType(MediaTypes.`application/json`, _) => parseAndConvert(data)
-        case _ => throw RiakUnsupportedContentType(ContentTypes.`application/json`, contentType)
+        case ContentType(MediaTypes.`application/json`, _) ⇒ parseAndConvert(data)
+        case _                                             ⇒ throw RiakUnsupportedContentType(ContentTypes.`application/json`, contentType)
       }
     }
 
     private def parseAndConvert(data: String): T = {
       Try(implicitly[RootJsonReader[T]].read(JsonParser(data))) match {
-        case Success(t) => t
-        case Failure(throwable) => throw RiakDeserializationFailed(data, classTag[T].runtimeClass.getName, throwable)
+        case Success(t)         ⇒ t
+        case Failure(throwable) ⇒ throw RiakDeserializationFailed(data, classTag[T].runtimeClass.getName, throwable)
       }
     }
   }

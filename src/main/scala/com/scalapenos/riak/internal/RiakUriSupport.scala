@@ -17,7 +17,6 @@
 package com.scalapenos.riak
 package internal
 
-
 private[riak] trait RiakUriSupport {
   import spray.http.Uri
   import spray.http.Uri._
@@ -38,7 +37,6 @@ private[riak] trait RiakUriSupport {
     def query = ("returnbody", s"$returnBody") +: Query.Empty
   }
 
-
   // ==========================================================================
   // URL building and Query Parameters
   // ==========================================================================
@@ -57,7 +55,6 @@ private[riak] trait RiakUriSupport {
 
   def IndexRangeUri(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange) =
     uri(server, s"buckets/${bucket}/index/${indexRange.fullName}/${indexRange.start}/${indexRange.end}")
-
 
   private def uri(server: RiakServerInfo, path: String, query: Query = Query.Empty): Uri = {
     Uri.from(

@@ -19,7 +19,6 @@ package com.scalapenos.riak
 import org.specs2.mutable._
 import MediaTypes._
 
-
 class RiakSerializationSpec extends Specification {
 
   case class ClassWithoutCustomSerialization(a: String, b: Int)
@@ -28,7 +27,7 @@ class RiakSerializationSpec extends Specification {
   object ClassWithCustomSerialization {
     implicit def companionXmlSerializer = new RiakSerializer[ClassWithCustomSerialization] {
       def serialize(t: ClassWithCustomSerialization): (String, ContentType) = {
-        (<xml><a>{t.a}</a></xml>.toString, ContentType(`text/xml`))
+        (<xml><a>{ t.a }</a></xml>.toString, ContentType(`text/xml`))
       }
     }
 
@@ -39,8 +38,8 @@ class RiakSerializationSpec extends Specification {
         def fromXml(elem: Elem) = ClassWithCustomSerialization((elem \ "a").text)
 
         contentType match {
-          case ContentType(`text/xml`, _) => fromXml(toXml)
-          case _ => throw RiakUnsupportedContentType(ContentType(`text/xml`), contentType)
+          case ContentType(`text/xml`, _) ⇒ fromXml(toXml)
+          case _                          ⇒ throw RiakUnsupportedContentType(ContentType(`text/xml`), contentType)
         }
       }
     }

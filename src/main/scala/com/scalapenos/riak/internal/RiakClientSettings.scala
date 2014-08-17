@@ -19,7 +19,6 @@ package internal
 
 import com.typesafe.config.Config
 
-
 private[riak] class RiakClientSettings(config: Config) {
 
   /**
@@ -33,7 +32,6 @@ private[riak] class RiakClientSettings(config: Config) {
    * This value defaults to false.
    */
   final val AddClientIdHeader: Boolean = config.getBoolean("riak.add-client-id-header")
-
 
   // TODO: add setting for silently ignoring indexes on backends that don't allow them. The alternative is failing/throwing exceptions
 

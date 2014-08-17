@@ -20,7 +20,6 @@ package serialization
 import org.specs2.mutable._
 import scala.util._
 
-
 class SprayJsonSerializationSpec extends Specification {
   import spray.json.DefaultJsonProtocol._
   import spray.http.MediaTypes._
@@ -53,7 +52,7 @@ class SprayJsonSerializationSpec extends Specification {
       val deserializer = implicitly[RiakDeserializer[Thingy]]
 
       deserializer.deserialize(invalidJson, ContentTypes.`application/json`) must throwA[RiakDeserializationFailed].like {
-        case exception: RiakDeserializationFailed => {
+        case exception: RiakDeserializationFailed ⇒ {
           exception.data must beEqualTo(invalidJson)
           exception.targetType must beEqualTo(classOf[Thingy].getName)
           exception.cause must beAnInstanceOf[spray.json.DeserializationException]

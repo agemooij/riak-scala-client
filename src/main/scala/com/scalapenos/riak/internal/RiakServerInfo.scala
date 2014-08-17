@@ -17,7 +17,6 @@
 package com.scalapenos.riak
 package internal
 
-
 // ============================================================================
 // RiakServerInfo - a nice way to encode the Riak server properties
 // ============================================================================

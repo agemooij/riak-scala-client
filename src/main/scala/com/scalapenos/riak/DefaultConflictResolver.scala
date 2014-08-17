@@ -16,9 +16,8 @@
 
 package com.scalapenos.riak
 
-
 class ConflicResolutionNotImplemented
-    extends RuntimeException("A bucket operation resulted in siblings but no conflict resolver was specified for the bucket.")
+  extends RuntimeException("A bucket operation resulted in siblings but no conflict resolver was specified for the bucket.")
 
 case object DefaultConflictsResolver extends RiakConflictsResolver {
   def resolve(values: Set[RiakValue]) = {

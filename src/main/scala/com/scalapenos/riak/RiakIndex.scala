@@ -48,7 +48,6 @@ final case class RiakLongIndex(name: String, value: Long) extends RiakIndex {
   def suffix = "int"
 }
 
-
 // ============================================================================
 //  RiakIndexer
 // ============================================================================

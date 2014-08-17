@@ -19,7 +19,6 @@ package com.scalapenos.riak
 import annotation.implicitNotFound
 import scala.util.control.NoStackTrace
 
-
 // ============================================================================
 // Serialization
 // ============================================================================
@@ -48,7 +47,6 @@ private[riak] trait LowPriorityDefaultRiakSerializerImplicits {
   import spray.json.RootJsonWriter
   implicit def sprayJsonSerializer[T: RootJsonWriter] = new SprayJsonSerializer[T]
 }
-
 
 // ============================================================================
 // Deserialization

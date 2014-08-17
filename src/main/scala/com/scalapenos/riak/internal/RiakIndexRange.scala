@@ -17,7 +17,6 @@
 package com.scalapenos.riak
 package internal
 
-
 // ============================================================================
 // RiakIndexRange - for easy passing of a fetch range
 // ============================================================================

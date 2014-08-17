@@ -16,9 +16,8 @@
 
 package com.scalapenos.riak
 
-
 trait RiakBucket {
-  import scala.concurrent.{ExecutionContext, Future}
+  import scala.concurrent.{ ExecutionContext, Future }
   import internal._
 
   val name: String
@@ -39,7 +38,6 @@ trait RiakBucket {
   def fetch(index: String, start: Int, end: Int): Future[List[RiakValue]] = fetch(RiakIndexRange(index, start, end))
   private[riak] def fetch(index: RiakIndexRange): Future[List[RiakValue]]
 
-
   def store[T: RiakMarshaller](key: String, value: T): Future[Unit] = store(key, RiakValue(value))
   def store[T: RiakMarshaller](key: String, meta: RiakMeta[T]): Future[Unit] = store(key, RiakValue(meta))
   def store(key: String, value: RiakValue): Future[Unit]
@@ -48,9 +46,7 @@ trait RiakBucket {
   def storeAndFetch[T: RiakMarshaller](key: String, meta: RiakMeta[T]): Future[RiakValue] = storeAndFetch(key, RiakValue(meta))
   def storeAndFetch(key: String, value: RiakValue): Future[RiakValue]
 
-
   def delete(key: String): Future[Unit]
-
 
   def properties: Future[RiakBucketProperties]
   def properties_=(newProperties: Set[RiakBucketProperty[_]]): Future[Unit]

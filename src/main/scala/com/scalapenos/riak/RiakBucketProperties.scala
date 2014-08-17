@@ -18,12 +18,11 @@ package com.scalapenos.riak
 
 import spray.json._
 
-
 // ============================================================================
 // Reading Bucket Properties
 // ============================================================================
 
-final case class RiakBucketProperties (
+final case class RiakBucketProperties(
   numberOfReplicas: Int,
   allowSiblings: Boolean,
   lastWriteWins: Boolean //,
@@ -33,22 +32,21 @@ final case class RiakBucketProperties (
   // durableWriteQuorum: RiakQuorum,
   // primaryWriteQuorum: RiakQuorum,
   // deleteQuorum: RiakQuorum
-)
+  )
 
 object RiakBucketProperties {
   implicit object jsonReader extends RootJsonReader[RiakBucketProperties] {
     def read(value: JsValue): RiakBucketProperties = {
-      value.asJsObject.fields.get("props").flatMap { props =>
+      value.asJsObject.fields.get("props").flatMap { props ⇒
         props.asJsObject.getFields("n_val", "allow_mult", "last_write_wins") match {
-          case Seq(JsNumber(numberOfReplicas), JsBoolean(allowSiblings), JsBoolean(lastWriteWins)) =>
+          case Seq(JsNumber(numberOfReplicas), JsBoolean(allowSiblings), JsBoolean(lastWriteWins)) ⇒
             Some(new RiakBucketProperties(numberOfReplicas.toInt, allowSiblings, lastWriteWins))
-          case _ => None
+          case _ ⇒ None
         }
       }.getOrElse(throw new DeserializationException(s"Invalid Riak properties document: ${value.compactPrint}"))
     }
   }
 }
-
 
 // ============================================================================
 // Writing Bucket Properties
@@ -60,8 +58,8 @@ sealed trait RiakBucketProperty[T] {
   def json: JsValue
 
   override def equals(other: Any): Boolean = other match {
-    case that: RiakBucketProperty[_] => name == that.name
-    case _                        => false
+    case that: RiakBucketProperty[_] ⇒ name == that.name
+    case _                           ⇒ false
   }
 
   override def hashCode: Int = name.hashCode
@@ -83,8 +81,6 @@ case class LastWriteWins(value: Boolean) extends RiakBucketProperty[Boolean] {
   def name = "last_write_wins"
   def json = JsBoolean(value)
 }
-
-
 
 /*
 {

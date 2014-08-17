@@ -17,10 +17,9 @@
 package com.scalapenos.riak
 package internal
 
-
 private[riak] object SprayClientExtras {
   import spray.http.HttpHeader
   import spray.httpx.RequestBuilding.RequestTransformer
 
-  def addOptionalHeader(header: => Option[HttpHeader]): RequestTransformer = _.mapHeaders(headers => header.toList ++ headers)
+  def addOptionalHeader(header: ⇒ Option[HttpHeader]): RequestTransformer = _.mapHeaders(headers ⇒ header.toList ++ headers)
 }

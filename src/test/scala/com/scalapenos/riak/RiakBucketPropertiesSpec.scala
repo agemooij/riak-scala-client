@@ -29,8 +29,8 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
       val newLastWriteWins = !oldProperties.lastWriteWins
 
       (bucket.properties = Set(NumberOfReplicas(newNumberOfReplicas),
-                               AllowSiblings(newAllowSiblings),
-                               LastWriteWins(newLastWriteWins))).await
+        AllowSiblings(newAllowSiblings),
+        LastWriteWins(newLastWriteWins))).await
 
       val newProperties = bucket.properties.await
 
@@ -56,7 +56,7 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
 
       val newProperties = bucket.properties.await
 
-      oldProperties must be equalTo(newProperties)
+      oldProperties must be equalTo (newProperties)
     }
 
     "support directly setting the 'n_val' bucket property" in {

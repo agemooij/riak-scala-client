@@ -41,21 +41,19 @@ package object riak {
 
   val MediaTypes = spray.http.MediaTypes
 
-
   // ============================================================================
   // Conflict Resolution
   // ============================================================================
 
   case class ConflictResolution(result: RiakValue, writeBack: Boolean)
 
-  trait RiakConflictsResolver  {
+  trait RiakConflictsResolver {
     def resolve(values: Set[RiakValue]): ConflictResolution
   }
 
-  implicit def func2resolver(f: Set[RiakValue] => ConflictResolution): RiakConflictsResolver = new RiakConflictsResolver {
+  implicit def func2resolver(f: Set[RiakValue] ⇒ ConflictResolution): RiakConflictsResolver = new RiakConflictsResolver {
     def resolve(values: Set[RiakValue]) = f(values)
   }
-
 
   // ============================================================================
   // VClock/ETag Support
@@ -75,7 +73,6 @@ package object riak {
     implicit def vclockToString(vclock: VClock): String = vclock.toString
   }
 
-
   implicit class ETag(val value: String) extends AnyVal {
     def isDefined = !isEmpty
     def isEmpty = value.trim.isEmpty
@@ -89,7 +86,6 @@ package object riak {
 
     implicit def etagToString(etag: ETag): String = etag.toString
   }
-
 
   // ============================================================================
   // Exceptions

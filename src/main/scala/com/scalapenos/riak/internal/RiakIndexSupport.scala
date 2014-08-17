@@ -19,7 +19,6 @@ package internal
 
 import RiakHttpHeaders._
 
-
 private[riak] object RiakIndexSupport {
   val IndexNameAndType = (indexHeaderPrefix + "(.+)_(bin|int)$").r
 }
@@ -31,8 +30,8 @@ private[riak] trait RiakIndexSupport {
 
   private[riak] def toIndexHeader(index: RiakIndex): HttpHeader = {
     index match {
-      case l: RiakLongIndex   => RawHeader(indexHeaderPrefix + l.fullName, l.value.toString)
-      case s: RiakStringIndex => RawHeader(indexHeaderPrefix + s.fullName, s.value)
+      case l: RiakLongIndex   ⇒ RawHeader(indexHeaderPrefix + l.fullName, l.value.toString)
+      case s: RiakStringIndex ⇒ RawHeader(indexHeaderPrefix + s.fullName, s.value)
     }
   }
 
@@ -41,15 +40,15 @@ private[riak] trait RiakIndexSupport {
       val values = header.value.split(',')
 
       header.lowercaseName match {
-        case IndexNameAndType(name, "int") => values.map(value => RiakIndex(name, value.trim.toLong)).toSet
-        case IndexNameAndType(name, "bin") => values.map(value => RiakIndex(name, value.trim)).toSet
-        case _                             => Set.empty[RiakIndex]
+        case IndexNameAndType(name, "int") ⇒ values.map(value ⇒ RiakIndex(name, value.trim.toLong)).toSet
+        case IndexNameAndType(name, "bin") ⇒ values.map(value ⇒ RiakIndex(name, value.trim)).toSet
+        case _                             ⇒ Set.empty[RiakIndex]
       }
     }
 
     headers.filter(_.lowercaseName.startsWith(indexHeaderPrefix))
-           .flatMap(toRiakIndex(_))
-           .toSet
+      .flatMap(toRiakIndex(_))
+      .toSet
   }
 
   private[riak] case class RiakIndexQueryResponse(keys: List[String])

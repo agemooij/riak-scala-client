@@ -1,3 +1,5 @@
+import scalariform.formatter.preferences._
+
 name := "riak-scala-client"
 
 version := "0.9.5"
@@ -46,3 +48,13 @@ libraryDependencies ++= {
 initialCommands in console += {
   List("import com.scalapenos.riak._", "import akka.actor._").mkString("\n")
 }
+
+scalariformSettings
+
+ScalariformKeys.preferences := ScalariformKeys.preferences.value
+  .setPreference(AlignParameters, false)
+  .setPreference(AlignSingleLineCaseStatements, true)
+  .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 90)
+  .setPreference(DoubleIndentClassDeclaration, true)
+  .setPreference(PreserveDanglingCloseParenthesis, true)
+  .setPreference(RewriteArrowSymbols, true)

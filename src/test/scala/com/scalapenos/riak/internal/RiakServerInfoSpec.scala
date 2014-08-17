@@ -18,7 +18,6 @@ package com.scalapenos.riak.internal
 
 import org.specs2.mutable._
 
-
 class RiakServerInfoSpec extends Specification {
   "When constructing a RiakServerInfo, it" should {
     "accept just a host and a port" in {
