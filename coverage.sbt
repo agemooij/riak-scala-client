@@ -1,1 +1,3 @@
-seq(instrumentSettings: _*)
+instrumentSettings
+
+coverallsSettings
