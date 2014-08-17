@@ -42,11 +42,12 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   import spray.http.{HttpEntity, HttpHeader, HttpResponse}
   import spray.http.StatusCodes._
   import spray.http.HttpHeaders._
+  import spray.httpx.SprayJsonSupport._
+  import spray.json.DefaultJsonProtocol._
 
   import org.slf4j.LoggerFactory
 
   import SprayClientExtras._
-  import SprayJsonSupport._
   import RiakHttpHeaders._
   import RiakHttpClientHelper._
 
