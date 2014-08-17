@@ -1,8 +1,8 @@
 
 [![Build Status](https://api.travis-ci.org/agemooij/riak-scala-client.png?branch=master)](https://travis-ci.org/agemooij/riak-scala-client)
+[![Coverage Status](https://coveralls.io/repos/agemooij/riak-scala-client/badge.png)](https://coveralls.io/r/agemooij/riak-scala-client)
 
 ## What is this?
-
 An easy to use, non-blocking Scala client library for interacting with [Riak].
 
 See the [project site] for full [documentation], [examples], [scaladocs], and more.
