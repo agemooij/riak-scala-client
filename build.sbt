@@ -29,15 +29,15 @@ resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repo
 
 libraryDependencies ++= {
    val sprayVersion = "1.3.1"
-   val akkaVersion = "2.3.4"
+   val akkaVersion = "2.3.5"
   Seq(
      "com.typesafe.akka"      %%  "akka-actor"        % akkaVersion,
      "com.typesafe.akka"      %%  "akka-slf4j"        % akkaVersion,
      "io.spray"               %%  "spray-client"      % sprayVersion,
      "io.spray"               %%  "spray-json"        % "1.2.6",
      "com.github.nscala-time" %%  "nscala-time"       % "1.2.0",
-     "ch.qos.logback"         %   "logback-classic"   % "1.1.1"      % "provided",
-     "org.specs2"             %%  "specs2"            % "2.4"        % "test",
+     "ch.qos.logback"         %   "logback-classic"   % "1.1.2"      % "provided",
+     "org.specs2"             %%  "specs2"            % "2.4.1"      % "test",
      "com.typesafe.akka"      %%  "akka-testkit"      % akkaVersion  % "test",
      "io.spray"               %%  "spray-testkit"     % sprayVersion % "test"
   )
