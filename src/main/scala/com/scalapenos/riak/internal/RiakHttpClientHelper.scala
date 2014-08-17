@@ -232,6 +232,9 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private def resolveConflict(server: RiakServerInfo, bucket: String, key: String, response: HttpResponse, resolver: RiakConflictsResolver): Future[RiakValue] = {
     import spray.http._
     import spray.httpx.unmarshalling._
+    import FixedMultipartContentUnmarshalling._
+
+    implicit val FixedMultipartContentUnmarshaller = multipartContentUnmarshaller(HttpCharsets.`UTF-8`)
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
@@ -253,5 +256,70 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
         }
       }
     }
+  }
+}
+
+/**
+ * Fix to work around the fact that Riak produces illegal Http content by not quoting ETag
+ * headers in multipart/mixed responses. This breaks the Spray header parser so the below
+ * class reproduces the minimal parts of Spray that are needed to provide a custom
+ * unmarshaller for multipart/mixed responses.
+ */
+private[internal] object FixedMultipartContentUnmarshalling {
+  import java.io.{ ByteArrayOutputStream, ByteArrayInputStream }
+  import org.jvnet.mimepull.{ MIMEMessage, MIMEConfig }
+  import org.parboiled.common.FileUtils
+  import scala.collection.JavaConverters._
+  import spray.http.parser.HttpParser
+  import spray.httpx.unmarshalling._
+  import spray.util._
+  import spray.http._
+  import MediaTypes._
+  import HttpHeaders._
+
+  def multipartContentUnmarshaller(defaultCharset: HttpCharset): Unmarshaller[MultipartContent] =
+    multipartPartsUnmarshaller[MultipartContent](`multipart/mixed`, defaultCharset, MultipartContent(_))
+
+  private def multipartPartsUnmarshaller[T <: MultipartParts](mediaRange: MediaRange,
+    defaultCharset: HttpCharset,
+    create: Seq[BodyPart] ⇒ T): Unmarshaller[T] =
+    Unmarshaller[T](mediaRange) {
+      case HttpEntity.NonEmpty(contentType, data) ⇒
+        contentType.mediaType.parameters.get("boundary") match {
+          case None | Some("") ⇒
+            sys.error("Content-Type with a multipart media type must have a non-empty 'boundary' parameter")
+          case Some(boundary) ⇒
+            val mimeMsg = new MIMEMessage(new ByteArrayInputStream(data.toByteArray), boundary, mimeParsingConfig)
+            create(convertMimeMessage(mimeMsg, defaultCharset))
+        }
+      case HttpEntity.Empty ⇒ create(Nil)
+    }
+
+  private def convertMimeMessage(mimeMsg: MIMEMessage, defaultCharset: HttpCharset): Seq[BodyPart] = {
+    mimeMsg.getAttachments.asScala.map { part ⇒
+      val rawHeaders: List[HttpHeader] = part.getAllHeaders.asScala.map(h ⇒ RawHeader(h.getName, h.getValue))(collection.breakOut)
+
+      // This is the custom code that detects illegal unquoted "Etag" headers and quotes them.
+      val fixedHeaders = rawHeaders.map { header =>
+        if (header.lowercaseName == "etag" && !header.value.startsWith('"')) RawHeader(header.name, "\"" + header.value + "\"")
+        else header
+      }
+
+      HttpParser.parseHeaders(fixedHeaders) match {
+        case (Nil, headers) ⇒
+          val contentType = headers.mapFind { case `Content-Type`(t) ⇒ Some(t); case _ ⇒ None }
+            .getOrElse(ContentType(`text/plain`, defaultCharset)) // RFC 2046 section 5.1
+          val outputStream = new ByteArrayOutputStream
+          FileUtils.copyAll(part.readOnce(), outputStream)
+          BodyPart(HttpEntity(contentType, outputStream.toByteArray), headers)
+        case (errors, _) ⇒ sys.error("Multipart part contains %s illegal header(s):\n%s".format(errors.size, errors.mkString("\n")))
+      }
+    }(collection.breakOut)
+  }
+
+  private val mimeParsingConfig = {
+    val config = new MIMEConfig
+    config.setMemoryThreshold(-1) // use only in-memory parsing
+    config
   }
 }
