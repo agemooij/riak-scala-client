@@ -218,7 +218,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     response.entity.toOption.map { body =>
       import spray.json._
 
-      val keys = body.asString.asJson.convertTo[RiakIndexQueryResponse].keys
+      val keys = body.asString.parseJson.convertTo[RiakIndexQueryResponse].keys
 
       traverse(keys)(fetch(server, bucket, _, resolver)).map(_.flatten)
     }.getOrElse(successful(Nil))
