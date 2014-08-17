@@ -6,6 +6,10 @@ version := "0.9.5"
 
 scalaVersion := "2.11.2"
 
+crossScalaVersions := Seq("2.11.2", "2.10.4")
+
+crossVersion := CrossVersion.binary
+
 organization := "com.scalapenos"
 
 organizationHomepage := Some(url("http://scalapenos.com/"))
@@ -29,19 +33,20 @@ resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repo
                   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
                   "Spray Repository"    at "http://repo.spray.io/")
 
-libraryDependencies ++= {
-   val sprayVersion = "1.3.1"
-   val akkaVersion = "2.3.5"
+libraryDependencies <++= (scalaVersion) { v: String =>
+  val sprayVersion = "1.3.1"
+  val akkaVersion = "2.3.5"
+  val specs2Version = if (v.startsWith("2.10")) "2.3.13" else "2.4.1"
   Seq(
      "com.typesafe.akka"      %%  "akka-actor"        % akkaVersion,
      "com.typesafe.akka"      %%  "akka-slf4j"        % akkaVersion,
      "io.spray"               %%  "spray-client"      % sprayVersion,
      "io.spray"               %%  "spray-json"        % "1.2.6",
      "com.github.nscala-time" %%  "nscala-time"       % "1.2.0",
-     "ch.qos.logback"         %   "logback-classic"   % "1.1.2"      % "provided",
-     "org.specs2"             %%  "specs2"            % "2.4.1"      % "test",
-     "com.typesafe.akka"      %%  "akka-testkit"      % akkaVersion  % "test",
-     "io.spray"               %%  "spray-testkit"     % sprayVersion % "test"
+     "com.typesafe.akka"      %%  "akka-testkit"      % akkaVersion   % "test",
+     "io.spray"               %%  "spray-testkit"     % sprayVersion  % "test",
+     "org.specs2"             %%  "specs2"            % specs2Version % "test",
+     "ch.qos.logback"         %   "logback-classic"   % "1.1.2"       % "provided"
   )
 }
 
