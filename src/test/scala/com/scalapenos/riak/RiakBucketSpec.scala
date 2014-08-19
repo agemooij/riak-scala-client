@@ -54,6 +54,20 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
 
       fetched should beNone
     }
+
+    "assign a search index" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      val randomIndex = (client.createSearchIndex(randomBucket.name)).await
+
+      //Wait for assigning the search index
+      Thread.sleep(10000)
+
+      val indexAssigned = (bucket.setSearchIndex(randomIndex)).await
+
+      indexAssigned should beTrue
+    }
   }
 
 }

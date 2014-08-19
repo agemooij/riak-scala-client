@@ -21,7 +21,7 @@ import akka.actor._
 import spray.http._
 import spray.client.pipelining._
 import spray.http.parser.HttpParser
-import spray.json.{JsNumber, JsValue, JsString, JsObject}
+import spray.json._
 
 //Temporary fix for spray 1.3.1_2.11
 import java.io.{ ByteArrayOutputStream, ByteArrayInputStream }
@@ -97,7 +97,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, bucketType:String, index: RiakIndex, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
-    httpRequest(Get(IndexUri(server, bucket, index))).flatMap { response =>
+    httpRequest(Get(IndexUri(server, bucket, bucketType, index))).flatMap { response =>
       response.status match {
         case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, bucketType, response, resolver)
         case BadRequest => throw new ParametersInvalid(s"""Invalid index name ("${index.fullName}") or value ("${index.value}").""")
@@ -107,7 +107,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, bucketType:String, indexRange: RiakIndexRange, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
-    httpRequest(Get(IndexRangeUri(server, bucket, indexRange))).flatMap { response =>
+    httpRequest(Get(IndexRangeUri(server, bucket, bucketType, indexRange))).flatMap { response =>
       response.status match {
         case OK         => fetchWithKeysReturnedByIndexLookup(server, bucket, bucketType, response, resolver)
         case BadRequest => throw new ParametersInvalid(s"""Invalid index name ("${indexRange.fullName}") or range ("${indexRange.start}" to "${indexRange.start}").""")
@@ -151,46 +151,84 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def getRiakBucketOrTypeProperties(server: RiakServerInfo, uri:Uri , bucketOrType: String): Future[RiakBucketProperties] = {
+  def getBucketProperties(server: RiakServerInfo, bucket:String, bucketType: String): Future[RiakBucketProperties] = {
     import spray.httpx.unmarshalling._
-
-    httpRequest(Get(uri)).map { response =>
+    httpRequest(Get(BucketPropertiesUri(server, bucket, bucketType))).map { response =>
       response.status match {
         case OK => response.entity.as[RiakBucketProperties] match {
           case Right(properties) => properties
-          case Left(error)       => throw new BucketOperationFailed(s"Fetching properties of '$bucketOrType' failed because the response entity could not be parsed.")
+          case Left(error)       => throw new BucketOperationFailed(s"Fetching properties of '$bucketType' failed because the response entity could not be parsed.")
         }
-        case other => throw new BucketOperationFailed(s"Fetching properties of '$bucketOrType' produced an unexpected response code '$other'.")
+        case other => throw new BucketOperationFailed(s"Fetching properties of '$bucketType' produced an unexpected response code '$other'.")
       }
     }
   }
 
-  def setRiakBucketOrTypeProperties(server: RiakServerInfo, uri:Uri , bucketOrType: String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] = {
+  def setBucketProperties(server: RiakServerInfo, bucket:String, bucketType: String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] = {
+    import spray.json._
+    val properties = JsObject("props" -> JsObject(newProperties.map(property => (property.name -> property.json)).toMap))
+    httpRequest(Put(BucketPropertiesUri(server, bucket, bucketType), properties)).map { response =>
+      response.status match {
+        case NoContent            => successful(())
+        case BadRequest           => throw new ParametersInvalid(s"Setting properties of '$bucketType' failed because the http request contained invalid data.")
+        case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting properties of '$bucketType' failed because the content type of the http request was not 'application/json'.")
+        case other                => throw new BucketOperationFailed(s"Setting properties of '$bucketType' produced an unexpected response code '$other'.")
+      }
+    }
+  }
+
+  def getBucketTypeProperties(server: RiakServerInfo, bucketType: String): Future[RiakBucketProperties] = {
+    import spray.httpx.unmarshalling._
+
+    httpRequest(Get(BucketTypePropertiesUri(server, bucketType))).map { response =>
+      response.status match {
+        case OK => response.entity.as[RiakBucketProperties] match {
+          case Right(properties) => properties
+          case Left(error)       => throw new BucketOperationFailed(s"Fetching properties of '$bucketType' failed because the response entity could not be parsed.")
+        }
+        case other => throw new BucketOperationFailed(s"Fetching properties of '$bucketType' produced an unexpected response code '$other'.")
+      }
+    }
+  }
+
+  def setBucketTypeProperties(server: RiakServerInfo, bucketType: String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] = {
     import spray.json._
 
     val properties = JsObject("props" -> JsObject(newProperties.map(property => (property.name -> property.json)).toMap))
 
-    httpRequest(Put(uri, properties)).map { response =>
+    httpRequest(Put(BucketTypePropertiesUri(server, bucketType), properties)).map { response =>
       response.status match {
-        case NoContent            => ()
-        case BadRequest           => throw new ParametersInvalid(s"Setting properties of '$bucketOrType' failed because the http request contained invalid data.")
-        case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting properties of '$bucketOrType' failed because the content type of the http request was not 'application/json'.")
-        case other                => throw new BucketOperationFailed(s"Setting properties of '$bucketOrType' produced an unexpected response code '$other'.")
+        case NoContent            => successful(())
+        case BadRequest           => throw new ParametersInvalid(s"Setting properties of '$bucketType' failed because the http request contained invalid data.")
+        case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting properties of '$bucketType' failed because the content type of the http request was not 'application/json'.")
+        case other                => throw new BucketOperationFailed(s"Setting properties of '$bucketType' produced an unexpected response code '$other'.")
       }
     }
   }
 
+  def setBucketSearchIndex(server: RiakServerInfo, bucket:String, bucketType:String, searchIndex:RiakSearchIndex): Future[Boolean] = {
+    val properties = JsObject("props" -> JsObject("search_index" -> JsString(searchIndex.name)))
+    httpRequest(Put(BucketPropertiesUri(server, bucket, bucketType), properties)).map { response =>
+      response.status match {
+        case NoContent            => true
+        case BadRequest           => throw new ParametersInvalid(s"Setting properties of '$bucketType' failed because the http request contained invalid data.")
+        case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting search_index of '$bucketType' failed because the content type of the http request was not 'application/json'.")
+        case other                => throw new BucketOperationFailed(s"Setting search_index of '$bucketType' produced an unexpected response code '$other'.")
+      }
+    }
+  }
 
-  //TODO: Implement a cleaner way to handle buckets and type buckets
-  def setBucketProperties(server: RiakServerInfo, bucket: String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] =
-    setRiakBucketOrTypeProperties(server, BucketPropertiesUri(server,bucket), bucket, newProperties)
-  def getBucketProperties(server: RiakServerInfo, bucket: String): Future[RiakBucketProperties] =
-    getRiakBucketOrTypeProperties(server, BucketPropertiesUri(server,bucket), bucket)
-
-  def setBucketTypeProperties(server: RiakServerInfo, bucketType:String, newProperties: Set[RiakBucketProperty[_]]): Future[Unit] =
-    setRiakBucketOrTypeProperties(server, BucketTypePropertiesUri(server, bucketType), bucketType, newProperties)
-  def getBucketTypeProperties(server: RiakServerInfo, bucketType:String): Future[RiakBucketProperties] =
-    getRiakBucketOrTypeProperties(server, BucketTypePropertiesUri(server, bucketType), bucketType)
+  def setBucketTypeSearchIndex(server: RiakServerInfo, bucketType:String, searchIndex:RiakSearchIndex): Future[Boolean] = {
+    val properties = JsObject("props" -> JsObject("search_index" -> JsString(searchIndex.name)))
+    httpRequest(Put(BucketTypePropertiesUri(server, bucketType), properties)).map { response =>
+      response.status match {
+        case NoContent            => true
+        case BadRequest           => throw new ParametersInvalid(s"Setting properties of '$bucketType' failed because the http request contained invalid data.")
+        case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting search_index of '$bucketType' failed because the content type of the http request was not 'application/json'.")
+        case other                => throw new BucketOperationFailed(s"Setting search_index of '$bucketType' produced an unexpected response code '$other'.")
+      }
+    }
+  }
 
   def search(server: RiakServerInfo, bucket: String, solrQuery:RiakSearchQuery, resolver:RiakConflictsResolver): Future[RiakSearchResult] = {
 
@@ -204,14 +242,13 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def createSearchIndex(server: RiakServerInfo, name:String, nVal:Int, schema:String): Future[Boolean] = {
+  def createSearchIndex(server: RiakServerInfo, name:String, nVal:Int, schema:String): Future[RiakSearchIndex] = {
 
     val props = JsObject("schema" -> JsString(schema), "n_val" -> JsNumber(nVal))
-    println(Put(SearchIndexUri(server, name), props))
     httpRequest(Put(SearchIndexUri(server, name), props)).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
-        case NoContent  => successful(true)
+        case NoContent  => successful(RiakSearchIndex(name, nVal, schema))
         case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
       }
     }

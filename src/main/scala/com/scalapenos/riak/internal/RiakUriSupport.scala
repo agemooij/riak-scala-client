@@ -55,17 +55,17 @@ private[riak] trait RiakUriSupport {
   def KeyUri(server: RiakServerInfo, bucket: String, bucketType:String, key: String, parameters: QueryParameters = NoQueryParameters) =
     uri(server, s"types/${bucketType}/buckets/${bucket}/keys/${key}", parameters.query)
 
-  def BucketPropertiesUri(server: RiakServerInfo, bucket: String) =
-    uri(server, s"buckets/${bucket}/props")
+  def BucketPropertiesUri(server: RiakServerInfo, bucket: String, bucketType:String) =
+    uri(server, s"types/${bucketType}/buckets/${bucket}/props")
 
   def BucketTypePropertiesUri(server: RiakServerInfo, bucketType:String) =
     uri(server, s"types/${bucketType}/props")
 
-  def IndexUri(server: RiakServerInfo, bucket: String, index: RiakIndex) =
-    uri(server, s"buckets/${bucket}/index/${index.fullName}/${index.value}")
+  def IndexUri(server: RiakServerInfo, bucket: String, bucketType: String, index: RiakIndex) =
+    uri(server, s"types/${bucketType}/buckets/${bucket}/index/${index.fullName}/${index.value}")
 
-  def IndexRangeUri(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange) =
-    uri(server, s"buckets/${bucket}/index/${indexRange.fullName}/${indexRange.start}/${indexRange.end}")
+  def IndexRangeUri(server: RiakServerInfo, bucket: String, bucketType: String, indexRange: RiakIndexRange) =
+    uri(server, s"types/${bucketType}/buckets/${bucket}/index/${indexRange.fullName}/${indexRange.start}/${indexRange.end}")
 
   def SearchSolrUri(server: RiakServerInfo, bucket: String, parameters: QueryParameters) =
     uri(server, s"solr/${bucket}/select/", parameters.query)

@@ -25,6 +25,7 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
     "support setting and getting the bucket properties" in {
       val bucket = randomBucket
       val oldProperties = bucket.getProperties.await
+      println(oldProperties)
 
       val newNumberOfReplicas = oldProperties.nVal + 1
       val newAllowSiblings = !oldProperties.allowMult
@@ -124,12 +125,8 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
 
       val propertiesNew = bucket.getProperties.await
 
-      val searchHook = precommitValues(0)
-
-      propertiesNew.preCommit.contains(
-        searchHook.mapValues(JsString(_))) must beTrue
+      propertiesNew.preCommit must beEqualTo(precommitValues)
     }
-
 
   }
 

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.scalapenos.riak.internal
-
-import com.scalapenos.riak.{RiakBucketProperty, RiakBucketType}
+package com.scalapenos.riak
+package internal
 
 private[riak] final class RiakHttpBucketType(helper: RiakHttpClientHelper, server: RiakServerInfo, val name: String) extends RiakBucketType {
 
   def getProperties = helper.getBucketTypeProperties(server, name)
   def setProperties(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketTypeProperties(server, name, newProperties)
+
+  def setSearchIndex(riakSearchIndex: RiakSearchIndex) = helper.setBucketTypeSearchIndex(server, name, riakSearchIndex)
 }

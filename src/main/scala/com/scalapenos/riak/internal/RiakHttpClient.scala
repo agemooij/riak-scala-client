@@ -24,7 +24,7 @@ private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: R
   def ping = helper.ping(server)
 
   //Bucket
-  def bucket(name: String, resolver: RiakConflictsResolver)(implicit riakBucket: RiakBucketType = bucketType("default")) = new RiakHttpBucket(helper, server, name, resolver)
+  def bucket(name: String, resolver: RiakConflictsResolver, riakBucketType: RiakBucketType = bucketType("default")) = new RiakHttpBucket(helper, server, name, resolver, riakBucketType)
   def bucketType(name: String) = new RiakHttpBucketType(helper, server, name)
 
   //Search

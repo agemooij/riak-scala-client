@@ -138,14 +138,14 @@ case class RiakSearchResult(
   contentType:ContentType,
   data:String)
 
-case class RiakSearchIndex(name:String, nVal:Number, schema:String)
+case class RiakSearchIndex(name:String, nVal:Int, schema:String)
 
 object RiakSearchIndex {
   implicit object RiakSearchIndexFormat extends RootJsonReader[RiakSearchIndex] {
     def read(value: JsValue) = {
       value.asJsObject.getFields("name", "n_val", "schema") match {
         case Seq(JsString(name), JsNumber(nVal), JsString(schema)) =>
-          RiakSearchIndex (name, nVal, schema)
+          RiakSearchIndex (name, nVal.toInt, schema)
         case _ => throw new DeserializationException("riak search index json expected")
       }
     }

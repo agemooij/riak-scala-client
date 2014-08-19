@@ -29,7 +29,9 @@ final case class RiakBucketProperties (
   nVal: Int,
   allowMult: Boolean,
   lastWriteWins: Boolean,
-  preCommit: List[Map[String, Any]]//,
+  preCommit: List[Map[String, String]],
+  search:Option[Boolean],
+  searchIndex:Option[String]
   // readQuorum: RiakQuorum,
   // primaryReadQuorum: RiakQuorum,
   // writeQuorum: RiakQuorum,
@@ -42,24 +44,14 @@ object RiakBucketProperties {
   implicit object jsonReader extends RootJsonReader[RiakBucketProperties] {
     def read(value: JsValue): RiakBucketProperties = {
       value.asJsObject.fields.get("props").flatMap { props =>
-        props.asJsObject.getFields(
-          "n_val",
-          "allow_mult",
-          "last_write_wins",
-          "precommit") match {
-          case Seq(
-            JsNumber(numberOfReplicas),
-            JsBoolean(allowSiblings),
-            JsBoolean(lastWriteWins),
-            JsArray(preCommit)) =>
-              Some(RiakBucketProperties(
-                numberOfReplicas.toInt,
-                allowSiblings,
-                lastWriteWins,
-                preCommit.map{case x:JsObject => x.fields.toMap[String, Any]}
-                ))
-          case _ => None
-        }
+        Some(RiakBucketProperties(
+          nVal = props.asJsObject.fields.get("n_val").map(_.convertTo[Int]).get,
+          allowMult = props.asJsObject.fields.get("allow_mult").map(_.convertTo[Boolean]).get,
+          lastWriteWins = props.asJsObject.fields.get("last_write_wins").map(_.convertTo[Boolean]).get,
+          preCommit = props.asJsObject.fields.get("precommit").map(_.convertTo[List[Map[String, String]]]).get,
+          search = props.asJsObject.fields.get("search").map(_.convertTo[Boolean]),
+          searchIndex = props.asJsObject.fields.get("search_index").map(_.convertTo[String])
+        ))
       }.getOrElse(throw new DeserializationException(s"Invalid Riak properties document: ${value.compactPrint}"))
     }
   }
@@ -100,9 +92,19 @@ case class LastWriteWins(value: Boolean) extends RiakBucketProperty[Boolean] {
   def json = JsBoolean(value)
 }
 
-case class PreCommit(value:List[Map[String, Any]]) extends RiakBucketProperty[List[Map[String, Any]]] {
+case class PreCommit(value:List[Map[String, String]]) extends RiakBucketProperty[List[Map[String, String]]] {
   def name = "precommit"
   def json = JsArray(value.map{case x:Map[String, String] => x.toJson})
+}
+
+case class Search(value:Boolean) extends RiakBucketProperty[Boolean] {
+  def name = "search"
+  def json = JsBoolean(value)
+}
+
+case class SearchIndex(value:String) extends RiakBucketProperty[String] {
+  def name = "search_index"
+  def json = JsString(value)
 }
 
 /*

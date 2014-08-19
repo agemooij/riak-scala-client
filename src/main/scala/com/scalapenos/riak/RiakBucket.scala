@@ -20,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import internal._
 
 
-trait RiakPropsEssential {
+trait RiakBucketEssential {
 
 
   val name: String
@@ -38,21 +38,33 @@ trait RiakPropsEssential {
   def lastWriteWins_=(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
 
   def preCommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = getProperties.map(_.preCommit)
-  def preCommit_=(value: List[Map[String, Any]]): Future[Unit] = setProperties(Set(PreCommit(value)))
+  def preCommit_=(value: List[Map[String, String]]): Future[Unit] = setProperties(Set(PreCommit(value)))
+
+  def searchEnabled(implicit ec: ExecutionContext): Future[Option[Boolean]] = getProperties.map(_.search)
+  def enableSearch(): Future[Unit] = setProperties(Set(Search(true)))
+
+  def getSearchIndex(implicit ec: ExecutionContext): Future[Option[String]] = getProperties.map(_.searchIndex)
+
+  //def search(query:RiakSearchQuery): Future[RiakValue]
+}
+
+trait RiakSearch {
+  def setSearchIndex(riakSearchIndex: RiakSearchIndex): Future[Boolean]
+}
+
+trait RiakBucketType extends RiakBucketEssential with RiakSearch {
 
 }
 
-trait RiakBucketType extends RiakPropsEssential {
-
-}
-
-trait RiakBucket extends RiakPropsEssential {
+trait RiakBucket extends RiakBucketEssential with RiakSearch {
 
   /**
    * Every bucket has a default RiakConflictsResolver that will be used when resolving
    * conflicts during fetches and stores (when returnBody is true).
    */
   def resolver: RiakConflictsResolver
+
+  def bucketType: RiakBucketType
 
   def fetch(key: String): Future[Option[RiakValue]]
 
@@ -73,10 +85,7 @@ trait RiakBucket extends RiakPropsEssential {
   def storeAndFetch[T: RiakMarshaller](key: String, meta: RiakMeta[T]): Future[RiakValue] = storeAndFetch(key, RiakValue(meta))
   def storeAndFetch(key: String, value: RiakValue): Future[RiakValue]
 
-
   def delete(key: String): Future[Unit]
-
-  def search(query:RiakSearchQuery): Future[RiakSearchResult]
 
 
 
