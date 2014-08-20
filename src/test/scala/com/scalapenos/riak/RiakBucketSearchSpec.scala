@@ -39,12 +39,9 @@ class RiakBucketSearchSpec extends RiakClientSpecification with RandomKeySupport
   "A RiakClient" should {
     "create a search index" in {
       client.createSearchIndex(randomIndex, 4).await must beAnInstanceOf[RiakSearchIndex]
+      Thread.sleep(5000)
     }
-
     "get a search by name" in {
-      Thread.sleep(10.seconds.toMillis)
-      //To let riak make available the index to read
-
       client.getSearchIndex(randomIndex).await must beAnInstanceOf[RiakSearchIndex]
     }
     "get a list of all search index" in {
