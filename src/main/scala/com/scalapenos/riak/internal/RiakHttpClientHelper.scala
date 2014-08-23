@@ -23,6 +23,8 @@ import spray.client.pipelining._
 import spray.http.parser.HttpParser
 import spray.json._
 
+import scala.concurrent.Promise
+
 //Temporary fix for spray 1.3.1_2.11
 import java.io.{ ByteArrayOutputStream, ByteArrayInputStream }
 import org.jvnet.mimepull.{ MIMEMessage, MIMEConfig }
@@ -211,7 +213,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     httpRequest(Put(BucketPropertiesUri(server, bucket, bucketType), properties)).map { response =>
       response.status match {
         case NoContent            => true
-        case BadRequest           => throw new ParametersInvalid(s"Setting properties of '$bucketType' failed because the http request contained invalid data.")
+        case BadRequest           => throw new ParametersInvalid(s"Setting properties of '$bucketType' failed with message: ${response.entity.asString}")
         case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting search_index of '$bucketType' failed because the content type of the http request was not 'application/json'.")
         case other                => throw new BucketOperationFailed(s"Setting search_index of '$bucketType' produced an unexpected response code '$other'.")
       }
@@ -230,17 +232,29 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def search(server: RiakServerInfo, bucket: String, solrQuery:RiakSearchQuery, resolver:RiakConflictsResolver): Future[RiakSearchResult] = {
+  def search(server: RiakServerInfo, bucket: RiakBucket, solrQuery:RiakSearchQuery, resolver:RiakConflictsResolver): Future[RiakSearchResult] = {
 
     val query:Map[String, String] = solrQuery.m.toMap
-    httpRequest(Get(SearchSolrUri(server, bucket, SolrQueryParameters(query)))).flatMap { response =>
-      response.status match {
-        case BadRequest => throw new ParametersInvalid(s"Invalid search or params (${solrQuery.m.toMap}) ")
-        case OK         => throw new Error(s"Disabled for now")//successful(toRiakSearch(response, server, bucket, resolver))
-        case other      => throw new BucketOperationFailed(s"Solr search '$query.toString' in bucket '$bucket' produced an unexpected response code '$other'.")
+
+    def searchOnServer(indexName:String) = {
+      httpRequest(Get(SearchSolrUri(server, indexName, SolrQueryParameters(query)))).flatMap { response =>
+        response.status match {
+          case BadRequest => throw new ParametersInvalid(s"Invalid search or params (${solrQuery.m.toMap}) ")
+          case OK         => successful(toRiakSearch(response, server, bucket, resolver))
+          case other      => throw new BucketOperationFailed(s"Solr search '$query.toString' in bucket '$bucket' produced an unexpected response code '$other'.")
+        }
       }
     }
+
+    bucket.getSearchIndex.flatMap { response =>
+      response match {
+        case Some(indexName) => searchOnServer(indexName)
+        case None => throw new OperationFailed(s"There is no index defined for this bucket, you must set a search index before searching")
+      }
+    }
+
   }
+
 
   def createSearchIndex(server: RiakServerInfo, name:String, nVal:Int, schema:String): Future[RiakSearchIndex] = {
 
@@ -259,7 +273,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
         case NoContent  => successful(true)
-        case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
+        case other      => throw new BucketOperationFailed(s"There was a problem deleting the search index '$other' error: ${response.entity.asString}.")
       }
     }
   }
@@ -269,7 +283,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"There was a problem getting the search index because the http request contained invalid data.")
         case OK         => parseSearchIndex(response.entity)
-        case other      => throw new OperationFailed(s"There was a problem creating the search index '$other'.")
+        case other      => throw new OperationFailed(s"There was a problem retreiving the search index '$other', error: ${response.entity.asString}.")
       }
     }
   }
@@ -316,8 +330,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
 
 
-  /*private def toRiakSearch(response: HttpResponse, server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSearchResult = toRiakSearch(response.entity, response.headers, server, bucket, resolver)
-  private def toRiakSearch(entity: HttpEntity, headers: List[HttpHeader], server: RiakServerInfo, bucket: String, resolver:RiakConflictsResolver):RiakSearchResult = {
+  private def toRiakSearch(response: HttpResponse, server: RiakServerInfo, bucket: RiakBucket, resolver:RiakConflictsResolver):RiakSearchResult = toRiakSearch(response.entity, response.headers, server, bucket, resolver)
+  private def toRiakSearch(entity: HttpEntity, headers: List[HttpHeader], server: RiakServerInfo, bucket: RiakBucket, resolver:RiakConflictsResolver):RiakSearchResult = {
     entity.toOption.map { body =>
       import spray.json._
 
@@ -329,8 +343,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       val responseObject = response.convertTo[RiakSearchResponse]
 
       //TODO: Fix double quote in string to avoid using replace
-      val responseValues = RiakSearchValueResponse(
-        values=responseObject.docs.map(x => fetch(server, bucket, x.id.replace("\"",""), resolver)))
+      val values = responseObject.docs.map(x => fetch(server, bucket.name, bucket.bucketType.name, x._yz_rk.replace("\"",""), resolver ))
+      val responseValues = RiakSearchValueResponse(values=values)
 
       RiakSearchResult(
         response=responseObject,
@@ -339,7 +353,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
         contentType=body.contentType,
         data=body.asString)
     }.get
-  }*/
+  }
 
 
   // ==========================================================================

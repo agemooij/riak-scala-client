@@ -44,8 +44,6 @@ trait RiakBucketEssential {
   def enableSearch(): Future[Unit] = setProperties(Set(Search(true)))
 
   def getSearchIndex(implicit ec: ExecutionContext): Future[Option[String]] = getProperties.map(_.searchIndex)
-
-  //def search(query:RiakSearchQuery): Future[RiakValue]
 }
 
 trait RiakSearch {
@@ -87,7 +85,7 @@ trait RiakBucket extends RiakBucketEssential with RiakSearch {
 
   def delete(key: String): Future[Unit]
 
-
+  def search(query:RiakSearchQuery): Future[RiakSearchResult]
 
 }
 

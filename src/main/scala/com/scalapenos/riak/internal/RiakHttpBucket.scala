@@ -31,7 +31,7 @@ private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: R
   def getProperties = helper.getBucketProperties(server, name, bucketType.name)
   def setProperties(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, name, bucketType.name, newProperties)
 
-  def search(query:RiakSearchQuery) =  helper.search(server, name, query, resolver)
+  def search(query:RiakSearchQuery) = helper.search(server, this, query, resolver)
 
   def setSearchIndex(riakSearchIndex: RiakSearchIndex) = helper.setBucketSearchIndex(server, name, bucketType.name, riakSearchIndex)
 }

@@ -67,8 +67,8 @@ private[riak] trait RiakUriSupport {
   def IndexRangeUri(server: RiakServerInfo, bucket: String, bucketType: String, indexRange: RiakIndexRange) =
     uri(server, s"types/${bucketType}/buckets/${bucket}/index/${indexRange.fullName}/${indexRange.start}/${indexRange.end}")
 
-  def SearchSolrUri(server: RiakServerInfo, bucket: String, parameters: QueryParameters) =
-    uri(server, s"solr/${bucket}/select/", parameters.query)
+  def SearchSolrUri(server: RiakServerInfo, indexName: String, parameters: QueryParameters) =
+    uri(server, s"search/query/${indexName}", parameters.query)
 
   def SearchIndexUri(server: RiakServerInfo, name: String) =
     uri(server, s"search/index/${name}")

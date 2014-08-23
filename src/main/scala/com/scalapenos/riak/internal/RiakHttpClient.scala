@@ -25,7 +25,7 @@ private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: R
 
   //Bucket
   def bucket(name: String, resolver: RiakConflictsResolver, riakBucketType: RiakBucketType = bucketType("default")) = new RiakHttpBucket(helper, server, name, resolver, riakBucketType)
-  def bucketType(name: String) = new RiakHttpBucketType(helper, server, name)
+  def bucketType(name: String, resolver: RiakConflictsResolver = DefaultConflictsResolver) = new RiakHttpBucketType(helper, server, name, resolver)
 
   //Search
   def createSearchIndex(name: String , nVal:Int = 3, schema:String = "_yz_default")  = helper.createSearchIndex(server, name, nVal, schema)

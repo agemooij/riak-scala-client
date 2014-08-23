@@ -17,7 +17,7 @@
 package com.scalapenos.riak
 package internal
 
-private[riak] final class RiakHttpBucketType(helper: RiakHttpClientHelper, server: RiakServerInfo, val name: String) extends RiakBucketType {
+private[riak] final class RiakHttpBucketType(helper: RiakHttpClientHelper, server: RiakServerInfo, val name: String, val resolver: RiakConflictsResolver) extends RiakBucketType {
 
   def getProperties = helper.getBucketTypeProperties(server, name)
   def setProperties(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketTypeProperties(server, name, newProperties)

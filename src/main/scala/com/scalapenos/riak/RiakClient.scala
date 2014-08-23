@@ -49,7 +49,8 @@ trait RiakClient {
   def bucket(name: String,
              resolver: RiakConflictsResolver = DefaultConflictsResolver,
              riakBucketType: RiakBucketType = bucketType("default")): RiakBucket
-  def bucketType(name: String): RiakBucketType
+  def bucketType(name: String,
+                 resolver: RiakConflictsResolver = DefaultConflictsResolver): RiakBucketType
 
 
   //Search

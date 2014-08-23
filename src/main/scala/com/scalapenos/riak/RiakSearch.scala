@@ -79,31 +79,35 @@ case class RiakSearchQuery() {
      def write(params: List[RiakSearchDoc]) = {
        params.map{
          x => JsObject(
-         "id" -> JsString(x.id),
-         "index" -> JsString(x.index),
-         "fields" -> x.fields.mapValues(_ toString).toJson,
-         "props" -> x.props.mapValues(_ toString).toJson)
+         "_yz_id" -> JsString(x._yz_id),
+         "_yz_rk" -> JsString(x._yz_rk),
+         "_yz_rt" -> JsString(x._yz_rt),
+         "_yz_rb" -> JsString(x._yz_rb),
+         "fields" -> x.fields.mapValues(_ toString).toJson)
        }.toJson
      }
 
      def read(value: JsValue) = {
 
        value.asInstanceOf[JsArray].elements.map{
-         x => RiakSearchDoc(
-           x.asJsObject.fields.get("id").get.toString,
-           x.asJsObject.fields.get("index").get.toString,
-           x.asJsObject.fields.get("fields").get.asJsObject.fields.toMap,
-           x.asJsObject.fields.get("props").get.asJsObject.fields.toMap)
+         x =>
+           val _yz_id = x.asJsObject.fields.get("_yz_id").get.toString
+           val _yz_rt = x.asJsObject.fields.get("_yz_rt").get.toString
+           val _yz_rb = x.asJsObject.fields.get("_yz_rb").get.toString
+           val _yz_rk = x.asJsObject.fields.get("_yz_rk").get.toString
+           val fields = x.asJsObject.fields - "_yz_id" - "_yz_rt" - "_yz_rb" - "_yz_rk"
+           RiakSearchDoc(_yz_id,_yz_rk,_yz_rt,_yz_rb,fields)
        }
      }
    }
 }
 
 private[riak] sealed case class RiakSearchDoc(
-  id:String,
-  index:String,
-  fields:Map[String, Any],
-  props:Map[String, Any]){
+  _yz_id:String,
+  _yz_rk:String,
+  _yz_rt:String,
+  _yz_rb:String,
+  fields:Map[String, Any]){
 
 
 }
@@ -111,7 +115,7 @@ private[riak] sealed case class RiakSearchDoc(
 private[riak] sealed case class RiakSearchResponse(
   numFound:Int,
   start: Int,
-  maxScore:String,
+  maxScore:Int,
   docs:List[RiakSearchDoc])
 
 
