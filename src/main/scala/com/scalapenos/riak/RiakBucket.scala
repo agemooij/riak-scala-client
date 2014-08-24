@@ -62,7 +62,7 @@ trait RiakBucket extends RiakBucketEssential with RiakSearch {
    */
   def resolver: RiakConflictsResolver
 
-  def bucketType: RiakBucketType
+  def bucketType: Option[RiakBucketType]
 
   def fetch(key: String): Future[Option[RiakValue]]
 
