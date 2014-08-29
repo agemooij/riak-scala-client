@@ -1,5 +1,5 @@
 
-[![Build Status](https://api.travis-ci.org/agemooij/riak-scala-client.png?branch=master)](https://travis-ci.org/agemooij/riak-scala-client)
+[![Build Status](https://api.travis-ci.org/mordonez-me/riak-scala-client.png?branch=master)](https://travis-ci.org/mordonez-me/riak-scala-client)
 
 ## What is this?
 
