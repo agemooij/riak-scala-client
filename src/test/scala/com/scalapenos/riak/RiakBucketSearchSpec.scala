@@ -34,7 +34,6 @@ class RiakBucketSearchSpec extends RiakClientSpecification with RandomKeySupport
 
   "A RiakClient" should {
     "create a search index" in {
-      pending
       client.createSearchIndex("test").await must beTrue
     }
     "get a search by name" in {
@@ -45,7 +44,6 @@ class RiakBucketSearchSpec extends RiakClientSpecification with RandomKeySupport
 
   "A RiakBucket" should {
     "get an empty precommit and set precommit values for solr search" in {
-      pending
       val bucket = randomBucket
       val key = randomKey
 
@@ -71,7 +69,6 @@ class RiakBucketSearchSpec extends RiakClientSpecification with RandomKeySupport
     }
 
     "insert two elements and search with solr to get them back" in {
-      pending
       val bucket = randomBucket
 
       val songComplex1 = SongTestComplex(1, "titulo1", Map("test1" -> "datatest1"))
