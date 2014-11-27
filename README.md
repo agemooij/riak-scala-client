@@ -1,5 +1,5 @@
 
-[![Build Status](https://api.travis-ci.org/agemooij/riak-scala-client.png?branch=master)](https://travis-ci.org/agemooij/riak-scala-client)
+[![Build Status](https://api.travis-ci.org/mordonez-me/riak-scala-client.png?branch=master)](https://travis-ci.org/mordonez-me/riak-scala-client)
 
 ## What is this?
 
@@ -9,12 +9,7 @@ See the [project site] for full [documentation], [examples], [scaladocs], and mo
 
 
 ## Current Status
-The latest version is 0.8.1.1, which is compatible with Akka 2.1.4 and Spray 1.1-M8.
-
-There is also a parallel release for people who have already moved to Akka 2.2.
-Version 0.8.1.2 is compatible with Akka 2.2-RC1 and Spray 1.2-M8. Please be aware
-that this version is __not__ compatible with Akka 2.2-RC2 because that version
-is not backwards compatible with RC1 and therefor not compatible with Spray 1.2-M8.
+The latest version is 0.9.2, which is compatible with Akka 2.3.2 and Spray 1.3.1.
 
 
 ## Features
@@ -30,10 +25,13 @@ So far, the following Riak (http) API features are supported:
     - Storing with indexes
 - Getting/setting bucket properties
 - ping
+- Listing all keys in a bucket
+- Listing all buckets
+- Map Reduce (partial)
 
 Other features include:
 
-- Completely non-blocking thanks to Scala 2.10 Futures, Akka, and Spray
+- Completely non-blocking thanks to Scala 2.11 Futures, Akka, and Spray
 - Transparent integration with Akka projects through an Akka extension
 - An untyped RiakValue class for interacting with raw Riak values and their associated
   meta data (vclock, etag, content type, last modified time, indexes, etc.)
@@ -48,9 +46,6 @@ Other features include:
 The following Riak (http) API features are still under construction:
 
 - Link walking
-- Map Reduce
-- Listing all keys in a bucket
-- Listing all buckets
 - Conditional fetch/store semantics (i.e. If-None-Match and If-Match for ETags and
   If-Modified-Since and If-Unmodified-Since for LastModified)
 - Node Status
@@ -58,7 +53,7 @@ The following Riak (http) API features are still under construction:
 The initial focus is on supporting the Riak HTTP API. Protobuf support might be added
 later but it has a low priority at the moment.
 
-The riak-scala-client has been tested against [Riak] versions 1.2.x and 1.3.x.
+The riak-scala-client has been tested against [Riak] versions 2.0.2.
 
 
 ## Current Limitations
@@ -101,3 +96,4 @@ The _riak-scala-client_ is licensed under [APL 2.0].
   [riakka]:             https://github.com/timperrett/riakka
   [riaktor]:            https://github.com/benmyles/riaktor
   [scalariak]:          https://github.com/ariejdl/scala-riak
+  [

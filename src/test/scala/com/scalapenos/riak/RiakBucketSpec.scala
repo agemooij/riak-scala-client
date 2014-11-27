@@ -88,6 +88,14 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
 
       bucket.bucketType.name must be_==("default")
     }
+
+    "get a list of bucket keys" in {
+      val bucket = client.bucket(name="riak-bucket-tests-" + randomKey)
+      val key = randomKey
+      bucket.store(key, "value").await
+
+      bucket.getKeys().await.contains(key) must beTrue
+    }
   }
 
 }

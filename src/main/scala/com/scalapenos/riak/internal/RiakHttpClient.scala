@@ -29,11 +29,14 @@ private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: R
              resolver: RiakConflictsResolver = DefaultConflictsResolver) =
     new RiakHttpBucket(helper, server, name, resolver, riakBucketType)
 
+  def getBuckets(riakBucketType: RiakBucketType = bucketType(name="default")) =
+    helper.getBuckets(server, this, riakBucketType.name)
+
+  //Bucket Type
   def bucketType(name: String) = new RiakHttpBucketType(helper, server, this, name)
 
   //Map Reduce
   def mapReduce(input: RiakMapReduce.Input) = new RiakHttpMapReduce(helper, server, input)
-
 
   //Client methods
   //Search Index
@@ -49,4 +52,6 @@ private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: R
   def getSearchSchema(name:String):Future[scala.xml.Elem] = helper.getSearchSchema(server, name)
 
   def search(index:RiakSearchIndex, query:RiakSearchQuery):Future[RiakSearchResult] = helper.search(server, index, query)
+
+  //def getBuckets():Future[RiakBucket] = helper.search(server, index, query)
 }

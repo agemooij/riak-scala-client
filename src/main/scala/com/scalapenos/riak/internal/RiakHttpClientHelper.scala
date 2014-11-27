@@ -38,6 +38,8 @@ import HttpHeaders._
 import HttpCharsets._
 import spray.httpx.unmarshalling.Unmarshaller
 
+import org.slf4j.{Logger, LoggerFactory}
+
 
 private[riak] object RiakHttpClientHelper {
   import spray.http.HttpEntity
@@ -72,6 +74,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private implicit val sys = system
   private val settings = RiakClientExtension(system).settings
 
+  private val log = LoggerFactory.getLogger("scala-riak-client")
 
   // ==========================================================================
   // Main HTTP Request Implementations
@@ -306,11 +309,37 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
 
   def getKeys(server:RiakServerInfo, bucket:String, bucketType:String):Future[List[String]] = {
+    log.warn("Do not use this in production, as it requires traversing through all keys stored in a cluster")
     httpRequest(Get(KeysUri(server, bucket, bucketType))).flatMap { response =>
+      import spray.json._
+      import DefaultJsonProtocol._
+
+      val keyList = response.entity.data.asString.parseJson.asJsObject.fields("keys").convertTo[List[String]]
+
       response.status match {
-        case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search schema because the http request contained invalid data.")
-        case NoContent  => successful()
-        case other      => throw new OperationFailed(s"There was a problem creating the search schema '$other'.")
+        case BadRequest => throw new ParametersInvalid(s"There was a problem retrieving the list because the http request contained invalid data.")
+        case OK  => successful(keyList)
+        case other      => throw new OperationFailed(s"There was a problem retrieving the key list '$other'.")
+      }
+    }
+  }
+
+
+  def getBuckets(server:RiakServerInfo, client:RiakClient, bucketType:String):Future[List[RiakBucket]] = {
+    log.warn("Do not use this in production, as it requires traversing through all keys stored in a cluster")
+    httpRequest(Get(BucketsUri(server, bucketType))).flatMap { response =>
+      import spray.json._
+      import DefaultJsonProtocol._
+
+      val bucketList = response.entity.data.asString.parseJson
+        .asJsObject.fields("buckets")
+        .convertTo[List[String]]
+        .map(x => client.bucket(x))
+
+      response.status match {
+        case BadRequest => throw new ParametersInvalid(s"There was a problem retrieving the list because the http request contained invalid data.")
+        case OK  => successful(bucketList)
+        case other      => throw new OperationFailed(s"There was a problem retrieving the key list '$other'.")
       }
     }
   }

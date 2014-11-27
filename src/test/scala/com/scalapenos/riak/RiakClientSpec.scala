@@ -22,6 +22,10 @@ class RiakClientSpec extends RiakClientSpecification {
     "support calling the Riak ping API" in {
       client.ping.await should beTrue
     }
+
+    "get the list of buckets" in {
+      client.getBuckets().await must beAnInstanceOf[List[RiakBucket]]
+    }
   }
 
 }

@@ -83,7 +83,10 @@ private[riak] trait RiakUriSupport {
     uri(server, s"mapred")
 
   def KeysUri(server: RiakServerInfo, bucket:String, bucketType:String) =
-    uri(server, s"types/${bucketType}/buckets/${bucket}/keys?keys=true")
+    uri(server, s"types/${bucketType}/buckets/${bucket}/keys", Query("keys" -> "true"))
+
+  def BucketsUri(server: RiakServerInfo, bucketType:String) =
+    uri(server, s"types/${bucketType}/buckets", Query("buckets" -> "true"))
 
   private def uri(server: RiakServerInfo, path: String, query: Query = Query.Empty): Uri = {
     Uri.from(

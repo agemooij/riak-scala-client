@@ -50,9 +50,11 @@ trait RiakClient {
              bucketType: RiakBucketType = setBucketType(name="default"),
              resolver: RiakConflictsResolver = DefaultConflictsResolver): RiakBucket
 
+  def getBuckets(bucketType: RiakBucketType = setBucketType(name="default")):Future[List[RiakBucket]]
+
   //Bucket Type
   def bucketType(name: String): RiakBucketType
-  private def setBucketType(name: String): RiakBucketType = bucketType(name)
+  private def setBucketType(name: String) = bucketType(name)
 
   def mapReduce(input: RiakMapReduce.Input): RiakMapReduce
 
