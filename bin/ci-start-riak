@@ -1,4 +1,4 @@
-#!/bin/sh -ex
+#!/usr/bin/env sh
 
 DIR=$(basename $0 | xargs dirname)
 TMP=$DIR/tmp
