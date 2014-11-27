@@ -8,6 +8,6 @@ jdk:
   - oraclejdk7
 
 before_install:
-  - ./bin/ci-install-riak.sh
-  - ./bin/ci-start-riak.sh
+  - ./bin/ci-install-riak
+  - ./bin/ci-start-riak
 
