@@ -7,5 +7,7 @@ jdk:
   - openjdk7
   - oraclejdk7
 
-services:
-  - riak
+before_install:
+  - ./bin/ci-install-riak.sh
+  - ./bin/ci-start-riak.sh
+
