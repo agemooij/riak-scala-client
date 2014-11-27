@@ -24,12 +24,29 @@ private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: R
   def ping = helper.ping(server)
 
   //Bucket
-  def bucket(name: String, resolver: RiakConflictsResolver, riakBucketType: RiakBucketType = bucketType("default")) = new RiakHttpBucket(helper, server, name, resolver, riakBucketType)
-  def bucketType(name: String, resolver: RiakConflictsResolver = DefaultConflictsResolver) = new RiakHttpBucketType(helper, server, name, resolver)
+  def bucket(name: String,
+             riakBucketType: RiakBucketType = bucketType(name="default"),
+             resolver: RiakConflictsResolver = DefaultConflictsResolver) =
+    new RiakHttpBucket(helper, server, name, resolver, riakBucketType)
 
-  //Search
-  def createSearchIndex(name: String , nVal:Int = 3, schema:String = "_yz_default")  = helper.createSearchIndex(server, name, nVal, schema)
+  def bucketType(name: String) = new RiakHttpBucketType(helper, server, this, name)
+
+  //Map Reduce
+  def mapReduce(input: RiakMapReduce.Input) = new RiakHttpMapReduce(helper, server, input)
+
+
+  //Client methods
+  //Search Index
+  def createSearchIndex(name: String , nVal:Int = 3, schema:String = "_yz_default")  =
+    helper.createSearchIndex(server, name, nVal, schema)
   def getSearchIndex(name: String) = helper.getSearchIndex(server, name)
   def getSearchIndexList = helper.getSearchIndexList(server)
   def deleteSearchIndex(name: String) = helper.deleteSearchIndex(server, name)
+
+  //Search Schema
+  def createSearchSchema(name:String, content:scala.xml.Elem):Future[Boolean] =
+    helper.createSearchSchema(server, name, content)
+  def getSearchSchema(name:String):Future[scala.xml.Elem] = helper.getSearchSchema(server, name)
+
+  def search(index:RiakSearchIndex, query:RiakSearchQuery):Future[RiakSearchResult] = helper.search(server, index, query)
 }

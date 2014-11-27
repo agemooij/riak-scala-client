@@ -9,6 +9,7 @@ import scala.collection._
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 import scala.concurrent.Future
+import scala.xml.{MetaData, NamespaceBinding, Node, Elem}
 
 
 trait RiakSearchFormat{
@@ -97,7 +98,7 @@ case class RiakSearchQuery() {
            val _yz_rk = x.asJsObject.fields.get("_yz_rk").get.toString
            val fields = x.asJsObject.fields - "_yz_id" - "_yz_rt" - "_yz_rb" - "_yz_rk"
            RiakSearchDoc(_yz_id,_yz_rk,_yz_rt,_yz_rb,fields)
-       }
+       }.toList
      }
    }
 }
@@ -120,7 +121,7 @@ private[riak] sealed case class RiakSearchResponse(
 
 
 private[riak] sealed case class RiakSearchValueResponse(
-  values:List[Future[Option[RiakValue]]])
+  values:Future[List[RiakValue]])
 
 private[riak] object RiakSearchResponse extends RiakSearchJsonFormats{
   implicit val jsonFormat = jsonFormat4(RiakSearchResponse.apply)
@@ -156,7 +157,11 @@ object RiakSearchIndex {
   }
 
   implicit object RiakSearchIndexListFormat extends RootJsonReader[List[RiakSearchIndex]] {
-    def read(value: JsValue) = value.asInstanceOf[JsArray].elements.map(_.convertTo[RiakSearchIndex])
+    def read(value: JsValue) = value.asInstanceOf[JsArray].elements.map(_.convertTo[RiakSearchIndex]).toList
   }
 
+}
+
+trait RiakSearch {
+  def setSearchIndex(riakSearchIndex: RiakSearchIndex): Future[Boolean]
 }

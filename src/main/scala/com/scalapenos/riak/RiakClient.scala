@@ -47,17 +47,27 @@ trait RiakClient {
 
   //Bucket
   def bucket(name: String,
-             resolver: RiakConflictsResolver = DefaultConflictsResolver,
-             riakBucketType: Option[RiakBucketType]): RiakBucket
-  def bucketType(name: String,
-                 resolver: RiakConflictsResolver = DefaultConflictsResolver): RiakBucketType
+             bucketType: RiakBucketType = setBucketType(name="default"),
+             resolver: RiakConflictsResolver = DefaultConflictsResolver): RiakBucket
 
+  //Bucket Type
+  def bucketType(name: String): RiakBucketType
+  private def setBucketType(name: String): RiakBucketType = bucketType(name)
 
-  //Search
+  def mapReduce(input: RiakMapReduce.Input): RiakMapReduce
+
+  //Search Schema
+  def createSearchSchema(name:String, content:scala.xml.Elem):Future[Boolean]
+  def getSearchSchema(name:String):Future[scala.xml.Elem]
+
+  //Search Index
   def createSearchIndex(name: String, nVal:Int = 3, schema:String = "_yz_default"): Future[RiakSearchIndex]
   def getSearchIndex(name: String): Future[RiakSearchIndex]
-  def getSearchIndexList:Future[List[RiakSearchIndex]]
   def deleteSearchIndex(name: String):Future[Boolean]
+  def getSearchIndexList:Future[List[RiakSearchIndex]]
+
+  //Search
+  def search(index:RiakSearchIndex, query:RiakSearchQuery):Future[RiakSearchResult]
 }
 
 

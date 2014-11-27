@@ -15,15 +15,14 @@
  */
 
 package com.scalapenos.riak
-package internal
 
-private[riak] final class RiakHttpBucketType(helper: RiakHttpClientHelper, server: RiakServerInfo, riakClient:RiakClient, val name: String) extends RiakBucketType {
+class RiakBucketTypeSpec extends RiakClientSpecification with RandomKeySupport {
+  private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
 
-  def bucket(name:String, resolver: RiakConflictsResolver = DefaultConflictsResolver) =
-    riakClient.bucket(name, this, resolver)
+  "A RiakBucketType" should {
+    "be able to be created without bucket" in {
+      client.bucketType("bucketTypeTest") must beAnInstanceOf[RiakBucketType]
+    }
+  }
 
-  def getProperties = helper.getBucketTypeProperties(server, name)
-  def setProperties(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketTypeProperties(server, name, newProperties)
-
-  def setSearchIndex(riakSearchIndex: RiakSearchIndex) = helper.setBucketTypeSearchIndex(server, name, riakSearchIndex)
 }

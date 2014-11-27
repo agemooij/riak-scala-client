@@ -44,7 +44,7 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
   "When dealing with concurrent writes, a bucket configured with allow_mult = true and a custom resolver" should {
     "resolve any conflicts, store the resolved value back to Riak when requested, and return the result" in {
 
-      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver(true))
+      val bucket = client.bucket(name="riak-conflict-resolution-tests-" + randomKey, resolver=TestEntityWithMergableListResolver(true))
       val key = randomKey
 
       (bucket.allowMult = true).await
@@ -72,7 +72,7 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
     }
 
     "resolve any conflicts, not store the resolved value back to Riak if not requested, and return the result" in {
-      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver(false))
+      val bucket = client.bucket(name="riak-conflict-resolution-tests-" + randomKey, resolver=TestEntityWithMergableListResolver(false))
       val key = randomKey
 
       (bucket.allowMult = true).await
@@ -100,7 +100,7 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
     }
 
     "not pass tombstoned siblings into the conflict resolver" in {
-      val bucket = client.bucket("riak-conflict-resolution-tests-" + randomKey, TestEntityWithMergableListResolver(true))
+      val bucket = client.bucket(name="riak-conflict-resolution-tests-" + randomKey, resolver=TestEntityWithMergableListResolver(true))
       val key = randomKey
 
       (bucket.allowMult = true).await

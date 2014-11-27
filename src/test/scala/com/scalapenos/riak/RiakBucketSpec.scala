@@ -68,6 +68,26 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
 
       indexAssigned should beTrue
     }
+
+    "be able to be created with bucket type" in {
+      val bucketType = client.bucketType("bucketTypeTest")
+      val bucket = client.bucket(name="riak-bucket-tests-" + randomKey, bucketType=bucketType)
+
+      bucket must beAnInstanceOf[RiakBucket]
+    }
+
+    "get bucket type from a bucket created with a custom bucket type" in {
+      val bucketType = client.bucketType("bucketTypeTest")
+      val bucket = client.bucket(name="riak-bucket-tests-" + randomKey, bucketType=bucketType)
+
+      bucket.bucketType.name must be_==(bucketType.name)
+    }
+
+    "get default bucket type from a bucket created with default bucket type" in {
+      val bucket = client.bucket(name="riak-bucket-tests-" + randomKey)
+
+      bucket.bucketType.name must be_==("default")
+    }
   }
 
 }

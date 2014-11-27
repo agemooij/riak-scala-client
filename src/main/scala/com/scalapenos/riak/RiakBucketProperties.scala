@@ -20,6 +20,8 @@ import spray.json._
 import spray.httpx.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol._
 
+import scala.concurrent.{ExecutionContext, Future}
+
 
 // ============================================================================
 // Reading Bucket Properties
@@ -105,6 +107,33 @@ case class Search(value:Boolean) extends RiakBucketProperty[Boolean] {
 case class SearchIndex(value:String) extends RiakBucketProperty[String] {
   def name = "search_index"
   def json = JsString(value)
+}
+
+
+
+trait RiakBucketBasicProperties {
+
+  val name: String
+
+  def getProperties: Future[RiakBucketProperties]
+  def setProperties(newProperties: Set[RiakBucketProperty[_]]): Future[Unit]
+
+  def nVal(implicit ec: ExecutionContext): Future[Int] = getProperties.map(_.nVal)
+  def nVal_=(number: Int): Future[Unit] = setProperties(Set(NumberOfReplicas(number)))
+
+  def allowMult(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.allowMult)
+  def allowMult_=(value: Boolean): Future[Unit] = setProperties(Set(AllowMult(value)))
+
+  def lastWriteWins(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.lastWriteWins)
+  def lastWriteWins_=(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
+
+  def preCommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = getProperties.map(_.preCommit)
+  def preCommit_=(value: List[Map[String, String]]): Future[Unit] = setProperties(Set(PreCommit(value)))
+
+  def searchEnabled(implicit ec: ExecutionContext): Future[Option[Boolean]] = getProperties.map(_.search)
+  def enableSearch(): Future[Unit] = setProperties(Set(Search(true)))
+
+  def getSearchIndex(implicit ec: ExecutionContext): Future[Option[String]] = getProperties.map(_.searchIndex)
 }
 
 /*

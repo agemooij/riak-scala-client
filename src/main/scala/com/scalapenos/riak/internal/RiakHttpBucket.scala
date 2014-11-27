@@ -17,22 +17,24 @@
 package com.scalapenos.riak
 package internal
 
+private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper,
+                                         server: RiakServerInfo,
+                                         val name: String,
+                                         val resolver: RiakConflictsResolver,
+                                         val bucketType:RiakBucketType) extends RiakBucket {
 
-private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, val name: String, val resolver: RiakConflictsResolver, val bucketType:Option[RiakBucketType]) extends RiakBucket {
-  def fetch(key: String) = helper.fetch(server, name, bucketType, key, resolver)
-  def fetch(index: RiakIndex) = helper.fetch(server, name, bucketType, index, resolver)
-  def fetch(indexRange: RiakIndexRange) = helper.fetch(server, name, bucketType, indexRange, resolver)
+  def fetch(key: String) = helper.fetch(server, name, bucketType.name, key, resolver)
 
-  def store(key: String, value: RiakValue) = helper.store(server, name, bucketType, key, value, resolver)
-  def storeAndFetch(key: String, value: RiakValue) = helper.storeAndFetch(server, name, bucketType, key, value, resolver)
+  def fetch(index: RiakIndex) = helper.fetch(server, name, bucketType.name, index, resolver)
+  def fetch(indexRange: RiakIndexRange) = helper.fetch(server, name, bucketType.name, indexRange, resolver)
 
-  def delete(key: String) = helper.delete(server, name, bucketType, key)
+  def store(key: String, value: RiakValue) = helper.store(server, name, bucketType.name, key, value, resolver)
+  def storeAndFetch(key: String, value: RiakValue) = helper.storeAndFetch(server, name, bucketType.name, key, value, resolver)
 
-  def getProperties = helper.getBucketProperties(server, name, bucketType)
-  def setProperties(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, name, bucketType, newProperties)
+  def delete(key: String) = helper.delete(server, name, bucketType.name, key)
 
-  def search(query:RiakSearchQuery) = helper.searchInBucket(server, this, query, resolver)
-  def searchInBucketType(query:RiakSearchQuery) = helper.searchInBucketType(server, this, query, resolver)
+  def getProperties = helper.getBucketProperties(server, name, bucketType.name)
+  def setProperties(newProperties: Set[RiakBucketProperty[_]]) = helper.setBucketProperties(server, name, bucketType.name, newProperties)
 
-  def setSearchIndex(riakSearchIndex: RiakSearchIndex) = helper.setBucketSearchIndex(server, name, bucketType, riakSearchIndex)
+  def setSearchIndex(riakSearchIndex: RiakSearchIndex) = helper.setBucketSearchIndex(server, name, bucketType.name, riakSearchIndex)
 }

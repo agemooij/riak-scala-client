@@ -20,41 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import internal._
 
 
-trait RiakBucketEssential {
-
-
-  val name: String
-
-  def getProperties: Future[RiakBucketProperties]
-  def setProperties(newProperties: Set[RiakBucketProperty[_]]): Future[Unit]
-
-  def nVal(implicit ec: ExecutionContext): Future[Int] = getProperties.map(_.nVal)
-  def nVal_=(number: Int): Future[Unit] = setProperties(Set(NumberOfReplicas(number)))
-
-  def allowMult(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.allowMult)
-  def allowMult_=(value: Boolean): Future[Unit] = setProperties(Set(AllowMult(value)))
-
-  def lastWriteWins(implicit ec: ExecutionContext): Future[Boolean] = getProperties.map(_.lastWriteWins)
-  def lastWriteWins_=(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
-
-  def preCommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = getProperties.map(_.preCommit)
-  def preCommit_=(value: List[Map[String, String]]): Future[Unit] = setProperties(Set(PreCommit(value)))
-
-  def searchEnabled(implicit ec: ExecutionContext): Future[Option[Boolean]] = getProperties.map(_.search)
-  def enableSearch(): Future[Unit] = setProperties(Set(Search(true)))
-
-  def getSearchIndex(implicit ec: ExecutionContext): Future[Option[String]] = getProperties.map(_.searchIndex)
-}
-
-trait RiakSearch {
-  def setSearchIndex(riakSearchIndex: RiakSearchIndex): Future[Boolean]
-}
-
-trait RiakBucketType extends RiakBucketEssential with RiakSearch {
-
-}
-
-trait RiakBucket extends RiakBucketEssential with RiakSearch {
+trait RiakBucket extends RiakBucketBasicProperties with RiakSearch {
 
   /**
    * Every bucket has a default RiakConflictsResolver that will be used when resolving
@@ -62,7 +28,7 @@ trait RiakBucket extends RiakBucketEssential with RiakSearch {
    */
   def resolver: RiakConflictsResolver
 
-  def bucketType: Option[RiakBucketType]
+  def bucketType: RiakBucketType
 
   def fetch(key: String): Future[Option[RiakValue]]
 
@@ -85,7 +51,10 @@ trait RiakBucket extends RiakBucketEssential with RiakSearch {
 
   def delete(key: String): Future[Unit]
 
-  def search(query:RiakSearchQuery): Future[RiakSearchResult]
+  def getKeys():Future[List[String]]
+
+  //def search(query:RiakSearchQuery): Future[RiakSearchResult]
+
 
 }
 
