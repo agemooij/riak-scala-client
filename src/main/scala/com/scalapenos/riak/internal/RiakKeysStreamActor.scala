@@ -45,6 +45,13 @@ class RiakKeysStreamActor(rq:HttpRequest) extends Actor with ActorLogging{
 
   var originalSender:Option[ActorRef] = None
 
+  val iteratee2 = Iteratee.foreach[JsValue](s => println(s))
+
+  val bla = for{
+    i1 <-  iteratee
+    i2 <-  iteratee2
+  } yield i1
+
   def receive = {
     case "start" =>
 
@@ -60,12 +67,22 @@ class RiakKeysStreamActor(rq:HttpRequest) extends Actor with ActorLogging{
     case ChunkedResponseStart(res) => //println("start: " + res)
 
     case MessageChunk(body, ext) =>
-      internalIteratee = Some(Iteratee.flatten(internalIteratee.get.feed(Input.El(body.asString.parseJson))))
+
+      bla.feed(Input.El(body.asString.parseJson))
+
+      /*val localIteratee = internalIteratee.get.feed(Input.El(body.asString.parseJson))
+      localIteratee.onComplete{
+        case scala.util.Success(chunkKeys) =>
+          println(s"chunkKeys ${chunkKeys}")
+        case scala.util.Failure(error) => println(s"chunkKeys error ${error}")
+      }
+      val newIteratee = Iteratee.flatten(localIteratee)
+      internalIteratee = Some(newIteratee)*/
 
     case ChunkedMessageEnd(ext, trailer) =>
       println("end: " + ext)
       internalIteratee = Some(Iteratee.flatten(internalIteratee.get.feed(Input.EOF)))
-      internalIteratee.get.run.onComplete{
+      internalIteratee.get.run.onComplete {
         case scala.util.Success(allKeys) =>
           val keyAsList = allKeys.asJsObject.fields("keys") match {
             case JsArray(keys) => keys.map{
