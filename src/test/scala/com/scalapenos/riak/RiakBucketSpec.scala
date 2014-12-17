@@ -96,6 +96,22 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
 
       bucket.getKeys().await.contains(key) must beTrue
     }
+
+    "get a list of bucket keys using stream" in {
+      //val bucket = client.bucket(name="riak-bucket-tests-" + randomKey)
+      val bucket = client.bucket(name="riak-bucket-tests-7c812572-2a12-4340-87f3-d16bdf7e81d0")
+
+      //for(i <- 1 to 10000)
+      //  bucket.store(i.toString, "value").await
+
+      //bucket.store(randomKey, "value").await
+      //bucket.store(randomKey, "value").await
+      //bucket.store(randomKey, "value").await
+
+      bucket.getKeysStream().await must be_===(List.empty[String])
+
+      //true must beTrue
+    }
   }
 
 }

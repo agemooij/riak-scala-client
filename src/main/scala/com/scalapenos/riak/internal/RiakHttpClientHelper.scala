@@ -18,12 +18,15 @@ package com.scalapenos.riak
 package internal
 
 import akka.actor._
+import akka.actor.ActorDSL._
+import play.api.libs.iteratee.Step.Done
+import play.api.libs.iteratee._
 import spray.http._
 import spray.client.pipelining._
 import spray.http.parser.HttpParser
 import spray.json._
 
-import scala.concurrent.Promise
+import scala.concurrent.{ExecutionContext, Promise}
 
 //Temporary fix for spray 1.3.1_2.11
 import java.io.{ ByteArrayOutputStream, ByteArrayInputStream }
@@ -286,7 +289,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-
   def getSearchSchema(server: RiakServerInfo, name:String): Future[scala.xml.Elem] = {
     httpRequest(Get(SearchSchema(server, name))).flatMap { response =>
       response.status match {
@@ -307,7 +309,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-
   def getKeys(server:RiakServerInfo, bucket:String, bucketType:String):Future[List[String]] = {
     log.warn("Do not use this in production, as it requires traversing through all keys stored in a cluster")
     httpRequest(Get(KeysUri(server, bucket, bucketType))).flatMap { response =>
@@ -324,6 +325,28 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
+  def getKeysStream(server:RiakServerInfo, bucket:String, bucketType:String):Future[List[String]] = {
+    log.warn("Do not use this in production, as it requires traversing through all keys stored in a cluster")
+
+    val request = Get(KeysStreamUri(server, bucket, bucketType))
+
+    val p = Promise[List[String]]
+
+    actor(
+      new Act {
+        system.actorOf(Props(classOf[RiakKeysStreamActor], request)) ! "start"
+        become {
+          case keys:List[String] =>
+            p.success(keys)
+            context.stop(self)
+          case ReceiveTimeout =>
+            println("error")
+        }
+      }
+    )
+
+    p.future
+  }
 
   def getBuckets(server:RiakServerInfo, client:RiakClient, bucketType:String):Future[List[RiakBucket]] = {
     log.warn("Do not use this in production, as it requires traversing through all keys stored in a cluster")
@@ -374,7 +397,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-
   // ==========================================================================
   // Search utils
   // ==========================================================================
@@ -395,8 +417,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
 
   }
-
-
 
   // ==========================================================================
   // Solr Building
@@ -434,7 +454,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }.get
   }
 
-
   // ==========================================================================
   // Request building
   // ==========================================================================
@@ -457,7 +476,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       httpRequest
   }
 
-
   // ==========================================================================
   // Response => RiakValue
   // ==========================================================================
@@ -478,7 +496,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private def dateTimeFromLastModified(lm: `Last-Modified`): DateTime = toSprayDateTime(fromSprayDateTime(lm.date))
   private def lastModifiedFromDateTime(dateTime: DateTime): `Last-Modified` = `Last-Modified`(dateTime)
 
-
   // ==========================================================================
   // Index result fetching
   // ==========================================================================
@@ -492,7 +509,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       traverse(keys)(fetch(server, bucket, bucketType, _, resolver)).map(_.flatten)
     }.getOrElse(successful(Nil))
   }
-
 
   // ==========================================================================
   // Conflict Resolution

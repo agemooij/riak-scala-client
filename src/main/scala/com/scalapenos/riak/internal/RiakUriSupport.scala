@@ -85,6 +85,9 @@ private[riak] trait RiakUriSupport {
   def KeysUri(server: RiakServerInfo, bucket:String, bucketType:String) =
     uri(server, s"types/${bucketType}/buckets/${bucket}/keys", Query("keys" -> "true"))
 
+  def KeysStreamUri(server: RiakServerInfo, bucket:String, bucketType:String) =
+    uri(server, s"types/${bucketType}/buckets/${bucket}/keys", Query("keys" -> "stream"))
+
   def BucketsUri(server: RiakServerInfo, bucketType:String) =
     uri(server, s"types/${bucketType}/buckets", Query("buckets" -> "true"))
 
