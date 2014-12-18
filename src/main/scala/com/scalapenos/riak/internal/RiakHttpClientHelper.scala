@@ -325,27 +325,43 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def getKeysStream(server:RiakServerInfo, bucket:String, bucketType:String):Future[List[String]] = {
+  def getKeysStream(server:RiakServerInfo, bucket:String, bucketType:String):RiakStream[List[String]] = {
     log.warn("Do not use this in production, as it requires traversing through all keys stored in a cluster")
+    import scala.concurrent.duration._
 
     val request = Get(KeysStreamUri(server, bucket, bucketType))
 
-    val p = Promise[List[String]]
+    val streamer = RiakStream[List[String]]()
 
-    actor(
-      new Act {
-        system.actorOf(Props(classOf[RiakKeysStreamActor], request)) ! "start"
-        become {
-          case keys:List[String] =>
-            p.success(keys)
-            context.stop(self)
-          case ReceiveTimeout =>
-            println("error")
+    val enumerator = Concurrent.unicast[RiakChunkedMessage[List[String]]](onStart = channel => {
+      actor(
+        new Act {
+          //context.setReceiveTimeout(5 seconds)
+          system.actorOf(Props(classOf[RiakKeysStreamActor], request)) ! "start"
+          become {
+            case data:RiakChunkedMessageFinish[List[String]] =>
+              channel.push(data)
+              context.stop(self)
+            case data:RiakChunkedMessageResponse[List[String]] =>
+              channel.push(data)
+
+            case ReceiveTimeout =>
+              println("error")
+              streamer.timeoutError()
+              //context.stop(self)
+          }
         }
-      }
-    )
+      )
+    })
 
-    p.future
+    //streamer.onChunk((x) => println("onChunk"))
+
+    enumerator |>> Iteratee.foreach{
+      case chunk:RiakChunkedMessageFinish[List[String]] => streamer.finish(chunk)
+      case chunk:RiakChunkedMessageResponse[List[String]] => streamer.setChunk(chunk)
+    }
+
+    streamer
   }
 
   def getBuckets(server:RiakServerInfo, client:RiakClient, bucketType:String):Future[List[RiakBucket]] = {

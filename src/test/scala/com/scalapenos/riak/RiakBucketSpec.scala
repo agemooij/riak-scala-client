@@ -108,9 +108,11 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       //bucket.store(randomKey, "value").await
       //bucket.store(randomKey, "value").await
 
-      bucket.getKeysStream().await must be_===(List.empty[String])
+      //bucket.getKeysStream().await must be_===(List.empty[String])
 
-      //true must beTrue
+      bucket.getKeysStream().onChunk( x => println(x))
+
+      true must beTrue
     }
   }
 
