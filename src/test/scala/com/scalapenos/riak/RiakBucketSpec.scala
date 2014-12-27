@@ -55,18 +55,18 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       fetched should beNone
     }
 
-    "assign a search index" in {
+    "create and assign a search index" in {
       val bucket = randomBucket
       val key = randomKey
 
       val randomIndex = (client.createSearchIndex(randomBucket.name)).await
 
       //Wait for assigning the search index
-      Thread.sleep(10000)
+      //Thread.sleep(10000)
 
       val indexAssigned = (bucket.setSearchIndex(randomIndex)).await
 
-      indexAssigned should beTrue
+      indexAssigned must beTrue.eventually
     }
 
     "be able to be created with bucket type" in {
@@ -98,21 +98,21 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "get a list of bucket keys using stream" in {
-      //val bucket = client.bucket(name="riak-bucket-tests-" + randomKey)
-      val bucket = client.bucket(name="riak-bucket-tests-7c812572-2a12-4340-87f3-d16bdf7e81d0")
+      val bucket = client.bucket(name="riak-bucket-tests-" + randomKey)
+      bucket.store("mustHaveKey", "mustHaveValue").await
 
-      //for(i <- 1 to 10000)
-      //  bucket.store(i.toString, "value").await
+      var lString = List.empty[String]
 
-      //bucket.store(randomKey, "value").await
-      //bucket.store(randomKey, "value").await
-      //bucket.store(randomKey, "value").await
+      val keysAsStream = bucket.getKeysStream()
 
-      //bucket.getKeysStream().await must be_===(List.empty[String])
+      keysAsStream.onChunk{
+        x => lString = lString ++ x.chunk
+      }
+      keysAsStream.onFinish{
+        x => lString = lString ++ x.chunk
+      }
 
-      bucket.getKeysStream().onChunk( x => println(x))
-
-      true must beTrue
+      lString.contains("mustHaveKey") must beTrue.eventually
     }
   }
 

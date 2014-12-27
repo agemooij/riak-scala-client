@@ -340,6 +340,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
           system.actorOf(Props(classOf[RiakKeysStreamActor], request)) ! "start"
           become {
             case data:RiakChunkedMessageFinish[List[String]] =>
+              //println("LLEGA EL MENSAJE FINAL")
               channel.push(data)
               context.stop(self)
             case data:RiakChunkedMessageResponse[List[String]] =>
@@ -354,11 +355,13 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       )
     })
 
-    //streamer.onChunk((x) => println("onChunk"))
-
     enumerator |>> Iteratee.foreach{
-      case chunk:RiakChunkedMessageFinish[List[String]] => streamer.finish(chunk)
-      case chunk:RiakChunkedMessageResponse[List[String]] => streamer.setChunk(chunk)
+      case chunk:RiakChunkedMessageFinish[List[String]] =>
+        streamer.finish(chunk)
+        //println("send finish")
+      case chunk:RiakChunkedMessageResponse[List[String]] =>
+        streamer.setChunk(chunk)
+        //println("send chunk")
     }
 
     streamer

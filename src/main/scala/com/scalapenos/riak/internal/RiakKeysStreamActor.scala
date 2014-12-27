@@ -56,8 +56,7 @@ class RiakKeysStreamActor(rq:HttpRequest) extends Actor with ActorLogging{
       }
 
     case ChunkedMessageEnd(ext, trailer) =>
-      println("end: " + ext)
-
+      //println("end: " + ext)
       originalSender.get ! new RiakChunkedMessageFinish[List[String]]{
         def chunk = List.empty[String]
       }
