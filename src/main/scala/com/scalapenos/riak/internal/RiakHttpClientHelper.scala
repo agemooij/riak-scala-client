@@ -336,20 +336,17 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     val enumerator = Concurrent.unicast[RiakChunkedMessage[List[String]]](onStart = channel => {
       actor(
         new Act {
-          //context.setReceiveTimeout(5 seconds)
           system.actorOf(Props(classOf[RiakKeysStreamActor], request)) ! "start"
           become {
             case data:RiakChunkedMessageFinish[List[String]] =>
-              //println("LLEGA EL MENSAJE FINAL")
               channel.push(data)
               context.stop(self)
             case data:RiakChunkedMessageResponse[List[String]] =>
               channel.push(data)
 
             case ReceiveTimeout =>
-              println("error")
               streamer.timeoutError()
-              //context.stop(self)
+              context.stop(self)
           }
         }
       )
@@ -358,10 +355,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     enumerator |>> Iteratee.foreach{
       case chunk:RiakChunkedMessageFinish[List[String]] =>
         streamer.finish(chunk)
-        //println("send finish")
       case chunk:RiakChunkedMessageResponse[List[String]] =>
         streamer.setChunk(chunk)
-        //println("send chunk")
     }
 
     streamer

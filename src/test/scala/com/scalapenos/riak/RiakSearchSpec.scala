@@ -16,6 +16,7 @@
 
 package com.scalapenos.riak
 
+import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import org.specs2.specification.BeforeAfterExample
 import spray.json.DefaultJsonProtocol._
@@ -59,7 +60,7 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "get a list of all search index" in {
-      client.getSearchIndexList.await must beAnInstanceOf[List[RiakSearchIndex]]
+      client.getSearchIndexList.await must beAnInstanceOf[List[RiakSearchIndex]].eventually
     }
 
     "get an index by name" in new delayedBefore {
@@ -70,6 +71,7 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "assign a search index to a bucket, insert two elements and search with solr to get them back" in {
+
       val riakIndex = client.getSearchIndex(randomIndex).await
       val indexAssigned = (bucket.setSearchIndex(riakIndex)).await
 
@@ -97,15 +99,18 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "throw an error when delete a search index assigned to a bucket" in {
+
       client.deleteSearchIndex(randomIndex).await must throwA[Exception]
     }
 
     "delete a search index" in {
+
       (bucket.setSearchIndex(RiakSearchIndex("_dont_index_", 0, "_dont_index_"))).await
       client.deleteSearchIndex(randomIndex).await must beTrue
     }
 
     "create a schema" in new delayedAfter{
+
       val schema =
         <schema name="schedule" version="1.5">
           <fields>
@@ -129,7 +134,7 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
       client.createSearchSchema(schemaName, schema).await must beTrue
     }
 
-    "get a schema" in new delayedBefore{
+    "get a schema" in new delayedBefore {
       client.getSearchSchema(schemaName).await should beAnInstanceOf[scala.xml.Elem]
     }
   }

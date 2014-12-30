@@ -16,7 +16,7 @@
 
 package com.scalapenos.riak
 
-class RiakClientSpec extends RiakClientSpecification {
+class RiakClientSpec extends RiakClientSpecification{
 
   "A RiakClient" should {
     "support calling the Riak ping API" in {

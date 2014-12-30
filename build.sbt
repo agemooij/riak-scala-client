@@ -3,9 +3,9 @@ import scala.Some
 
 name := "riak-scala-client"
 
-version := "0.9.2"
+version := "2.0.2"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.4"
 
 organization := "com.scalapenos"
 

@@ -9,13 +9,15 @@ See the [project site] for full [documentation], [examples], [scaladocs], and mo
 
 
 ## Current Status
-The latest version is 0.9.2, which is compatible with Akka 2.3.2 and Spray 1.3.1.
+The latest version is 2.0.2, which is compatible with Akka 2.3.2 and Spray 1.3.1.
 
 
 ## Features
 
 So far, the following Riak (http) API features are supported:
 
+- Create buckets
+- Create bucket types
 - Fetch
 - Store
 - Delete
@@ -24,10 +26,17 @@ So far, the following Riak (http) API features are supported:
     - Fetching ranges
     - Storing with indexes
 - Getting/setting bucket properties
+- Getting/setting bucket types properties
 - ping
 - Listing all keys in a bucket
+- Listing all keys in a bucket as stream
 - Listing all buckets
-- Map Reduce (partial)
+- Create a schema
+- Get a schema by name
+- Create an index
+- Get a search index
+- Delete a search index
+- Search
 
 Other features include:
 
@@ -96,4 +105,3 @@ The _riak-scala-client_ is licensed under [APL 2.0].
   [riakka]:             https://github.com/timperrett/riakka
   [riaktor]:            https://github.com/benmyles/riaktor
   [scalariak]:          https://github.com/ariejdl/scala-riak
-  [

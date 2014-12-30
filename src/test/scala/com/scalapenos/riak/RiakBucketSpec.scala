@@ -18,6 +18,9 @@ package com.scalapenos.riak
 
 class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
   private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
+  private var riakSearchIndex:Option[RiakSearchIndex] = None
+
+  sequential
 
   "A RiakBucket" should {
     "not be able to store an empty String value" in {
@@ -53,20 +56,6 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       val fetched = bucket.fetch(key).await
 
       fetched should beNone
-    }
-
-    "create and assign a search index" in {
-      val bucket = randomBucket
-      val key = randomKey
-
-      val randomIndex = (client.createSearchIndex(randomBucket.name)).await
-
-      //Wait for assigning the search index
-      //Thread.sleep(10000)
-
-      val indexAssigned = (bucket.setSearchIndex(randomIndex)).await
-
-      indexAssigned must beTrue.eventually
     }
 
     "be able to be created with bucket type" in {
