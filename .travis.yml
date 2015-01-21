@@ -1,7 +1,7 @@
 language: scala
 
 scala:
-- 2.11.2
+- 2.11.5
 - 2.10.4
 
 jdk:
@@ -9,7 +9,7 @@ jdk:
 - oraclejdk8
 
 script:
-- sbt ++$TRAVIS_SCALA_VERSION scoverage:test
+- sbt ++$TRAVIS_SCALA_VERSION coverage test
 - sbt ++$TRAVIS_SCALA_VERSION coveralls
 
 services:
@@ -20,3 +20,4 @@ env:
   - secure: b9q84WPda6mwQDNSGA+S5A2faQlpUfkxix4dxapAI4wSPI9KljLoB15GFUeTHg3RNVuWP7KsahHXZgsxLuIOO47EP5ZzCq2L9pdisYB3fOq+O3w3Z+RwrltAulDXvWxAyTQK0YQbl4qDoLqIiF6TeBHEXdNGKYDSo7gr7rS9Fg8=
   - secure: CN9r/iIcnWXfOFMw+1ahtpY1XNp3z3zXPGcf+Ms/Rk4nZIeITRr+RvHX2xE2Xex/kmS9xCMZ4Vn2aSlM/zhEnj3nfWtJXVP1RdB4roMRTcxJmpp0QaUVNbEvrPNvQOlPE+Ze0VgHKEleLDbGdKrXaGFVeHvvP9DkAci2xONU6JQ=
   - secure: RGr6s8CGEk8ardviZx4POAg06l/TOnBvLJzHsez0Psq6RGE/uM7SrT9Xlhm1FeBosQxc9ltBytCpwGt13/8WtxLNWGBBJMoIzI49mJ8TAv3wS5Mh9rARW6RzShh5CQoNNZj77/RZ7A2oCf2aZC42U42EEByKwOTcDLZ7OCSuvwo=
+
