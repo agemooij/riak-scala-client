@@ -3,7 +3,7 @@ import scala.Some
 
 name := "riak-scala-client"
 
-version := "2.0.2"
+version := "2.0.2a"
 
 scalaVersion := "2.11.4"
 

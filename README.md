@@ -35,6 +35,7 @@ So far, the following Riak (http) API features are supported:
 - Get a schema by name
 - Create an index
 - Get a search index
+- Get search index list
 - Delete a search index
 - Search
 

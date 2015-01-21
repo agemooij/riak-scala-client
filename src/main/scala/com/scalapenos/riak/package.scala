@@ -100,6 +100,7 @@ package object riak {
 
   case class OperationFailed(cause: String) extends RuntimeException(cause)
   case class BucketOperationFailed(cause: String) extends RuntimeException(cause)
+  case class BucketTypeOperationFailed(cause: String) extends RuntimeException(cause)
   case class ConflictResolutionFailed(cause: String) extends RuntimeException(cause)
   case class ParametersInvalid(cause: String) extends RuntimeException(cause)
   case class MapReduceOperationFailed(cause: String) extends RuntimeException(cause)

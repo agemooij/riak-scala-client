@@ -14,5 +14,7 @@ trait RiakBucketType extends RiakBucketBasicProperties {
 
   def setSearchIndex(riakSearchIndex: RiakSearchIndex):Future[Boolean]
 
+  def search(query:RiakSearchQuery):Future[RiakSearchResult]
+
   override def toString = s"BucketType:$name"
 }

@@ -41,4 +41,6 @@ private[riak] final class RiakHttpBucket(helper: RiakHttpClientHelper,
   def getKeys() = helper.getKeys(server, name, bucketType.name)
   def getKeysStream() = helper.getKeysStream(server, name, bucketType.name)
 
+  def search(query:RiakSearchQuery) = helper.search(server, this, query)
+
 }

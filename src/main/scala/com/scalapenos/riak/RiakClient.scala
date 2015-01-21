@@ -63,7 +63,7 @@ trait RiakClient {
   def getSearchSchema(name:String):Future[scala.xml.Elem]
 
   //Search Index
-  def createSearchIndex(name: String, nVal:Int = 3, schema:String = "_yz_default"): Future[RiakSearchIndex]
+  def createSearchIndex(name: String, schema:String = "_yz_default", nVal:Int = 3): Future[RiakSearchIndex]
   def getSearchIndex(name: String): Future[RiakSearchIndex]
   def deleteSearchIndex(name: String):Future[Boolean]
   def getSearchIndexList:Future[List[RiakSearchIndex]]

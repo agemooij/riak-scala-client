@@ -41,12 +41,12 @@ case class RiakSearchQuery() {
     if(value.nonEmpty) m("q_op") = value.get
     else m.remove("q_op")
   def start(value:Option[Long]) =
-    if(value.nonEmpty) m("q_op") = value.get.toString
+    if(value.nonEmpty) m("start") = value.get.toString
     else m.remove("q_op")
   def rows(value:Option[Long]) =
     if(value.nonEmpty) m("rows") = value.get.toString
     else m.remove("rows")
-  def sort(value:Option[Long]) =
+  def sort(value:Option[String]) =
     if(value.nonEmpty) m("sort") = value.get.toString
     else m.remove("sort")
   def wt(value:Option[RiakSearchFormat]) =
@@ -116,7 +116,6 @@ private[riak] sealed case class RiakSearchDoc(
 private[riak] sealed case class RiakSearchResponse(
   numFound:Int,
   start: Int,
-  maxScore:Int,
   docs:List[RiakSearchDoc])
 
 
@@ -124,7 +123,7 @@ private[riak] sealed case class RiakSearchValueResponse(
   values:Future[List[RiakValue]])
 
 private[riak] object RiakSearchResponse extends RiakSearchJsonFormats{
-  implicit val jsonFormat = jsonFormat4(RiakSearchResponse.apply)
+  implicit val jsonFormat = jsonFormat3(RiakSearchResponse.apply)
 }
 
 private[riak] sealed case class RiakSearchResponseHeader(
@@ -144,6 +143,7 @@ case class RiakSearchResult(
   data:String)
 
 case class RiakSearchIndex(name:String, nVal:Int, schema:String)
+object RiakNoSearchIndex extends RiakSearchIndex("_dont_index_", 0, "_dont_index_")
 
 object RiakSearchIndex {
   implicit object RiakSearchIndexFormat extends RootJsonReader[RiakSearchIndex] {

@@ -99,11 +99,6 @@ case class PreCommit(value:List[Map[String, String]]) extends RiakBucketProperty
   def json = JsArray(value.map{case x:Map[String, String] => x.toJson})
 }
 
-case class Search(value:Boolean) extends RiakBucketProperty[Boolean] {
-  def name = "search"
-  def json = JsBoolean(value)
-}
-
 case class SearchIndex(value:String) extends RiakBucketProperty[String] {
   def name = "search_index"
   def json = JsString(value)
@@ -129,9 +124,6 @@ trait RiakBucketBasicProperties {
 
   def preCommit(implicit ec: ExecutionContext): Future[List[Map[String, Any]]] = getProperties.map(_.preCommit)
   def preCommit_=(value: List[Map[String, String]]): Future[Unit] = setProperties(Set(PreCommit(value)))
-
-  def searchEnabled(implicit ec: ExecutionContext): Future[Option[Boolean]] = getProperties.map(_.search)
-  def enableSearch(): Future[Unit] = setProperties(Set(Search(true)))
 
   def getSearchIndex(implicit ec: ExecutionContext): Future[Option[String]] = getProperties.map(_.searchIndex)
 }

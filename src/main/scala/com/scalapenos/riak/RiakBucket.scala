@@ -54,7 +54,7 @@ trait RiakBucket extends RiakBucketBasicProperties with RiakSearch {
   def getKeys():Future[List[String]]
   def getKeysStream():RiakStream[List[String]]
 
-  //def search(query:RiakSearchQuery): Future[RiakSearchResult]
+  def search(query:RiakSearchQuery):Future[RiakSearchResult]
 
 
 }

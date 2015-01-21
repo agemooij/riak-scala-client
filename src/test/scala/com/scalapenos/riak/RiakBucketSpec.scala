@@ -16,9 +16,35 @@
 
 package com.scalapenos.riak
 
+import akka.event.slf4j.Logger
+import spray.json.DefaultJsonProtocol._
+
 class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
+
+  Logger("riak-scala-client").warn("a bucket type with name bucket-type-test must be manually created")
+
+  val bucketType = client.bucketType("bucket-type-test")
+
   private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
-  private var riakSearchIndex:Option[RiakSearchIndex] = None
+
+  val randomBucketForSearch = client.bucket("riak-bucket-tests-" + randomKey)
+
+  case class SongTestComplex (number_i: Int, title_s: String, data_b:Map[String, String])
+  object SongTestComplex {
+    implicit val jsonFormat = jsonFormat3(SongTestComplex.apply)
+  }
+
+  trait searchIndexSpec extends org.specs2.mutable.Before {
+    var searchIndex:RiakSearchIndex = _
+    def before = {
+      try {
+        searchIndex = client.getSearchIndex("test-search-index").await
+      } catch {
+        case x:OperationFailed =>
+          searchIndex = client.createSearchIndex("test-search-index").await
+      }
+    }
+  }
 
   sequential
 
@@ -59,14 +85,13 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "be able to be created with bucket type" in {
-      val bucketType = client.bucketType("bucketTypeTest")
+      val bucketType = client.bucketType("bucket-type-test")
       val bucket = client.bucket(name="riak-bucket-tests-" + randomKey, bucketType=bucketType)
 
       bucket must beAnInstanceOf[RiakBucket]
     }
 
     "get bucket type from a bucket created with a custom bucket type" in {
-      val bucketType = client.bucketType("bucketTypeTest")
       val bucket = client.bucket(name="riak-bucket-tests-" + randomKey, bucketType=bucketType)
 
       bucket.bucketType.name must be_==(bucketType.name)
@@ -102,6 +127,50 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       }
 
       lString.contains("mustHaveKey") must beTrue.eventually
+    }
+
+    "throw an exception when try to search and a bucket do not have an index associated" in new searchIndexSpec {
+      val bucket = randomBucket
+
+      val solrQuery = RiakSearchQuery()
+      solrQuery.wt(Some(JSONSearchFormat()))
+      solrQuery.q(Some("title_s:titulo*"))
+
+      bucket.search(solrQuery).await must throwAn[OperationFailed]
+    }
+
+    "be able to assign a search index" in new searchIndexSpec{
+      val bucket = randomBucketForSearch
+      val indexAssigned = (bucket.setSearchIndex(searchIndex)).await
+      indexAssigned must beTrue.eventually
+    }
+
+    "be able to search based on it's index" in new searchIndexSpec {
+      val bucket = randomBucketForSearch
+
+      Thread.sleep(10000)
+
+      val songComplex1 = SongTestComplex(1, "titulo1", Map("test1" -> "datatest1"))
+      bucket.store(s"song1", songComplex1).await
+
+      val songComplex2 = SongTestComplex(2, "titulo2", Map("test2" -> "datatest2"))
+      bucket.store(s"song2", songComplex2).await
+
+      val solrQuery = RiakSearchQuery()
+      solrQuery.wt(Some(JSONSearchFormat()))
+      solrQuery.q(Some("title_s:titulo*"))
+
+      val query = bucket.search(solrQuery).await
+
+      val listValues = query.responseValues.values.map( values => values.map(_.as[SongTestComplex])).await
+
+      listValues.contains(songComplex1) must beTrue
+
+    }
+
+    "be able to remove it's index" in {
+      val bucket = randomBucketForSearch
+      bucket.setSearchIndex(RiakNoSearchIndex).await must beTrue.eventually
     }
   }
 

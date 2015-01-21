@@ -229,32 +229,51 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     httpRequest(Put(BucketTypePropertiesUri(server, bucketType), properties)).map { response =>
       response.status match {
         case NoContent            => true
-        case BadRequest           => throw new ParametersInvalid(s"Setting properties of '$bucketType' failed because the http request contained invalid data.")
-        case UnsupportedMediaType => throw new BucketOperationFailed(s"Setting search_index of '$bucketType' failed because the content type of the http request was not 'application/json'.")
-        case other                => throw new BucketOperationFailed(s"Setting search_index of '$bucketType' produced an unexpected response code '$other'.")
+        case BadRequest           => throw new BucketTypeOperationFailed(s"Setting properties of '$bucketType' failed with the following message: ${response.entity.asString}")
+        case UnsupportedMediaType => throw new BucketTypeOperationFailed(s"Setting search_index of '$bucketType' failed because the content type of the http request was not 'application/json'.")
+        case other                => throw new BucketTypeOperationFailed(s"Setting search_index of '$bucketType' produced an unexpected response code '$other'.")
       }
     }
   }
 
+  /* Search */
   def search(server: RiakServerInfo, index: RiakSearchIndex, solrQuery:RiakSearchQuery): Future[RiakSearchResult] = {
     val query:Map[String, String] = solrQuery.m.toMap
     httpRequest(Get(SearchSolrUri(server, index.name, SolrQueryParameters(query)))).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"Invalid search or params (${query.toString}) ")
         case OK         => successful(toRiakSearch(response, server))
-        case other      => throw new BucketOperationFailed(s"Solr search query(${query.toString}) produced an unexpected response code '$other'.")
+        case other      => throw new OperationFailed(s"Solr search query(${query.toString}) produced an unexpected response code '$other'.")
       }
     }
   }
 
-  def createSearchIndex(server: RiakServerInfo, name:String, nVal:Int, schema:String): Future[RiakSearchIndex] = {
+  private def searchForBucketsAndBucketTypes( server: RiakServerInfo, bucket: RiakBucketBasicProperties, solrQuery:RiakSearchQuery): Future[RiakSearchResult] = {
+    bucket.getSearchIndex.flatMap{x => x match {
+      case Some(index) =>
+        if(index == RiakNoSearchIndex.name)
+          throw new OperationFailed(s"${bucket.name} has a ${RiakNoSearchIndex.name} index associated which is not allowed for search")
+        else
+          getSearchIndex(server, index).flatMap(riakSearchIndex => search(server, riakSearchIndex, solrQuery))
+      case None => throw new OperationFailed(s"${bucket.name} do not have an index associated")
+    }}
+  }
+
+  def search(server: RiakServerInfo, bucket: RiakBucket, solrQuery:RiakSearchQuery): Future[RiakSearchResult] =
+    searchForBucketsAndBucketTypes(server, bucket, solrQuery)
+
+  def search(server: RiakServerInfo, bucket: RiakBucketType, solrQuery:RiakSearchQuery): Future[RiakSearchResult] =
+    searchForBucketsAndBucketTypes(server, bucket, solrQuery)
+
+  def createSearchIndex(server: RiakServerInfo, name:String, schema:String, nVal:Int): Future[RiakSearchIndex] = {
 
     val props = JsObject("schema" -> JsString(schema), "n_val" -> JsNumber(nVal))
     httpRequest(Put(SearchIndexUri(server, name), props)).flatMap { response =>
       response.status match {
         case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
         case NoContent  => successful(RiakSearchIndex(name, nVal, schema))
-        case other      => throw new BucketOperationFailed(s"There was a problem creating the search index '$other'.")
+        case Conflict   => throw new OperationFailed(s"There was a conflict trying to create the index. Message: '${response.entity.asString}'.")
+        case other      => throw new OperationFailed(s"There was a problem creating the search index '$other'.")
       }
     }
   }
@@ -262,7 +281,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   def deleteSearchIndex(server: RiakServerInfo, name:String): Future[Boolean] = {
     httpRequest(Delete(SearchIndexUri(server, name))).flatMap { response =>
       response.status match {
-        case BadRequest => throw new ParametersInvalid(s"There was a problem creating the search index because the http request contained invalid data.")
+        case BadRequest => throw new ParametersInvalid(s"There was a problem deleting the search index because the http request contained invalid data.")
         case NoContent  => successful(true)
         case other      => throw new BucketOperationFailed(s"There was a problem deleting the search index '$other' error: ${response.entity.asString}.")
       }
@@ -448,6 +467,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
         body.asString.parseJson.asJsObject.fields.get("responseHeader").get.asJsObject
       val response:JsObject =
         body.asString.parseJson.asJsObject.fields.get("response").get.asJsObject
+
+      //println(s"response ---> $response")
 
       val responseObject = response.convertTo[RiakSearchResponse]
 

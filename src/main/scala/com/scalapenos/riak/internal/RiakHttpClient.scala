@@ -40,8 +40,8 @@ private[riak] final class RiakHttpClient(helper: RiakHttpClientHelper, server: R
 
   //Client methods
   //Search Index
-  def createSearchIndex(name: String , nVal:Int = 3, schema:String = "_yz_default")  =
-    helper.createSearchIndex(server, name, nVal, schema)
+  def createSearchIndex(name: String ,schema:String = "_yz_default", nVal:Int = 3)  =
+    helper.createSearchIndex(server, name, schema, nVal)
   def getSearchIndex(name: String) = helper.getSearchIndex(server, name)
   def getSearchIndexList = helper.getSearchIndexList(server)
   def deleteSearchIndex(name: String) = helper.deleteSearchIndex(server, name)

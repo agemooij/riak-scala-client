@@ -53,17 +53,18 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
   "A RiakClient" should {
 
     "create a search index" in new delayedAfter{
-      val newIndex = {
-        client.createSearchIndex(randomIndex).await
-      }
+      pending
+      val newIndex =  client.createSearchIndex(randomIndex).await
       newIndex should beAnInstanceOf[RiakSearchIndex]
     }
 
     "get a list of all search index" in {
+      pending
       client.getSearchIndexList.await must beAnInstanceOf[List[RiakSearchIndex]].eventually
     }
 
     "get an index by name" in new delayedBefore {
+      pending
       val getIndex = {
         client.getSearchIndex(randomIndex).await
       }
@@ -71,7 +72,7 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "assign a search index to a bucket, insert two elements and search with solr to get them back" in {
-
+      pending
       val riakIndex = client.getSearchIndex(randomIndex).await
       val indexAssigned = (bucket.setSearchIndex(riakIndex)).await
 
@@ -99,18 +100,19 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "throw an error when delete a search index assigned to a bucket" in {
-
+      pending
       client.deleteSearchIndex(randomIndex).await must throwA[Exception]
     }
 
     "delete a search index" in {
-
-      (bucket.setSearchIndex(RiakSearchIndex("_dont_index_", 0, "_dont_index_"))).await
+      pending
+      (bucket.setSearchIndex(RiakNoSearchIndex)).await
       client.deleteSearchIndex(randomIndex).await must beTrue
+
     }
 
     "create a schema" in new delayedAfter{
-
+      pending
       val schema =
         <schema name="schedule" version="1.5">
           <fields>
@@ -135,8 +137,26 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "get a schema" in new delayedBefore {
+      pending
       client.getSearchSchema(schemaName).await should beAnInstanceOf[scala.xml.Elem]
     }
+
+    "test" in {
+      val bucket = client.bucket("client")
+
+      val solrQuery = RiakSearchQuery()
+      solrQuery.wt(Some(JSONSearchFormat()))
+      solrQuery.q(Some("name:* AND companyId:729142110749460480"))
+      solrQuery.rows(Some(12))
+      solrQuery.presort(Some("key"))
+      solrQuery.start(Some(0))
+      solrQuery.sort(Some("name asc"))
+
+      println(bucket.search(solrQuery).await)
+
+      true must beTrue
+    }
+
   }
 
 }
