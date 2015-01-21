@@ -4,9 +4,9 @@ name := "riak-scala-client"
 
 version := "0.9.5"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.5"
 
-crossScalaVersions := Seq("2.11.2", "2.10.4")
+crossScalaVersions := Seq("2.11.5", "2.10.4")
 
 crossVersion := CrossVersion.binary
 
@@ -19,7 +19,7 @@ licenses := Seq("The Apache Software License, Version 2.0" -> url("http://www.ap
 homepage := Some(url("http://riak.scalapenos.com"))
 
 scalacOptions := Seq("-encoding", "utf8",
-                     "-target:jvm-1.6",
+                     "-target:jvm-1.7",
                      "-feature",
                      "-language:implicitConversions",
                      "-language:postfixOps",
@@ -29,20 +29,20 @@ scalacOptions := Seq("-encoding", "utf8",
                      "-Ywarn-adapted-args"
                     )
 
-resolvers ++= Seq("Sonatype Releases"   at "http://oss.sonatype.org/content/repositories/releases",
-                  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
-                  "Spray Repository"    at "http://repo.spray.io/")
+resolvers ++= Seq("Spray Repository" at "http://repo.spray.io/")
+resolvers ++= Seq("Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases")
+resolvers ++= Seq("snapshots", "releases").map(Resolver.sonatypeRepo)
 
 libraryDependencies <++= (scalaVersion) { v: String =>
-  val sprayVersion = "1.3.1"
-  val akkaVersion = "2.3.5"
-  val specs2Version = if (v.startsWith("2.10")) "2.3.13" else "2.4.1"
+  val sprayVersion = "1.3.2"
+  val akkaVersion = "2.3.9"
+  val specs2Version = if (v.startsWith("2.10")) "2.4.15" else "2.4.15"
   Seq(
      "com.typesafe.akka"      %%  "akka-actor"        % akkaVersion,
      "com.typesafe.akka"      %%  "akka-slf4j"        % akkaVersion,
      "io.spray"               %%  "spray-client"      % sprayVersion,
-     "io.spray"               %%  "spray-json"        % "1.2.6",
-     "com.github.nscala-time" %%  "nscala-time"       % "1.2.0",
+     "io.spray"               %%  "spray-json"        % "1.3.1",
+     "com.github.nscala-time" %%  "nscala-time"       % "1.6.0",
      "com.typesafe.akka"      %%  "akka-testkit"      % akkaVersion   % "test",
      "io.spray"               %%  "spray-testkit"     % sprayVersion  % "test",
      "org.specs2"             %%  "specs2"            % specs2Version % "test",

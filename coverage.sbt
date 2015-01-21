@@ -1,3 +1,2 @@
-instrumentSettings
 
 coverallsSettings
