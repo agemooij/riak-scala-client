@@ -26,7 +26,9 @@ import spray.client.pipelining._
 import spray.http.parser.HttpParser
 import spray.json._
 
-import scala.concurrent.{ExecutionContext, Promise}
+import scala.concurrent.ExecutionContext
+import scala.language.higherKinds
+import scala.collection.generic.CanBuildFrom
 
 //Temporary fix for spray 1.3.1_2.11
 import java.io.{ ByteArrayOutputStream, ByteArrayInputStream }
@@ -262,8 +264,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   def search(server: RiakServerInfo, bucket: RiakBucket, solrQuery:RiakSearchQuery): Future[RiakSearchResult] =
     searchForBucketsAndBucketTypes(server, bucket, solrQuery)
 
-  def search(server: RiakServerInfo, bucket: RiakBucketType, solrQuery:RiakSearchQuery): Future[RiakSearchResult] =
-    searchForBucketsAndBucketTypes(server, bucket, solrQuery)
+  def search(server: RiakServerInfo, bucketType: RiakBucketType, solrQuery:RiakSearchQuery): Future[RiakSearchResult] =
+    searchForBucketsAndBucketTypes(server, bucketType, solrQuery)
 
   def createSearchIndex(server: RiakServerInfo, name:String, schema:String, nVal:Int): Future[RiakSearchIndex] = {
 
@@ -468,21 +470,12 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       val response:JsObject =
         body.asString.parseJson.asJsObject.fields.get("response").get.asJsObject
 
-      //println(s"response ---> $response")
-
       val responseObject = response.convertTo[RiakSearchResponse]
 
-      def getItem(item:RiakSearchDoc) = {
-        fetch(server, item._yz_rb.replace("\"",""), item._yz_rt.replace("\"",""), item._yz_rk.replace("\"",""), DefaultConflictsResolver)
-      }
-
       //TODO: Fix double quote in string to avoid using replace
-      val responseValues = RiakSearchValueResponse(
-        values=traverse(responseObject.docs)(getItem).map(_.flatten))
 
       RiakSearchResult(
         response=responseObject,
-        responseValues=responseValues,
         responseHeader=responseHeader.convertTo[RiakSearchResponseHeader],
         contentType=body.contentType,
         data=body.asString)

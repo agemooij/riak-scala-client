@@ -21,10 +21,13 @@ import org.slf4j.{Logger, LoggerFactory}
 import org.specs2.specification.BeforeAfterExample
 import spray.json.DefaultJsonProtocol._
 import spray.json.JsString
-import scala.concurrent.Future
+import scala.collection.generic.CanBuildFrom
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.language.higherKinds
 
 class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
+
 
   trait delayedBefore extends org.specs2.mutable.Before {
     def before =
@@ -91,11 +94,7 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
 
       val query = client.getSearchIndex(randomIndex).flatMap( x => client.search(x, solrQuery) ).await
 
-      val listValues = query.responseValues.values.map( values => values.map(_.as[SongTestComplex])).await
-
-
-      listValues.contains(songComplex1) must beTrue
-      listValues.contains(songComplex2) must beTrue
+      query should beAnInstanceOf[RiakSearchResult]
 
     }
 
@@ -142,19 +141,49 @@ class RiakSearchSpec extends RiakClientSpecification with RandomKeySupport {
     }
 
     "test" in {
-      val bucket = client.bucket("client")
+      val bucket = client.bucket("timesheet")
 
       val solrQuery = RiakSearchQuery()
       solrQuery.wt(Some(JSONSearchFormat()))
-      solrQuery.q(Some("name:* AND companyId:729142110749460480"))
-      solrQuery.rows(Some(12))
+      solrQuery.q(Some("id:*"))
+      solrQuery.rows(Some(9999))
       solrQuery.presort(Some("key"))
       solrQuery.start(Some(0))
-      solrQuery.sort(Some("name asc"))
 
-      println(bucket.search(solrQuery).await)
+      val resultSearch:RiakSearchResult = bucket.search(solrQuery).await
 
-      true must beTrue
+      var result = 0
+
+      def loadFuturesSequentally[A, B, C[A] <: Iterable[A]](collection:C[A])(fn:A => Future[B])(implicit exec:ExecutionContext, cbf:CanBuildFrom[C[B], B, C[B]]):Future[C[B]] = {
+        val builder = cbf()
+        builder.sizeHint(collection.size)
+
+        collection.foldLeft(Future(builder)){
+          (previousFuture, nextFuture) =>
+            for{
+              previousResult <- previousFuture
+              nextResult <- fn(nextFuture)
+            } yield {
+              result += 1
+              println(result)
+              previousResult += nextResult
+            }
+        } map { builder => builder.result }
+      }
+
+      def getItem(item:RiakSearchDoc) = {
+        bucket.fetch(item._yz_rk.replace("\"",""))
+      }
+
+      val startSearch = System.nanoTime
+
+      val dataResult = loadFuturesSequentally(resultSearch.response.docs)(getItem).await
+
+      println("total time : %s".format((System.nanoTime() - startSearch) / 1000))
+
+      println(dataResult.size)
+
+      dataResult should beAnInstanceOf[List[RiakValue]].eventually(1, 10 minutes)
     }
 
   }

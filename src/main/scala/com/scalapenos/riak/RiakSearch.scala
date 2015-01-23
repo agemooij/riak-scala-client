@@ -63,7 +63,7 @@ case class RiakSearchQuery() {
 
 }
 
- private[riak] trait RiakSearchJsonFormats {
+private[riak] trait RiakSearchJsonFormats {
    implicit val mapStringFormat : JsonFormat[Map[String, String]] = new JsonFormat[Map[String, String]] {
      //implementation
      def write(params: Map[String, String]) = {
@@ -103,7 +103,7 @@ case class RiakSearchQuery() {
    }
 }
 
-private[riak] sealed case class RiakSearchDoc(
+sealed case class RiakSearchDoc(
   _yz_id:String,
   _yz_rk:String,
   _yz_rt:String,
@@ -113,20 +113,17 @@ private[riak] sealed case class RiakSearchDoc(
 
 }
 
-private[riak] sealed case class RiakSearchResponse(
+sealed case class RiakSearchResponse(
   numFound:Int,
   start: Int,
   docs:List[RiakSearchDoc])
 
 
-private[riak] sealed case class RiakSearchValueResponse(
-  values:Future[List[RiakValue]])
-
 private[riak] object RiakSearchResponse extends RiakSearchJsonFormats{
   implicit val jsonFormat = jsonFormat3(RiakSearchResponse.apply)
 }
 
-private[riak] sealed case class RiakSearchResponseHeader(
+sealed case class RiakSearchResponseHeader(
   status:Int,
   QTime: Int,
   params:Map[String, String])
@@ -138,7 +135,6 @@ private[riak] object RiakSearchResponseHeader extends RiakSearchJsonFormats{
 case class RiakSearchResult(
   responseHeader:RiakSearchResponseHeader,
   response:RiakSearchResponse,
-  responseValues:RiakSearchValueResponse,
   contentType:ContentType,
   data:String)
 

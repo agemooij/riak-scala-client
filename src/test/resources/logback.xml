@@ -7,12 +7,12 @@
         </encoder>
     </appender>
 
-    <logger name="akka" level="WARN" />
-    <logger name="spray" level="WARN" />
+    <logger name="akka" level="DEBUG" />
+    <logger name="spray" level="DEBUG" />
 
     <logger name="com.scalapenos.riak" level="DEBUG" />
 
-    <root level="WARN">
+    <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>
