@@ -7,18 +7,33 @@ An easy to use, non-blocking Scala client library for interacting with [Riak].
 
 See the [project site] for full [documentation], [examples], [scaladocs], and more.
 
+## Status (Jan 24th 2015)
+The latest version is 0.9.5, which is compatible with [Akka] 2.3.9 and [Spray] 1.3.2.
+It has been tested for compatibility against Riak 2.0.4
 
-## Current Status
-The latest version is 0.8.1.1, which is compatible with Akka 2.1.4 and Spray 1.1-M8.
+This library is cross-built against Scala 2.10.4 and 2.11.5 and compiled using
+`-target:jvm-1.7`.
 
-There is also a parallel release for people who have already moved to Akka 2.2.
-Version 0.8.1.2 is compatible with Akka 2.2-RC1 and Spray 1.2-M8. Please be aware
-that this version is __not__ compatible with Akka 2.2-RC2 because that version
-is not backwards compatible with RC1 and therefor not compatible with Spray 1.2-M8.
+# Installation
+To get started, add the following dependency to your SBT build:
+
+    libraryDependencies += "com.scalapenos" %% "riak-scala-client" % 0.9.5
+
+# Recent Changes
+
+## 0.9.5
+- Cross-built for Scala 2.10.4 and 2.11.5
+- Upgraded to [Akka] 2.3.9 and [Spray] 1.3.2 (thanks to @CharlesAHunt)
+- Upgraded the default JSON serialization implementation to [spray-json] 1.3.1, which is around 15 times faster than the 1.2.x versions we used before.
+- Fully tested with [Riak] 2.0 (2.0.4) and 1.4 (1.4.10)
+- Added Travis and Coveralls support (thanks to @zaneli)
+
+## 0.9.0
+- New feature: allow conflict resolvers to specify whether the resolved value should be written back to Riak or not (thanks to @asnare)
+- Dropped support for older versions of [Akka] and/or [Spray]
 
 
 ## Features
-
 So far, the following Riak (http) API features are supported:
 
 - Fetch
@@ -45,7 +60,7 @@ Other features include:
 - Automatic indexing of Scala (case) classes using type classes
 - Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)
 
-The following Riak (http) API features are still under construction:
+The following Riak (http) API features are not supported at this time:
 
 - Link walking
 - Map Reduce
@@ -58,7 +73,7 @@ The following Riak (http) API features are still under construction:
 The initial focus is on supporting the Riak HTTP API. Protobuf support might be added
 later but it has a low priority at the moment.
 
-The riak-scala-client has been tested against [Riak] versions 1.2.x and 1.3.x.
+The riak-scala-client has been tested against [Riak] versions 1.2.x, 1.3.x, 1.4.x, and 2.0.x
 
 
 ## Current Limitations
@@ -96,6 +111,7 @@ The _riak-scala-client_ is licensed under [APL 2.0].
   [Riak]:               http://basho.com/riak/
   [Akka]:               http://akka.io/
   [Spray]:              http://spray.io/
+  [spray-json]          https://github.com/spray/spray-json/
   [APL 2.0]:            http://www.apache.org/licenses/LICENSE-2.0
   [riaktive]:           https://github.com/xaleraz/Riaktive
   [riakka]:             https://github.com/timperrett/riakka
