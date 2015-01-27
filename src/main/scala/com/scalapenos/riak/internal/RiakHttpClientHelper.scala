@@ -165,6 +165,25 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   // ==========================================================================
+  // Special operations
+  // ==========================================================================
+
+  def allKeys(server: RiakServerInfo, bucket: String): Future[RiakKeys] = {
+    httpRequest(Get(AllKeysUri(server, bucket))).map { response ⇒
+      response.status match {
+        case OK ⇒
+          response.entity.toOption.map { body ⇒
+            import spray.json._
+
+            body.asString.parseJson.convertTo[RiakKeys]
+          }.getOrElse(RiakKeys(Nil))
+        case other ⇒
+          throw new BucketOperationFailed(s"""List keys in bucket "${bucket}" produced an unexpected response code: ${other}.""")
+      }
+    }
+  }
+
+  // ==========================================================================
   // Request building
   // ==========================================================================
 

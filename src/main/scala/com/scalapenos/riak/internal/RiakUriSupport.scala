@@ -47,6 +47,9 @@ private[riak] trait RiakUriSupport {
   def KeyUri(server: RiakServerInfo, bucket: String, key: String, parameters: QueryParameters = NoQueryParameters) =
     uri(server, s"buckets/${bucket}/keys/${key}", parameters.query)
 
+  def AllKeysUri(server: RiakServerInfo, bucket: String) =
+    uri(server, s"buckets/${bucket}/keys", Query("keys" -> "true"))
+
   def PropertiesUri(server: RiakServerInfo, bucket: String) =
     uri(server, s"buckets/${bucket}/props")
 

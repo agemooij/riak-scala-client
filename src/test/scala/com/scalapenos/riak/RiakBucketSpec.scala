@@ -54,6 +54,28 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
 
       fetched should beNone
     }
+
+    "list all keys" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      bucket.store(key, "value").await
+
+      val allKeys = bucket.allKeys().await
+
+      bucket.delete(key).await
+
+      allKeys.keys.size must beEqualTo(1)
+      allKeys.keys(0) must beEqualTo(key)
+    }
+
+    "list all keys from an empty bucket" in {
+      val bucket = randomBucket
+
+      val allKeys = bucket.allKeys().await
+
+      allKeys.keys should be(Nil)
+    }
   }
 
 }
