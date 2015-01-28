@@ -16,8 +16,7 @@
 
 package com.scalapenos.riak
 
-class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
-  private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
+class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with RandomBucketSupport {
 
   "A RiakBucket" should {
     "not be able to store an empty String value" in {
@@ -53,33 +52,6 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
       val fetched = bucket.fetch(key).await
 
       fetched should beNone
-    }
-
-    "list all keys" in {
-      val bucket = randomBucket
-      val numberOfKeys = 5
-      val keys = (1 to numberOfKeys).map(_ ⇒ randomKey)
-
-      keys.map { key ⇒
-        bucket.store(key, "value").await
-      }
-
-      val allKeys = bucket.allKeys().await
-
-      keys.map { key ⇒
-        bucket.delete(key).await
-      }
-
-      allKeys.keys.size must beEqualTo(numberOfKeys)
-      allKeys.keys.toSet must beEqualTo(keys.toSet)
-    }
-
-    "list all keys from an empty bucket" in {
-      val bucket = randomBucket
-
-      val allKeys = bucket.allKeys().await
-
-      allKeys.keys should be(Nil)
     }
   }
 

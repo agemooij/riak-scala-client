@@ -165,7 +165,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   // ==========================================================================
-  // Special operations
+  // Unsafe bucket operations
   // ==========================================================================
 
   def allKeys(server: RiakServerInfo, bucket: String): Future[RiakKeys] = {

@@ -39,3 +39,11 @@ trait RandomKeySupport {
 
   def randomKey = randomUUID().toString
 }
+
+trait RandomBucketSupport {
+  self: RiakClientSpecification with RandomKeySupport ⇒
+
+  import java.util.UUID._
+
+  def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
+}
