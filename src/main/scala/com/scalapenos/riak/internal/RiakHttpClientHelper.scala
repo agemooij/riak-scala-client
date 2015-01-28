@@ -165,6 +165,24 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   // ==========================================================================
+  // Unsafe bucket operations
+  // ==========================================================================
+
+  def allKeys(server: RiakServerInfo, bucket: String): Future[RiakKeys] = {
+    import spray.httpx.unmarshalling._
+
+    httpRequest(Get(AllKeysUri(server, bucket))).map { response ⇒
+      response.status match {
+        case OK ⇒ response.entity.as[RiakKeys] match {
+          case Right(riakKeys) ⇒ riakKeys
+          case Left(error)     ⇒ throw new BucketOperationFailed(s"List keys of bucket '$bucket' failed because the response entity could not be parsed.")
+        }
+        case other ⇒ throw new BucketOperationFailed(s"""List keys of bucket "${bucket}" produced an unexpected response code: ${other}.""")
+      }
+    }
+  }
+
+  // ==========================================================================
   // Request building
   // ==========================================================================
 

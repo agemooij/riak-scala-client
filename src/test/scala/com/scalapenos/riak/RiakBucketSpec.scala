@@ -16,8 +16,7 @@
 
 package com.scalapenos.riak
 
-class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport {
-  private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
+class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with RandomBucketSupport {
 
   "A RiakBucket" should {
     "not be able to store an empty String value" in {

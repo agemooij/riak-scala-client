@@ -70,5 +70,5 @@ trait RiakBucket {
   def lastWriteWins_=(value: Boolean): Future[Unit] = setLastWriteWins(value)
   def setLastWriteWins(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
 
+  def unsafe: UnsafeBucketOperations
 }
-
