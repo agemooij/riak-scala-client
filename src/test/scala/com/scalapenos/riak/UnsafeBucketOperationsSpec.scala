@@ -35,7 +35,6 @@ class UnsafeBucketOperationsSpec extends RiakClientSpecification with RandomKeyS
         unsafeBucketOperations.delete(key).await
       }
 
-      allKeys.keys.size must beEqualTo(numberOfKeys)
       allKeys.keys.toSet must beEqualTo(keys.toSet)
     }
 
