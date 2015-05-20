@@ -29,6 +29,7 @@ trait RiakBucket {
   def resolver: RiakConflictsResolver
 
   def fetch(key: String): Future[Option[RiakValue]]
+  def fetchWithSiblings(key: String): Future[Option[Set[RiakValue]]]
 
   def fetch(index: String, value: String): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
   def fetch(index: String, value: Int): Future[List[RiakValue]] = fetch(RiakIndex(index, value))

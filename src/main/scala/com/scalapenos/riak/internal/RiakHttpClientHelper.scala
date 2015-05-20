@@ -80,6 +80,18 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
+  def fetchWithSiblings(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[Set[RiakValue]]] = {
+    httpRequest(Get(KeyUri(server, bucket, key))).flatMap { response ⇒
+      response.status match {
+        case OK              ⇒ successful(toRiakValue(response).map(Set(_)))
+        case NotFound        ⇒ successful(None)
+        case MultipleChoices ⇒ successful(Some(toRiakSiblingValues(response)))
+        case other           ⇒ throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
+        // TODO: case NotModified => successful(None)
+      }
+    }
+  }
+
   def fetch(server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
     httpRequest(Get(IndexUri(server, bucket, index))).flatMap { response ⇒
       response.status match {
@@ -269,6 +281,29 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
           successful(result)
         }
       }
+    }
+  }
+
+  private def toRiakSiblingValues(response: HttpResponse): Set[RiakValue] = {
+    import spray.http._
+    import spray.httpx.unmarshalling._
+    import FixedMultipartContentUnmarshalling._
+
+    implicit val FixedMultipartContentUnmarshaller = multipartContentUnmarshaller(HttpCharsets.`UTF-8`)
+
+    val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
+
+    response.entity.as[MultipartContent] match {
+      case Left(error) ⇒ throw new ConflictResolutionFailed(error.toString)
+      case Right(multipartContent) ⇒
+        // TODO: make ignoring deleted values optional
+
+        val values = multipartContent.parts
+          .filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
+          .flatMap(part ⇒ toRiakValue(part.entity, vclockHeader ++ part.headers))
+          .toSet
+
+        values
     }
   }
 }
