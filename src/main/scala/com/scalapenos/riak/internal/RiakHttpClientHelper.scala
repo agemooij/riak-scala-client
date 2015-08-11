@@ -293,7 +293,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
     response.entity.as[MultipartContent] match {
-      case Left(error) ⇒ throw new ConflictResolutionFailed(error.toString)
+      case Left(error) ⇒ throw new BucketOperationFailed(s"Failed to parse server response as multipart content due to: '$error'" )
       case Right(multipartContent) ⇒
         // TODO: make ignoring deleted values optional
 
