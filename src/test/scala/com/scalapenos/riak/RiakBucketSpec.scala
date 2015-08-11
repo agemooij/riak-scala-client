@@ -90,7 +90,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
       fetched.get.map(_.data) should beEqualTo(Set(expectedValue))
     }
 
-    "return an empty set for Riak entry that hasn't been found when fetching with siblings mode" in {
+    "return None if entry hasn't been found when fetching with siblings mode" in {
       val bucket = randomBucket
       val key = randomKey
 
