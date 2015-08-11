@@ -264,7 +264,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
     response.entity.as[MultipartContent] match {
       case Left(error) ⇒ throw new ConflictResolutionFailed(error.toString)
-      case Right(multipartContent) ⇒ {
+      case Right(multipartContent) ⇒
         // TODO: make ignoring deleted values optional
 
         val values = multipartContent.parts
@@ -279,7 +279,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
         } else {
           successful(result)
         }
-      }
     }
   }
 
