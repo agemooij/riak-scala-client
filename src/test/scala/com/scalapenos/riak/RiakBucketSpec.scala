@@ -54,7 +54,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
       fetched should beNone
     }
 
-    "fetch all sibling values and return them to client if they exist for given Riak entry" in {
+    "fetch all sibling values and return them to the client if they exist for a given Riak entry" in {
       val bucket = randomBucket
       val key = randomKey
 
