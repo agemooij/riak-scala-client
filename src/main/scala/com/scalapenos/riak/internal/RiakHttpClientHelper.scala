@@ -87,7 +87,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
         case NotFound        ⇒ successful(None)
         case MultipleChoices ⇒ successful(Some(toRiakSiblingValues(response)))
         case other           ⇒ throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
-        // TODO: case NotModified => successful(None)
       }
     }
   }
