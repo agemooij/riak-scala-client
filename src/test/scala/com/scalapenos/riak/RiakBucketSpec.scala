@@ -60,9 +60,9 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
 
       (bucket.allowSiblings = true).await
 
-      val siblingValues= Set("value1", "value2", "value3")
+      val siblingValues = Set("value1", "value2", "value3")
 
-      for (value <- siblingValues) {
+      for (value ← siblingValues) {
         // we store values without VectorClock which causes siblings creation
         bucket.store(key, value).await
       }
