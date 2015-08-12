@@ -265,12 +265,13 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     response.entity.as[MultipartContent] match {
       case Left(error) ⇒ throw new ConflictResolutionFailed(error.toString)
       case Right(multipartContent) ⇒
-        // TODO: make ignoring deleted values optional
+        val bodyParts =
+          if (settings.IgnoreTombstones)
+            multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
+          else
+            multipartContent.parts
 
-        val values = multipartContent.parts
-          .filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
-          .flatMap(part ⇒ toRiakValue(part.entity, vclockHeader ++ part.headers))
-          .toSet
+        val values = bodyParts.flatMap(part ⇒ toRiakValue(part.entity, vclockHeader ++ part.headers)).toSet
 
         // Store the resolved value back to Riak and return the resulting RiakValue
         val ConflictResolution(result, writeBack) = resolver.resolve(values)
@@ -294,12 +295,13 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     response.entity.as[MultipartContent] match {
       case Left(error) ⇒ throw new BucketOperationFailed(s"Failed to parse the server response as multipart content due to: '$error'")
       case Right(multipartContent) ⇒
-        // TODO: make ignoring deleted values optional
+        val bodyParts =
+          if (settings.IgnoreTombstones)
+            multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
+          else
+            multipartContent.parts
 
-        val values = multipartContent.parts
-          .filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
-          .flatMap(part ⇒ toRiakValue(part.entity, vclockHeader ++ part.headers))
-          .toSet
+        val values = bodyParts.flatMap(part ⇒ toRiakValue(part.entity, vclockHeader ++ part.headers)).toSet
 
         values
     }
