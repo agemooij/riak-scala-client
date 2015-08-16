@@ -33,6 +33,16 @@ private[riak] class RiakClientSettings(config: Config) {
    */
   final val AddClientIdHeader: Boolean = config.getBoolean("riak.add-client-id-header")
 
+  /**
+   * Setting for controlling whether the Riak client should ignore deleted values ('tombstones')
+   * when fetching objects with multiple values ('siblings').
+   *
+   * Riak server designates values as tombstones by adding an optional 'X-Riak-Deleted' header.
+   *
+   * This value defaults to true.
+   */
+  final val IgnoreTombstones: Boolean = config.getBoolean("riak.ignore-tombstones")
+
   // TODO: add setting for silently ignoring indexes on backends that don't allow them. The alternative is failing/throwing exceptions
 
 }
