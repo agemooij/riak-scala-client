@@ -82,6 +82,13 @@ case class LastWriteWins(value: Boolean) extends RiakBucketProperty[Boolean] {
   def json = JsBoolean(value)
 }
 
+case class BackendSelector(value: String) extends RiakBucketProperty[String] {
+  require(value.length > 0, "Backend can not be zero length")
+
+  def name = "backend"
+  def json = JsString(value)
+}
+
 /*
 {
     "props": {
