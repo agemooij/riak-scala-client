@@ -16,6 +16,9 @@
 
 package com.scalapenos.riak
 
+import com.scalapenos.riak.RiakBucket.{IfMatch, IfModifiedSince, IfNoneMatch, IfUnmodifiedSince}
+import org.joda.time.DateTime
+
 class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with RandomBucketSupport {
 
   "A RiakBucket" should {
@@ -53,6 +56,85 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
 
       fetched should beNone
     }
-  }
 
+    // ============================================================================
+    // Conditional requests tests
+    // ============================================================================
+
+    "not return back a stored value if 'If-None-Match' condition does not hold for a requested data" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      val storedValue = bucket.storeAndFetch(key, "value").await
+
+      val eTag = storedValue.etag
+
+      bucket.fetch(key, IfNoneMatch(eTag)).await must beNone
+    }
+
+    "return back a stored value if 'If-None-Match' condition holds for requested data" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      val storedValue = bucket.storeAndFetch(key, "value").await
+
+      bucket.fetch(key, IfNoneMatch(randomKey)).await must beSome(storedValue)
+    }
+
+    "not return back a stored value if 'If-Match' condition does not hold for a requested data" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      bucket.storeAndFetch(key, "value").await
+
+      bucket.fetch(key, IfMatch(randomKey)).await must beNone
+    }
+
+    "return back a stored value if 'If-Match' condition holds for requested data" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      val storedValue = bucket.storeAndFetch(key, "value").await
+
+      val eTag = storedValue.etag
+
+      bucket.fetch(key, IfMatch(eTag)).await must beSome(storedValue)
+    }
+
+    "not return back a stored value if 'If-Modified-Since' condition does not hold for a requested data" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      bucket.storeAndFetch(key, "value").await
+
+      bucket.fetch(key, IfModifiedSince(DateTime.now.plusMinutes(5))).await must beNone
+    }
+
+    "return back a stored value if 'If-Modified-Since' condition holds for requested data" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      val storedValue = bucket.storeAndFetch(key, "value").await
+
+      bucket.fetch(key, IfModifiedSince(DateTime.now.minusMinutes(5))).await must beSome(storedValue)
+    }
+
+    "not return back a stored value if 'If-Unmodified-Since' condition does not hold for a requested data" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      bucket.storeAndFetch(key, "value").await
+
+      bucket.fetch(key, IfUnmodifiedSince(DateTime.now.minusMinutes(5))).await must beNone
+    }
+
+    "return back a stored value if 'If-Unmodified-Since' condition holds for requested data" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      val storedValue = bucket.storeAndFetch(key, "value").await
+
+      bucket.fetch(key, IfUnmodifiedSince(DateTime.now.plusMinutes(5))).await must beSome(storedValue)
+    }
+  }
 }
