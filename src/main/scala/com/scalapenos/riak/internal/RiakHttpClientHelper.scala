@@ -66,14 +66,14 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakHttpSu
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[RiakValue]] = {
-    httpRequest(Get(KeyUri(server, bucket, key))).flatMap { response ⇒
+  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver, conditionalRequestParams: List[ConditionalRequestParam] = Nil): Future[Option[RiakValue]] = {
+    httpRequest(Get(KeyUri(server, bucket, key)).withHeaders(conditionalRequestParams.map(_.asHeader))).flatMap { response ⇒
       response.status match {
         case OK              ⇒ successful(toRiakValue(response))
         case NotFound        ⇒ successful(None)
+        case NotModified     ⇒ successful(None) // This means that client is not able to distinguish cases when value is not in Riak or a supplied condition is not met.
         case MultipleChoices ⇒ resolveConflict(server, bucket, key, response, resolver).map(Some(_))
         case other           ⇒ throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
-        // TODO: case NotModified => successful(None)
       }
     }
   }
