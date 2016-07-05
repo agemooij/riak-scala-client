@@ -82,7 +82,7 @@ object RiakBucket {
 
   case class IfMatch(eTag: ETag) extends ConditionalRequestParam
 
-  case class IfModified(timestamp: DateTime) extends ConditionalRequestParam
+  case class IfModifiedSince(timestamp: DateTime) extends ConditionalRequestParam
 
-  case class IfUnmodified(timestamp: DateTime) extends ConditionalRequestParam
+  case class IfUnmodifiedSince(timestamp: DateTime) extends ConditionalRequestParam
 }
