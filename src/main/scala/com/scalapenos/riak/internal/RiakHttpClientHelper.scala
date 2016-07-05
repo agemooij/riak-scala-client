@@ -67,7 +67,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakHttpSu
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver, conditionalParams: ConditionalRequestParam*): Future[Option[RiakValue]] = {
+  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver, conditionalParams: Seq[ConditionalRequestParam] = Seq()): Future[Option[RiakValue]] = {
     httpRequest(Get(KeyUri(server, bucket, key)).withHeaders(conditionalParams.map(_.asHttpHeader): _*)).flatMap { response ⇒
       response.status match {
         case OK              ⇒ successful(toRiakValue(response))
