@@ -19,6 +19,7 @@ package com.scalapenos.riak
 trait RiakBucket {
   import scala.concurrent.{ ExecutionContext, Future }
   import internal._
+  import RiakBucket._
 
   val name: String
 
@@ -28,7 +29,7 @@ trait RiakBucket {
    */
   def resolver: RiakConflictsResolver
 
-  def fetch(key: String): Future[Option[RiakValue]]
+  def fetch(key: String, conditionalParams: ConditionalRequestParam*): Future[Option[RiakValue]]
 
   def fetch(index: String, value: String): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
   def fetch(index: String, value: Int): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
@@ -71,4 +72,17 @@ trait RiakBucket {
   def setLastWriteWins(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
 
   def unsafe: UnsafeBucketOperations
+}
+
+object RiakBucket {
+
+  sealed trait ConditionalRequestParam
+
+  case class IfNoneMatch(eTag: String) extends ConditionalRequestParam
+
+  case class IfMatch(eTag: String) extends ConditionalRequestParam
+
+  case class IfModified(timestamp: DateTime) extends ConditionalRequestParam
+
+  case class IfNotModified(timestamp: DateTime) extends ConditionalRequestParam
 }
