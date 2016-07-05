@@ -78,9 +78,9 @@ object RiakBucket {
 
   sealed trait ConditionalRequestParam
 
-  case class IfNoneMatch(eTag: String) extends ConditionalRequestParam
+  case class IfNoneMatch(eTag: ETag) extends ConditionalRequestParam
 
-  case class IfMatch(eTag: String) extends ConditionalRequestParam
+  case class IfMatch(eTag: ETag) extends ConditionalRequestParam
 
   case class IfModified(timestamp: DateTime) extends ConditionalRequestParam
 
