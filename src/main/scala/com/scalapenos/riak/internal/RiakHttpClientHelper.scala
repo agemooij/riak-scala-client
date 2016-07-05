@@ -33,7 +33,7 @@ private[riak] object RiakHttpClientHelper {
   }
 }
 
-private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSupport with RiakIndexSupport with DateTimeSupport {
+private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakHttpSupport with RiakIndexSupport with DateTimeSupport {
   import scala.concurrent.Future
   import scala.concurrent.Future._
 

@@ -17,9 +17,9 @@
 package com.scalapenos.riak
 package internal
 
-private[riak] trait RiakUriSupport {
-  import spray.http.Uri
-  import spray.http.Uri._
+private[riak] trait RiakHttpSupport {
+  import spray.http.{ Uri, HttpHeader, HttpHeaders, EntityTag }, HttpHeaders._, Uri._
+  import DateTimeSupport._
 
   // ==========================================================================
   // Query Parameters
@@ -35,6 +35,30 @@ private[riak] trait RiakUriSupport {
 
   case class StoreQueryParameters(returnBody: Boolean = false) extends QueryParameters {
     def query = ("returnbody", s"$returnBody") +: Query.Empty
+  }
+
+  // ==========================================================================
+  // Conditional Request Parameters
+  // ==========================================================================
+
+  sealed trait ConditionalRequestParam {
+    def asHeader: HttpHeader
+  }
+
+  case class IfNoneMatch(eTag: String) extends ConditionalRequestParam {
+    def asHeader: HttpHeader = `If-None-Match`(EntityTag(eTag))
+  }
+
+  case class IfMatch(eTag: String) extends ConditionalRequestParam {
+    def asHeader: HttpHeader = `If-Match`(EntityTag(eTag))
+  }
+
+  case class IfModified(timestamp: DateTime) extends ConditionalRequestParam {
+    def asHeader: HttpHeader = `If-Modified-Since`(toSprayDateTime(timestamp))
+  }
+
+  case class IfNotModified(timestamp: DateTime) extends ConditionalRequestParam {
+    def asHeader: HttpHeader = `If-Unmodified-Since`(toSprayDateTime(timestamp))
   }
 
   // ==========================================================================
