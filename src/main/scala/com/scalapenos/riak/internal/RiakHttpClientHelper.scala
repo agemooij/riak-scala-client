@@ -47,6 +47,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakHttpSu
   import SprayClientExtras._
   import RiakHttpHeaders._
   import RiakHttpClientHelper._
+  import RiakBucket._
 
   import system.dispatcher
 
@@ -66,8 +67,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakHttpSu
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver, conditionalRequestParams: List[ConditionalRequestParam] = Nil): Future[Option[RiakValue]] = {
-    httpRequest(Get(KeyUri(server, bucket, key)).withHeaders(conditionalRequestParams.map(_.asHeader))).flatMap { response ⇒
+  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver, conditionalParams: ConditionalRequestParam*): Future[Option[RiakValue]] = {
+    httpRequest(Get(KeyUri(server, bucket, key)).withHeaders(conditionalParams.map(_.asHttpHeader): _*)).flatMap { response ⇒
       response.status match {
         case OK              ⇒ successful(toRiakValue(response))
         case NotFound        ⇒ successful(None)

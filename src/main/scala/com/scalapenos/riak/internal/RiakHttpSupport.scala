@@ -20,6 +20,7 @@ package internal
 private[riak] trait RiakHttpSupport {
   import spray.http.{ Uri, HttpHeader, HttpHeaders, EntityTag }, HttpHeaders._, Uri._
   import DateTimeSupport._
+  import RiakBucket._
 
   // ==========================================================================
   // Query Parameters
@@ -38,27 +39,19 @@ private[riak] trait RiakHttpSupport {
   }
 
   // ==========================================================================
-  // Conditional Request Parameters
+  // Conditional Request Parameters Support
   // ==========================================================================
 
-  sealed trait ConditionalRequestParam {
-    def asHeader: HttpHeader
-  }
-
-  case class IfNoneMatch(eTag: String) extends ConditionalRequestParam {
-    def asHeader: HttpHeader = `If-None-Match`(EntityTag(eTag))
-  }
-
-  case class IfMatch(eTag: String) extends ConditionalRequestParam {
-    def asHeader: HttpHeader = `If-Match`(EntityTag(eTag))
-  }
-
-  case class IfModified(timestamp: DateTime) extends ConditionalRequestParam {
-    def asHeader: HttpHeader = `If-Modified-Since`(toSprayDateTime(timestamp))
-  }
-
-  case class IfNotModified(timestamp: DateTime) extends ConditionalRequestParam {
-    def asHeader: HttpHeader = `If-Unmodified-Since`(toSprayDateTime(timestamp))
+  implicit class ConditionalHttpRequestParam(conditionalParam: ConditionalRequestParam) {
+    def asHttpHeader: HttpHeader = {
+      conditionalParam match {
+        case IfModified(date)    ⇒ `If-Modified-Since`(toSprayDateTime(date))
+        case IfNotModified(date) ⇒ `If-Unmodified-Since`(toSprayDateTime(date))
+        case IfMatch(eTag)       ⇒ `If-Match`(EntityTag(eTag))
+        case IfNoneMatch(eTag)   ⇒ `If-None-Match`(EntityTag(eTag))
+        case _                   ⇒ throw new IllegalArgumentException("Unknown conditional request param: cannot convert to HTTP header.")
+      }
+    }
   }
 
   // ==========================================================================
