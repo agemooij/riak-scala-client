@@ -46,9 +46,9 @@ private[riak] trait RiakHttpSupport {
     def asHttpHeader: HttpHeader = {
       conditionalParam match {
         case IfModified(date)    ⇒ `If-Modified-Since`(toSprayDateTime(date))
-        case IfNotModified(date) ⇒ `If-Unmodified-Since`(toSprayDateTime(date))
         case IfMatch(eTag)       ⇒ `If-Match`(EntityTag(eTag))
         case IfNoneMatch(eTag)   ⇒ `If-None-Match`(EntityTag(eTag))
+        case IfUnmodified(date) ⇒ `If-Unmodified-Since`(toSprayDateTime(date))
         case _                   ⇒ throw new IllegalArgumentException("Unknown conditional request param: cannot convert to HTTP header.")
       }
     }

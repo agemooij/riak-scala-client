@@ -84,5 +84,5 @@ object RiakBucket {
 
   case class IfModified(timestamp: DateTime) extends ConditionalRequestParam
 
-  case class IfNotModified(timestamp: DateTime) extends ConditionalRequestParam
+  case class IfUnmodified(timestamp: DateTime) extends ConditionalRequestParam
 }
