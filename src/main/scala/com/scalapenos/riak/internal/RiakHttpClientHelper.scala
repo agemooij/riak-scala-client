@@ -44,8 +44,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakHttpSu
   import spray.httpx.SprayJsonSupport._
   import spray.json.DefaultJsonProtocol._
 
-  import org.slf4j.LoggerFactory
-
   import SprayClientExtras._
   import RiakHttpHeaders._
   import RiakHttpClientHelper._
