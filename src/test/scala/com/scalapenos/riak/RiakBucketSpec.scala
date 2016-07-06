@@ -107,7 +107,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
 
       bucket.storeAndFetch(key, "value").await
 
-      bucket.fetch(key, IfModifiedSince(DateTime.now.plusMinutes(5))).await must beNone
+      bucket.fetch(key, IfModifiedSince(DateTime.now)).await must beNone
     }
 
     "return back a stored value if 'If-Modified-Since' condition holds for requested data" in {
