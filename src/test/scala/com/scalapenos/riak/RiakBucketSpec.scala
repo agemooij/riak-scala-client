@@ -105,9 +105,10 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
       val bucket = randomBucket
       val key = randomKey
 
-      bucket.storeAndFetch(key, "value").await
+      val storedValue = bucket.storeAndFetch(key, "value").await
 
-      bucket.fetch(key, IfModifiedSince(DateTime.now)).await must beNone
+      // Fetch if the value has been modified after store operation
+      bucket.fetch(key, IfModifiedSince(storedValue.lastModified.plusMillis(1))).await must beNone
     }
 
     "return back a stored value if 'If-Modified-Since' condition holds for requested data" in {
@@ -116,16 +117,18 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
 
       val storedValue = bucket.storeAndFetch(key, "value").await
 
-      bucket.fetch(key, IfModifiedSince(DateTime.now.minusMinutes(5))).await must beSome(storedValue)
+      // Fetch if the value has been modified since before the store operation
+      bucket.fetch(key, IfModifiedSince(storedValue.lastModified.minusMinutes(5))).await must beSome(storedValue)
     }
 
     "not return back a stored value if 'If-Unmodified-Since' condition does not hold for a requested data" in {
       val bucket = randomBucket
       val key = randomKey
 
-      bucket.storeAndFetch(key, "value").await
+      val storedValue = bucket.storeAndFetch(key, "value").await
 
-      bucket.fetch(key, IfUnmodifiedSince(DateTime.now.minusMinutes(5))).await must beNone
+      // Fetch if the value has not been modified since before the store operation
+      bucket.fetch(key, IfUnmodifiedSince(storedValue.lastModified.minusMinutes(5))).await must beNone
     }
 
     "return back a stored value if 'If-Unmodified-Since' condition holds for requested data" in {
@@ -134,7 +137,8 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
 
       val storedValue = bucket.storeAndFetch(key, "value").await
 
-      bucket.fetch(key, IfUnmodifiedSince(DateTime.now.plusMinutes(5))).await must beSome(storedValue)
+      // Fetch if the value has not been modified since after the store operation
+      bucket.fetch(key, IfUnmodifiedSince(storedValue.lastModified.plusMinutes(5))).await must beSome(storedValue)
     }
   }
 }
