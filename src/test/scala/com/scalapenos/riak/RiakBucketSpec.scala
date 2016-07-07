@@ -57,6 +57,53 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
       fetched should beNone
     }
 
+    "fetch all sibling values and return them to the client if they exist for a given Riak entry" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      (bucket.allowSiblings = true).await
+
+      val siblingValues = Set("value1", "value2", "value3")
+
+      for (value ← siblingValues) {
+        // we store values without VectorClock which causes siblings creation
+        bucket.store(key, value).await
+      }
+
+      val fetched = bucket.fetchWithSiblings(key).await
+
+      fetched should beSome
+      fetched.get.size should beEqualTo(3)
+      fetched.get.map(_.data) should beEqualTo(siblingValues)
+    }
+
+    "return a set containing a single value for given Riak entry if there are no siblings when fetching with siblings mode" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      (bucket.allowSiblings = true).await
+
+      val expectedValue = "value"
+      bucket.store(key, expectedValue).await
+
+      val fetched = bucket.fetchWithSiblings(key).await
+
+      fetched should beSome
+      fetched.get.size should beEqualTo(1)
+      fetched.get.map(_.data) should beEqualTo(Set(expectedValue))
+    }
+
+    "return None if entry hasn't been found when fetching with siblings mode" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      (bucket.allowSiblings = true).await
+
+      val fetched = bucket.fetchWithSiblings(key).await
+
+      fetched should beNone
+    }
+
     // ============================================================================
     // Conditional requests tests
     // ============================================================================

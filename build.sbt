@@ -4,9 +4,9 @@ name := "riak-scala-client"
 
 version := "0.9.5"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq("2.11.5", "2.10.4")
+crossScalaVersions := Seq("2.11.7", "2.10.5")
 
 crossVersion := CrossVersion.binary
 
@@ -34,14 +34,14 @@ resolvers ++= Seq("Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/release
 resolvers ++= Seq("snapshots", "releases").map(Resolver.sonatypeRepo)
 
 libraryDependencies <++= (scalaVersion) { v: String =>
-  val sprayVersion = "1.3.2"
-  val akkaVersion = "2.3.9"
+  val sprayVersion = "1.3.3"
+  val akkaVersion = "2.3.12"
   val specs2Version = if (v.startsWith("2.10")) "2.4.15" else "2.4.15"
   Seq(
      "com.typesafe.akka"      %%  "akka-actor"        % akkaVersion,
      "com.typesafe.akka"      %%  "akka-slf4j"        % akkaVersion,
      "io.spray"               %%  "spray-client"      % sprayVersion,
-     "io.spray"               %%  "spray-json"        % "1.3.1",
+     "io.spray"               %%  "spray-json"        % "1.3.2",
      "com.github.nscala-time" %%  "nscala-time"       % "1.6.0",
      "com.typesafe.akka"      %%  "akka-testkit"      % akkaVersion   % "test",
      "io.spray"               %%  "spray-testkit"     % sprayVersion  % "test",
