@@ -140,5 +140,45 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
       // Fetch if the value has not been modified since after the store operation
       bucket.fetch(key, IfUnmodifiedSince(storedValue.lastModified.plusMinutes(5))).await must beSome(storedValue)
     }
+
+    // Combining multiple request conditions
+
+    "support multiple conditional request parameters" in {
+      val bucket = randomBucket
+      val key = randomKey
+
+      val storedValue = bucket.storeAndFetch(key, "value").await
+
+      // Fetch a value that hasn't been modified since after the store operation (this condition holds)
+      // only if it has a different tag (this condition doesn't hold)
+      bucket.fetch(key,
+        IfUnmodifiedSince(storedValue.lastModified.plusMillis(1)),
+        IfNotMatch(storedValue.etag)
+      ).await must beNone
+
+      // Fetch a value if it has the same ETag (this condition holds)
+      // has been modified since before the store operation (this condition also holds)
+      bucket.fetch(key,
+        IfMatch(storedValue.etag),
+        IfModifiedSince(storedValue.lastModified.minusMillis(1))
+      ).await must beSome(storedValue)
+
+      // Fetch a value if it has the same ETag (this condition holds)
+      // and has been modified since after the store operation (this condition doesn't hold)
+      bucket.fetch(key,
+        IfMatch(storedValue.etag),
+        IfModifiedSince(storedValue.lastModified.plusMillis(1))
+      ).await must beNone
+
+      bucket.fetch(key,
+        // Repeating the same conditional parameter doesn't change the behaviour
+        IfNotMatch(storedValue.etag),
+        IfNotMatch(storedValue.etag)).await must beNone
+
+      bucket.fetch(key,
+        // Repeating the same conditional parameter doesn't change the behaviour
+        IfModifiedSince(storedValue.lastModified.minusMinutes(5)),
+        IfModifiedSince(storedValue.lastModified.minusMinutes(5))).await must beSome(storedValue)
+    }
   }
 }
