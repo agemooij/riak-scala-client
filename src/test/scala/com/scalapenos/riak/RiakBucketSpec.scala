@@ -16,7 +16,7 @@
 
 package com.scalapenos.riak
 
-import com.scalapenos.riak.RiakBucket.{IfMatch, IfModifiedSince, IfNoneMatch, IfUnmodifiedSince}
+import com.scalapenos.riak.RiakBucket.{ IfMatch, IfModifiedSince, IfNotMatch, IfUnmodifiedSince }
 import org.joda.time.DateTime
 
 class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with RandomBucketSupport {
@@ -69,7 +69,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
 
       val eTag = storedValue.etag
 
-      bucket.fetch(key, IfNoneMatch(eTag)).await must beNone
+      bucket.fetch(key, IfNotMatch(eTag)).await must beNone
     }
 
     "return back a stored value if 'If-None-Match' condition holds for requested data" in {
@@ -78,7 +78,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
 
       val storedValue = bucket.storeAndFetch(key, "value").await
 
-      bucket.fetch(key, IfNoneMatch(randomKey)).await must beSome(storedValue)
+      bucket.fetch(key, IfNotMatch(randomKey)).await must beSome(storedValue)
     }
 
     "not return back a stored value if 'If-Match' condition does not hold for a requested data" in {

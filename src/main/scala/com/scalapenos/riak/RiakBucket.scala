@@ -87,7 +87,7 @@ object RiakBucket {
    *
    * @param eTag the target ETag value.
    */
-  case class IfNoneMatch(eTag: ETag) extends ConditionalRequestParam
+  case class IfNotMatch(eTag: ETag) extends ConditionalRequestParam
 
   /**
    * Perform a request on a RiakValue only if value's ETag matches the given one.

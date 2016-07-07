@@ -48,7 +48,7 @@ private[riak] trait RiakHttpSupport {
         case IfModifiedSince(date)   ⇒ `If-Modified-Since`(toSprayDateTime(date))
         case IfUnmodifiedSince(date) ⇒ `If-Unmodified-Since`(toSprayDateTime(date))
         case IfMatch(eTag)           ⇒ RawHeader("If-Match", eTag.value) // TODO this `If-Match`(EntityTag(eTag)) doesn't work as spray escapes double quotes in ETag value
-        case IfNoneMatch(eTag)       ⇒ RawHeader("If-None-Match", eTag.value) // TODO this `If-None-Match`(EntityTag(eTag)) doesn't work as spray escapes double quotes in ETag value
+        case IfNotMatch(eTag)        ⇒ RawHeader("If-None-Match", eTag.value) // TODO this `If-None-Match`(EntityTag(eTag)) doesn't work as spray escapes double quotes in ETag value
         case _                       ⇒ throw new IllegalArgumentException("Unknown conditional request param: cannot convert to HTTP header.")
       }
     }
