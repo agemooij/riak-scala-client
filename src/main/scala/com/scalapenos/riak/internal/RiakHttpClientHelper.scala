@@ -18,6 +18,7 @@ package com.scalapenos.riak
 package internal
 
 import akka.actor._
+import spray.http.HttpEncodingRange
 
 private[riak] object RiakHttpClientHelper {
   import spray.http.HttpEntity
@@ -42,6 +43,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   import spray.http.StatusCodes._
   import spray.http.HttpHeaders._
   import spray.httpx.SprayJsonSupport._
+  import spray.httpx.encoding.{ Gzip, Deflate }
   import spray.json.DefaultJsonProtocol._
 
   import org.slf4j.LoggerFactory
@@ -200,10 +202,20 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private lazy val clientId = java.util.UUID.randomUUID().toString
   private val clientIdHeader = if (settings.AddClientIdHeader) Some(RawHeader(`X-Riak-ClientId`, clientId)) else None
 
-  private def httpRequest = {
-    addOptionalHeader(clientIdHeader) ~>
-      addHeader("Accept", "*/*, multipart/mixed") ~>
+  private val basePipeline = {
+    if (settings.EnableHttpCompression) {
+      addHeader(`Accept-Encoding`(Gzip.encoding)) ~>
+        addHeader(`Content-Encoding`.apply(Gzip.encoding)) ~>
+        encode(Gzip) ~>
+        sendReceive ~>
+        decode(Gzip)
+    } else {
       sendReceive
+    }
+  }
+
+  private def httpRequest = {
+    addOptionalHeader(clientIdHeader) ~> addHeader("Accept", "*/*, multipart/mixed") ~> basePipeline
   }
 
   private def createStoreHttpRequest(value: RiakValue) = {
