@@ -202,7 +202,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private lazy val clientId = java.util.UUID.randomUUID().toString
   private val clientIdHeader = if (settings.AddClientIdHeader) Some(RawHeader(`X-Riak-ClientId`, clientId)) else None
 
-  private val basePipeline = {
+  private def basePipeline = {
     if (settings.EnableHttpCompression) {
       addHeader(`Accept-Encoding`(Gzip.encoding)) ~>
         encode(Gzip) ~>
