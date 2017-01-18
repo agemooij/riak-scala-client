@@ -60,7 +60,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   // ==========================================================================
 
   def ping(server: RiakServerInfo): Future[Boolean] = {
-    httpRequest(Get(PingUri(server))).map { response ⇒
+    httpRequest()(Get(PingUri(server))).map { response ⇒
       response.status match {
         case OK    ⇒ true
         case other ⇒ throw new OperationFailed(s"Ping on server '$server' produced an unexpected response code '$other'.")
@@ -69,7 +69,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[RiakValue]] = {
-    httpRequest(Get(KeyUri(server, bucket, key))).flatMap { response ⇒
+    httpRequest()(Get(KeyUri(server, bucket, key))).flatMap { response ⇒
       response.status match {
         case OK              ⇒ successful(toRiakValue(response))
         case NotFound        ⇒ successful(None)
@@ -81,7 +81,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   def fetchWithSiblings(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[Set[RiakValue]]] = {
-    httpRequest(Get(KeyUri(server, bucket, key))).flatMap { response ⇒
+    httpRequest()(Get(KeyUri(server, bucket, key))).flatMap { response ⇒
       response.status match {
         case OK              ⇒ successful(toRiakValue(response).map(Set(_)))
         case NotFound        ⇒ successful(None)
@@ -92,7 +92,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, index: RiakIndex, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
-    httpRequest(Get(IndexUri(server, bucket, index))).flatMap { response ⇒
+    httpRequest()(Get(IndexUri(server, bucket, index))).flatMap { response ⇒
       response.status match {
         case OK         ⇒ fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
         case BadRequest ⇒ throw new ParametersInvalid(s"""Invalid index name ("${index.fullName}") or value ("${index.value}").""")
@@ -102,7 +102,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   def fetch(server: RiakServerInfo, bucket: String, indexRange: RiakIndexRange, resolver: RiakConflictsResolver): Future[List[RiakValue]] = {
-    httpRequest(Get(IndexRangeUri(server, bucket, indexRange))).flatMap { response ⇒
+    httpRequest()(Get(IndexRangeUri(server, bucket, indexRange))).flatMap { response ⇒
       response.status match {
         case OK         ⇒ fetchWithKeysReturnedByIndexLookup(server, bucket, response, resolver)
         case BadRequest ⇒ throw new ParametersInvalid(s"""Invalid index name ("${indexRange.fullName}") or range ("${indexRange.start}" to "${indexRange.start}").""")
@@ -137,7 +137,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   def delete(server: RiakServerInfo, bucket: String, key: String): Future[Unit] = {
-    httpRequest(Delete(KeyUri(server, bucket, key))).map { response ⇒
+    httpRequest()(Delete(KeyUri(server, bucket, key))).map { response ⇒
       response.status match {
         case NoContent ⇒ ()
         case NotFound  ⇒ ()
@@ -149,7 +149,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   def getBucketProperties(server: RiakServerInfo, bucket: String): Future[RiakBucketProperties] = {
     import spray.httpx.unmarshalling._
 
-    httpRequest(Get(PropertiesUri(server, bucket))).map { response ⇒
+    httpRequest()(Get(PropertiesUri(server, bucket))).map { response ⇒
       response.status match {
         case OK ⇒ response.entity.as[RiakBucketProperties] match {
           case Right(properties) ⇒ properties
@@ -165,7 +165,9 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
     val entity = JsObject("props" -> JsObject(newProperties.map(property ⇒ (property.name -> property.json)).toMap))
 
-    httpRequest(Put(PropertiesUri(server, bucket), entity)).map { response ⇒
+    // For some reason, Riak set bucket props HTTP endpoint doesn't handle compressed request properly.
+    // So we disable compression for this request unconditionally.
+    httpRequest(enableCompression = false)(Put(PropertiesUri(server, bucket), entity)).map { response ⇒
       response.status match {
         case NoContent            ⇒ ()
         case BadRequest           ⇒ throw new ParametersInvalid(s"Setting properties of bucket '$bucket' failed because the http request contained invalid data.")
@@ -182,7 +184,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   def allKeys(server: RiakServerInfo, bucket: String): Future[RiakKeys] = {
     import spray.httpx.unmarshalling._
 
-    httpRequest(Get(AllKeysUri(server, bucket))).map { response ⇒
+    httpRequest()(Get(AllKeysUri(server, bucket))).map { response ⇒
       response.status match {
         case OK ⇒ response.entity.as[RiakKeys] match {
           case Right(riakKeys) ⇒ riakKeys
@@ -200,8 +202,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private lazy val clientId = java.util.UUID.randomUUID().toString
   private val clientIdHeader = if (settings.AddClientIdHeader) Some(RawHeader(`X-Riak-ClientId`, clientId)) else None
 
-  private def basePipeline = {
-    if (settings.EnableHttpCompression) {
+  private def basePipeline(enableCompression: Boolean) = {
+    if (enableCompression) {
       addHeader(`Accept-Encoding`(Gzip.encoding)) ~>
         encode(Gzip) ~>
         sendReceive ~>
@@ -211,8 +213,10 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  private def httpRequest = {
-    addOptionalHeader(clientIdHeader) ~> addHeader("Accept", "*/*, multipart/mixed") ~> basePipeline
+  private def httpRequest(enableCompression: Boolean = settings.EnableHttpCompression) = {
+    addOptionalHeader(clientIdHeader) ~>
+      addHeader("Accept", "*/*, multipart/mixed") ~>
+      basePipeline(enableCompression)
   }
 
   private def createStoreHttpRequest(value: RiakValue) = {
@@ -221,7 +225,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
     addOptionalHeader(vclockHeader) ~>
       addHeaders(indexHeaders) ~>
-      httpRequest
+      httpRequest()
   }
 
   // ==========================================================================
