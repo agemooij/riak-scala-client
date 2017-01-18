@@ -19,6 +19,7 @@ package internal
 
 import akka.actor._
 import spray.http.HttpEncodingRange
+import spray.httpx.encoding.{ Decompressor, Encoder, GzipCompressor, GzipDecompressor }
 
 private[riak] object RiakHttpClientHelper {
   import spray.http.HttpEntity
@@ -264,8 +265,20 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   // Conflict Resolution
   // ==========================================================================
 
+  import spray.http._
+
+  private def decompressWith(decompressorFactory: ⇒ Decompressor)(bodyPart: BodyPart): BodyPart = {
+    bodyPart.entity match {
+      case entity @ HttpEntity.NonEmpty(contentType, data) if bodyPart.headers.find(_.isInstanceOf[`Content-Encoding`]).exists(_.value.contains("gzip")) ⇒
+        val data = entity.data
+
+        bodyPart.copy(entity = HttpEntity(contentType, decompressorFactory.decompress(data.toByteArray)), headers = bodyPart.headers.filterNot(_.isInstanceOf[`Content-Encoding`]))
+
+      case _ ⇒ bodyPart
+    }
+  }
+
   private def resolveConflict(server: RiakServerInfo, bucket: String, key: String, response: HttpResponse, resolver: RiakConflictsResolver): Future[RiakValue] = {
-    import spray.http._
     import spray.httpx.unmarshalling._
     import FixedMultipartContentUnmarshalling._
 
@@ -276,11 +289,19 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     response.entity.as[MultipartContent] match {
       case Left(error) ⇒ throw new ConflictResolutionFailed(error.toString)
       case Right(multipartContent) ⇒
-        val bodyParts =
-          if (settings.IgnoreTombstones)
-            multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
-          else
-            multipartContent.parts
+        val bodyParts = {
+          val values =
+            if (settings.IgnoreTombstones)
+              multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
+            else
+              multipartContent.parts
+
+          if (settings.EnableHttpCompression) {
+            values.map(decompressWith(new GzipDecompressor))
+          } else {
+            values
+          }
+        }
 
         val values = bodyParts.flatMap(part ⇒ toRiakValue(part.entity, vclockHeader ++ part.headers)).toSet
 
@@ -306,11 +327,19 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     response.entity.as[MultipartContent] match {
       case Left(error) ⇒ throw new BucketOperationFailed(s"Failed to parse the server response as multipart content due to: '$error'")
       case Right(multipartContent) ⇒
-        val bodyParts =
-          if (settings.IgnoreTombstones)
-            multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
-          else
-            multipartContent.parts
+        val bodyParts = {
+          val values =
+            if (settings.IgnoreTombstones)
+              multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
+            else
+              multipartContent.parts
+
+          if (settings.EnableHttpCompression) {
+            values.map(decompressWith(new GzipDecompressor))
+          } else {
+            values
+          }
+        }
 
         val values = bodyParts.flatMap(part ⇒ toRiakValue(part.entity, vclockHeader ++ part.headers)).toSet
 
