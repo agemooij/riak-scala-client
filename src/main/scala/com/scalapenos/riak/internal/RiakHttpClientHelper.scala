@@ -18,8 +18,7 @@ package com.scalapenos.riak
 package internal
 
 import akka.actor._
-import spray.http.HttpEncodingRange
-import spray.httpx.encoding.{ Decompressor, Encoder, GzipCompressor, GzipDecompressor }
+import spray.httpx.encoding.{ Decompressor, GzipDecompressor }
 
 private[riak] object RiakHttpClientHelper {
   import spray.http.HttpEntity
@@ -44,10 +43,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   import spray.http.StatusCodes._
   import spray.http.HttpHeaders._
   import spray.httpx.SprayJsonSupport._
-  import spray.httpx.encoding.{ Gzip, Deflate }
+  import spray.httpx.encoding.Gzip
   import spray.json.DefaultJsonProtocol._
-
-  import org.slf4j.LoggerFactory
 
   import SprayClientExtras._
   import RiakHttpHeaders._
