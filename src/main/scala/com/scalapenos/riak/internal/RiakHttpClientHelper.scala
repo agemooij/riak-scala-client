@@ -205,7 +205,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private val basePipeline = {
     if (settings.EnableHttpCompression) {
       addHeader(`Accept-Encoding`(Gzip.encoding)) ~>
-        addHeader(`Content-Encoding`.apply(Gzip.encoding)) ~>
         encode(Gzip) ~>
         sendReceive ~>
         decode(Gzip)
