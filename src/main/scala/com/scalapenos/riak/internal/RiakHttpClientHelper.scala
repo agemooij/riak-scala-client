@@ -18,7 +18,6 @@ package com.scalapenos.riak
 package internal
 
 import akka.actor._
-import spray.httpx.encoding.{ Decompressor, GzipDecompressor }
 
 private[riak] object RiakHttpClientHelper {
   import spray.http.HttpEntity
@@ -43,6 +42,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   import spray.http.StatusCodes._
   import spray.http.HttpHeaders._
   import spray.httpx.SprayJsonSupport._
+  import spray.httpx.encoding.Decoder
   import spray.httpx.encoding.Gzip
   import spray.json.DefaultJsonProtocol._
 
@@ -268,41 +268,23 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
   import spray.http._
 
-  private def decompressWith(decompressorFactory: ⇒ Decompressor)(bodyPart: BodyPart): BodyPart = {
-    bodyPart.entity match {
-      case entity @ HttpEntity.NonEmpty(contentType, data) if bodyPart.headers.find(_.isInstanceOf[`Content-Encoding`]).exists(_.value.contains("gzip")) ⇒
-        val data = entity.data
-
-        bodyPart.copy(entity = HttpEntity(contentType, decompressorFactory.decompress(data.toByteArray)), headers = bodyPart.headers.filterNot(_.isInstanceOf[`Content-Encoding`]))
-
-      case _ ⇒ bodyPart
-    }
-  }
-
   private def resolveConflict(server: RiakServerInfo, bucket: String, key: String, response: HttpResponse, resolver: RiakConflictsResolver): Future[RiakValue] = {
     import spray.httpx.unmarshalling._
     import FixedMultipartContentUnmarshalling._
 
-    implicit val FixedMultipartContentUnmarshaller = multipartContentUnmarshaller(HttpCharsets.`UTF-8`)
+    implicit val FixedMultipartContentUnmarshaller =
+      multipartContentUnmarshaller(HttpCharsets.`UTF-8`, if (settings.EnableHttpCompression) Some(Gzip) else None)
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
     response.entity.as[MultipartContent] match {
       case Left(error) ⇒ throw new ConflictResolutionFailed(error.toString)
       case Right(multipartContent) ⇒
-        val bodyParts = {
-          val values =
-            if (settings.IgnoreTombstones)
-              multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
-            else
-              multipartContent.parts
-
-          if (settings.EnableHttpCompression) {
-            values.map(decompressWith(new GzipDecompressor))
-          } else {
-            values
-          }
-        }
+        val bodyParts =
+          if (settings.IgnoreTombstones)
+            multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
+          else
+            multipartContent.parts
 
         val values = bodyParts.flatMap(part ⇒ toRiakValue(part.entity, vclockHeader ++ part.headers)).toSet
 
@@ -321,26 +303,19 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     import spray.httpx.unmarshalling._
     import FixedMultipartContentUnmarshalling._
 
-    implicit val FixedMultipartContentUnmarshaller = multipartContentUnmarshaller(HttpCharsets.`UTF-8`)
+    implicit val FixedMultipartContentUnmarshaller =
+      multipartContentUnmarshaller(HttpCharsets.`UTF-8`, if (settings.EnableHttpCompression) Some(Gzip) else None)
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
     response.entity.as[MultipartContent] match {
       case Left(error) ⇒ throw new BucketOperationFailed(s"Failed to parse the server response as multipart content due to: '$error'")
       case Right(multipartContent) ⇒
-        val bodyParts = {
-          val values =
-            if (settings.IgnoreTombstones)
-              multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
-            else
-              multipartContent.parts
-
-          if (settings.EnableHttpCompression) {
-            values.map(decompressWith(new GzipDecompressor))
-          } else {
-            values
-          }
-        }
+        val bodyParts =
+          if (settings.IgnoreTombstones)
+            multipartContent.parts.filterNot(part ⇒ part.headers.exists(_.lowercaseName == `X-Riak-Deleted`.toLowerCase))
+          else
+            multipartContent.parts
 
         val values = bodyParts.flatMap(part ⇒ toRiakValue(part.entity, vclockHeader ++ part.headers)).toSet
 
@@ -361,17 +336,19 @@ private[internal] object FixedMultipartContentUnmarshalling {
   import org.parboiled.common.FileUtils
   import scala.collection.JavaConverters._
   import spray.http.parser.HttpParser
+  import spray.httpx.encoding.Decoder
   import spray.httpx.unmarshalling._
   import spray.util._
   import spray.http._
   import MediaTypes._
   import HttpHeaders._
 
-  def multipartContentUnmarshaller(defaultCharset: HttpCharset): Unmarshaller[MultipartContent] =
-    multipartPartsUnmarshaller[MultipartContent](`multipart/mixed`, defaultCharset, MultipartContent(_))
+  def multipartContentUnmarshaller(defaultCharset: HttpCharset, decoder: Option[Decoder]): Unmarshaller[MultipartContent] =
+    multipartPartsUnmarshaller[MultipartContent](`multipart/mixed`, defaultCharset, decoder, MultipartContent(_))
 
   private def multipartPartsUnmarshaller[T <: MultipartParts](mediaRange: MediaRange,
     defaultCharset: HttpCharset,
+    decoder: Option[Decoder],
     create: Seq[BodyPart] ⇒ T): Unmarshaller[T] =
     Unmarshaller[T](mediaRange) {
       case HttpEntity.NonEmpty(contentType, data) ⇒
@@ -380,12 +357,20 @@ private[internal] object FixedMultipartContentUnmarshalling {
             sys.error("Content-Type with a multipart media type must have a non-empty 'boundary' parameter")
           case Some(boundary) ⇒
             val mimeMsg = new MIMEMessage(new ByteArrayInputStream(data.toByteArray), boundary, mimeParsingConfig)
-            create(convertMimeMessage(mimeMsg, defaultCharset))
+            create(convertMimeMessage(mimeMsg, defaultCharset, decoder))
         }
       case HttpEntity.Empty ⇒ create(Nil)
     }
 
-  private def convertMimeMessage(mimeMsg: MIMEMessage, defaultCharset: HttpCharset): Seq[BodyPart] = {
+  private def decompressData(headers: List[HttpHeader], decoder: Decoder)(data: Array[Byte]): Array[Byte] = {
+    if (headers.findByType[`Content-Encoding`].exists(_.encoding == decoder.encoding)) {
+      decoder.newDecompressor.decompress(data)
+    } else {
+      data // pass-through
+    }
+  }
+
+  private def convertMimeMessage(mimeMsg: MIMEMessage, defaultCharset: HttpCharset, decoder: Option[Decoder]): Seq[BodyPart] = {
     mimeMsg.getAttachments.asScala.map { part ⇒
       val rawHeaders: List[HttpHeader] = part.getAllHeaders.asScala.map(h ⇒ RawHeader(h.getName, h.getValue))(collection.breakOut)
 
@@ -401,7 +386,10 @@ private[internal] object FixedMultipartContentUnmarshalling {
             .getOrElse(ContentType(`text/plain`, defaultCharset)) // RFC 2046 section 5.1
           val outputStream = new ByteArrayOutputStream
           FileUtils.copyAll(part.readOnce(), outputStream)
-          BodyPart(HttpEntity(contentType, outputStream.toByteArray), headers)
+
+          val data = decoder.foldRight(outputStream.toByteArray)(decompressData(headers, _)(_))
+          BodyPart(HttpEntity(contentType, data), headers)
+
         case (errors, _) ⇒ sys.error("Multipart part contains %s illegal header(s):\n%s".format(errors.size, errors.mkString("\n")))
       }
     }(collection.breakOut)
