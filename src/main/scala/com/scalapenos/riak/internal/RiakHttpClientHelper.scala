@@ -42,7 +42,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   import spray.http.StatusCodes._
   import spray.http.HttpHeaders._
   import spray.httpx.SprayJsonSupport._
-  import spray.httpx.encoding.Decoder
   import spray.httpx.encoding.Gzip
   import spray.json.DefaultJsonProtocol._
 
@@ -246,7 +245,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   private def dateTimeFromLastModified(lm: `Last-Modified`): DateTime = fromSprayDateTime(lm.date)
-  private def lastModifiedFromDateTime(dateTime: DateTime): `Last-Modified` = `Last-Modified`(toSprayDateTime(dateTime))
 
   // ==========================================================================
   // Index result fetching
