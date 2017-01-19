@@ -47,7 +47,7 @@ private[riak] class RiakClientSettings(config: Config) {
    * Setting for controlling whether the Riak client should use a compression (e.g. Gzip)
    * when sending and receiving data via HTTP connection to Riak.
    *
-   * This value defaults to true.
+   * This value defaults to *false*.
    */
   final val EnableHttpCompression: Boolean = config.getBoolean("riak.enable-http-compression")
 
