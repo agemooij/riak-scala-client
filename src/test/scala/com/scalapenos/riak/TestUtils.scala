@@ -12,7 +12,6 @@ import org.specs2.time.NoTimeConversions
 
 trait AkkaActorSystemSpecification extends Specification with NoTimeConversions {
   implicit val system = ActorSystem("tests")
-  implicit val executor = system.dispatcher
 
   // manual pimped future stolen^H^Hborrowed from spray.util because a
   // spray.util._ import causes implicit resolution conflicts with the above implicit actor system
