@@ -49,6 +49,19 @@ trait RiakClientSpecification extends AkkaActorSystemSpecification with Before {
   }
 
   skipAllUnless(RiakClient(defaultSystem).ping.await)
+
+  protected def createRiakClient(enableCompression: Boolean) = {
+    val config = ConfigFactory.parseString(
+      s"""
+         |{
+         | riak {
+         |   enable-http-compression = $enableCompression
+         | }
+         |}
+      """.stripMargin)
+
+    RiakClient(createActorSystem(Some(config)))
+  }
 }
 
 trait RandomKeySupport {
@@ -60,5 +73,5 @@ trait RandomKeySupport {
 trait RandomBucketSupport {
   self: RiakClientSpecification with RandomKeySupport ⇒
 
-  def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
+  def randomBucket(implicit client: RiakClient) = client.bucket("riak-bucket-tests-" + randomKey)
 }
