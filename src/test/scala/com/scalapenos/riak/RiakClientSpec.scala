@@ -23,5 +23,4 @@ class RiakClientSpec extends RiakClientSpecification {
       client.ping.await should beTrue
     }
   }
-
 }

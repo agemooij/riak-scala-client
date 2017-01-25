@@ -44,5 +44,4 @@ class BasicInteractionsSpec extends RiakClientSpecification {
       fetchAfterDelete must beNone
     }
   }
-
 }

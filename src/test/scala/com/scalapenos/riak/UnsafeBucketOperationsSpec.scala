@@ -47,5 +47,4 @@ class UnsafeBucketOperationsSpec extends RiakClientSpecification with RandomKeyS
       allKeys.keys should be(Nil)
     }
   }
-
 }
