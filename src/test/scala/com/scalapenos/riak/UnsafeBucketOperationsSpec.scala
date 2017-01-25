@@ -17,9 +17,8 @@
 package com.scalapenos.riak
 
 class UnsafeBucketOperationsSpec extends RiakClientSpecification with RandomKeySupport with RandomBucketSupport {
-  implicit val defaultClient = client
 
-  def randomUnsafeBucketOperations = randomBucket.unsafe
+  def randomUnsafeBucketOperations = randomBucket(client).unsafe
 
   "UnsafeBucketOperations" should {
     "list all keys" in {

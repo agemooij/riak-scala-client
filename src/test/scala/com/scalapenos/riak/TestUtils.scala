@@ -12,7 +12,8 @@ import com.typesafe.config.{ Config, ConfigFactory }
 
 import org.specs2.mutable._
 import org.specs2.execute.{ Failure, FailureException }
-import org.specs2.specification.{ Fragments, Step }
+import org.specs2.specification.StandardFragments.{ Backtab, Br }
+import org.specs2.specification.{ Fragments, Step, Text }
 import org.specs2.time.NoTimeConversions
 
 trait AkkaActorSystemSpecification extends Specification with NoTimeConversions {
@@ -39,9 +40,13 @@ trait AkkaActorSystemSpecification extends Specification with NoTimeConversions 
     actorSystems.put(systemName, system)
     system
   }
+
+  protected def decorateWith(fs: ⇒ Fragments)(text: String, block: ⇒ Unit) = {
+    Seq(Br(), Br(), Text(text), Step(block)) ++: fs.middle :+ Backtab(1)
+  }
 }
 
-trait RiakClientSpecification extends AkkaActorSystemSpecification with Before {
+abstract class RiakClientSpecification extends AkkaActorSystemSpecification with Before {
   var client: RiakClient = _
 
   def before {
@@ -50,7 +55,19 @@ trait RiakClientSpecification extends AkkaActorSystemSpecification with Before {
 
   skipAllUnless(RiakClient(defaultSystem).ping.await)
 
-  protected def createRiakClient(enableCompression: Boolean) = {
+  private def specsWithParametrizedCompression(fs: ⇒ Fragments): Fragments = {
+    Seq(true, false).map { enableCompression ⇒
+      val compressionCaseText = s"When compression is ${if (enableCompression) "enabled" else "disabled"} in"
+
+      fs.copy(middle = decorateWith(fs)(text = compressionCaseText, block = {
+        client = createRiakClient(enableCompression)
+      }))
+    }.reduce(_ ^ _)
+  }
+
+  override def map(fs: ⇒ Fragments) = super.map(specsWithParametrizedCompression(fs))
+
+  private def createRiakClient(enableCompression: Boolean) = {
     val config = ConfigFactory.parseString(
       s"""
          |{
@@ -70,8 +87,7 @@ trait RandomKeySupport {
   def randomKey = randomUUID().toString
 }
 
-trait RandomBucketSupport {
-  self: RiakClientSpecification with RandomKeySupport ⇒
+trait RandomBucketSupport { self: RandomKeySupport ⇒
 
-  def randomBucket(implicit client: RiakClient) = client.bucket("riak-bucket-tests-" + randomKey)
+  def randomBucket(client: RiakClient) = client.bucket("riak-bucket-tests-" + randomKey)
 }

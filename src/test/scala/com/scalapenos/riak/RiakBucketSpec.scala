@@ -18,94 +18,87 @@ package com.scalapenos.riak
 
 class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with RandomBucketSupport {
 
-  Seq(true, false) foreach { enableCompression ⇒
-    s"When compression is ${if (enableCompression) "enabled" else "disabled"}" in {
+  "A RiakBucket" should {
+    "not be able to store an empty String value" in {
+      val bucket = randomBucket(client)
+      val key = randomKey
 
-      implicit val customClient = createRiakClient(enableCompression)
+      // Riak will reject the request with a 400 because the request will
+      // not have a body (because Spray doesn't allow empty bodies).
+      bucket.store(key, "").await must throwA[BucketOperationFailed]
+    }
 
-      "A RiakBucket" should {
-        "not be able to store an empty String value" in {
-          val bucket = randomBucket
-          val key = randomKey
+    "treat tombstone values as if they don't exist when allow_mult = false" in {
+      val bucket = randomBucket(client)
+      val key = randomKey
 
-          // Riak will reject the request with a 400 because the request will
-          // not have a body (because Spray doesn't allow empty bodies).
-          bucket.store(key, "").await must throwA[BucketOperationFailed]
-        }
+      bucket.store(key, "value").await
+      bucket.delete(key).await
 
-        "treat tombstone values as if they don't exist when allow_mult = false" in {
-          val bucket = randomBucket
-          val key = randomKey
+      val fetched = bucket.fetch(key).await
 
-          bucket.store(key, "value").await
-          bucket.delete(key).await
+      fetched should beNone
+    }
 
-          val fetched = bucket.fetch(key).await
+    "treat tombstone values as if they don't exist when allow_mult = true" in {
+      val bucket = randomBucket(client)
+      val key = randomKey
 
-          fetched should beNone
-        }
+      (bucket.allowSiblings = true).await
 
-        "treat tombstone values as if they don't exist when allow_mult = true" in {
-          val bucket = randomBucket
-          val key = randomKey
+      bucket.store(key, "value").await
+      bucket.delete(key).await
 
-          (bucket.allowSiblings = true).await
+      val fetched = bucket.fetch(key).await
 
-          bucket.store(key, "value").await
-          bucket.delete(key).await
+      fetched should beNone
+    }
 
-          val fetched = bucket.fetch(key).await
+    "fetch all sibling values and return them to the client if they exist for a given Riak entry" in {
+      val bucket = randomBucket(client)
+      val key = randomKey
 
-          fetched should beNone
-        }
+      (bucket.allowSiblings = true).await
 
-        "fetch all sibling values and return them to the client if they exist for a given Riak entry" in {
-          val bucket = randomBucket
-          val key = randomKey
+      val siblingValues = Set("value1", "value2", "value3")
 
-          (bucket.allowSiblings = true).await
-
-          val siblingValues = Set("value1", "value2", "value3")
-
-          for (value ← siblingValues) {
-            // we store values without VectorClock which causes siblings creation
-            bucket.store(key, value).await
-          }
-
-          val fetched = bucket.fetchWithSiblings(key).await
-
-          fetched should beSome
-          fetched.get.size should beEqualTo(3)
-          fetched.get.map(_.data) should beEqualTo(siblingValues)
-        }
-
-        "return a set containing a single value for given Riak entry if there are no siblings when fetching with siblings mode" in {
-          val bucket = randomBucket
-          val key = randomKey
-
-          (bucket.allowSiblings = true).await
-
-          val expectedValue = "value"
-          bucket.store(key, expectedValue).await
-
-          val fetched = bucket.fetchWithSiblings(key).await
-
-          fetched should beSome
-          fetched.get.size should beEqualTo(1)
-          fetched.get.map(_.data) should beEqualTo(Set(expectedValue))
-        }
-
-        "return None if entry hasn't been found when fetching with siblings mode" in {
-          val bucket = randomBucket
-          val key = randomKey
-
-          (bucket.allowSiblings = true).await
-
-          val fetched = bucket.fetchWithSiblings(key).await
-
-          fetched should beNone
-        }
+      for (value ← siblingValues) {
+        // we store values without VectorClock which causes siblings creation
+        bucket.store(key, value).await
       }
+
+      val fetched = bucket.fetchWithSiblings(key).await
+
+      fetched should beSome
+      fetched.get.size should beEqualTo(3)
+      fetched.get.map(_.data) should beEqualTo(siblingValues)
+    }
+
+    "return a set containing a single value for given Riak entry if there are no siblings when fetching with siblings mode" in {
+      val bucket = randomBucket(client)
+      val key = randomKey
+
+      (bucket.allowSiblings = true).await
+
+      val expectedValue = "value"
+      bucket.store(key, expectedValue).await
+
+      val fetched = bucket.fetchWithSiblings(key).await
+
+      fetched should beSome
+      fetched.get.size should beEqualTo(1)
+      fetched.get.map(_.data) should beEqualTo(Set(expectedValue))
+    }
+
+    "return None if entry hasn't been found when fetching with siblings mode" in {
+      val bucket = randomBucket(client)
+      val key = randomKey
+
+      (bucket.allowSiblings = true).await
+
+      val fetched = bucket.fetchWithSiblings(key).await
+
+      fetched should beNone
     }
   }
 }
