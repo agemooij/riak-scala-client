@@ -203,12 +203,13 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
   private def basePipeline(enableCompression: Boolean) = {
     if (enableCompression) {
-      addHeader(`Accept-Encoding`(Gzip.encoding)) ~>
-        encode(Gzip) ~>
-        sendReceive ~>
-        decode(Gzip)
+      addHeader(`Accept-Encoding`(Gzip.encoding)) ~> encode(Gzip) ~> sendReceive ~> decode(Gzip)
     } else {
-      sendReceive
+      // So one might argue why would you need even to decode if you haven't asked for a gzip response via `Accept-Encoding` header? (the enableCompression=false case).
+      // Well, there is a surprise from Riak: it will respond with gzip anyway if previous `store value` request was performed with `Content-Encoding: gzip` header! o_O
+      // Yes, it's that weird...
+      // And adding `addHeader(`Accept-Encoding`(NoEncoding.encoding))` directive for request will break it: Riak might respond with '406 Not Acceptable'
+      sendReceive ~> decode(Gzip)
     }
   }
 
@@ -271,7 +272,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     import FixedMultipartContentUnmarshalling._
 
     implicit val FixedMultipartContentUnmarshaller =
-      multipartContentUnmarshaller(HttpCharsets.`UTF-8`, if (settings.EnableHttpCompression) Some(Gzip) else None)
+      // we always pass a Gzip decoder. Just in case if Riak decides to respond with gzip suddenly. o_O
+      multipartContentUnmarshaller(HttpCharsets.`UTF-8`, decoder = Gzip)
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
@@ -302,7 +304,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     import FixedMultipartContentUnmarshalling._
 
     implicit val FixedMultipartContentUnmarshaller =
-      multipartContentUnmarshaller(HttpCharsets.`UTF-8`, if (settings.EnableHttpCompression) Some(Gzip) else None)
+      // we always pass a Gzip decoder. Just in case if Riak decides to respond with gzip suddenly. o_O
+      multipartContentUnmarshaller(HttpCharsets.`UTF-8`, decoder = Gzip)
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
@@ -341,12 +344,12 @@ private[internal] object FixedMultipartContentUnmarshalling {
   import MediaTypes._
   import HttpHeaders._
 
-  def multipartContentUnmarshaller(defaultCharset: HttpCharset, decoder: Option[Decoder]): Unmarshaller[MultipartContent] =
+  def multipartContentUnmarshaller(defaultCharset: HttpCharset, decoder: Decoder): Unmarshaller[MultipartContent] =
     multipartPartsUnmarshaller[MultipartContent](`multipart/mixed`, defaultCharset, decoder, MultipartContent(_))
 
   private def multipartPartsUnmarshaller[T <: MultipartParts](mediaRange: MediaRange,
     defaultCharset: HttpCharset,
-    decoder: Option[Decoder],
+    decoder: Decoder,
     create: Seq[BodyPart] ⇒ T): Unmarshaller[T] =
     Unmarshaller[T](mediaRange) {
       case HttpEntity.NonEmpty(contentType, data) ⇒
@@ -360,7 +363,7 @@ private[internal] object FixedMultipartContentUnmarshalling {
       case HttpEntity.Empty ⇒ create(Nil)
     }
 
-  private def decompressData(headers: List[HttpHeader], decoder: Decoder)(data: Array[Byte]): Array[Byte] = {
+  private def decompressData(headers: List[HttpHeader], decoder: Decoder, data: Array[Byte]): Array[Byte] = {
     if (headers.findByType[`Content-Encoding`].exists(_.encoding == decoder.encoding)) {
       decoder.newDecompressor.decompress(data)
     } else {
@@ -368,7 +371,7 @@ private[internal] object FixedMultipartContentUnmarshalling {
     }
   }
 
-  private def convertMimeMessage(mimeMsg: MIMEMessage, defaultCharset: HttpCharset, decoder: Option[Decoder]): Seq[BodyPart] = {
+  private def convertMimeMessage(mimeMsg: MIMEMessage, defaultCharset: HttpCharset, decoder: Decoder): Seq[BodyPart] = {
     mimeMsg.getAttachments.asScala.map { part ⇒
       val rawHeaders: List[HttpHeader] = part.getAllHeaders.asScala.map(h ⇒ RawHeader(h.getName, h.getValue))(collection.breakOut)
 
@@ -385,7 +388,7 @@ private[internal] object FixedMultipartContentUnmarshalling {
           val outputStream = new ByteArrayOutputStream
           FileUtils.copyAll(part.readOnce(), outputStream)
 
-          val data = decoder.foldRight(outputStream.toByteArray)(decompressData(headers, _)(_))
+          val data = decompressData(headers, decoder, outputStream.toByteArray)
           BodyPart(HttpEntity(contentType, data), headers)
 
         case (errors, _) ⇒ sys.error("Multipart part contains %s illegal header(s):\n%s".format(errors.size, errors.mkString("\n")))
