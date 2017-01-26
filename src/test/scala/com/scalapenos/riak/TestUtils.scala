@@ -44,6 +44,19 @@ trait AkkaActorSystemSpecification extends Specification with NoTimeConversions 
   protected def decorateWith(fs: ⇒ Fragments)(text: String, block: ⇒ Unit) = {
     Seq(Br(), Br(), Text(text), Step(block)) ++: fs.middle :+ Backtab(1)
   }
+
+  protected def createRiakClient(enableCompression: Boolean) = {
+    val config = ConfigFactory.parseString(
+      s"""
+         |{
+         | riak {
+         |   enable-http-compression = $enableCompression
+         | }
+         |}
+      """.stripMargin)
+
+    RiakClient(createActorSystem(Some(config)))
+  }
 }
 
 abstract class RiakClientSpecification extends AkkaActorSystemSpecification with Before {
@@ -66,19 +79,6 @@ abstract class RiakClientSpecification extends AkkaActorSystemSpecification with
   }
 
   override def map(fs: ⇒ Fragments) = super.map(specsWithParametrizedCompression(fs))
-
-  private def createRiakClient(enableCompression: Boolean) = {
-    val config = ConfigFactory.parseString(
-      s"""
-         |{
-         | riak {
-         |   enable-http-compression = $enableCompression
-         | }
-         |}
-      """.stripMargin)
-
-    RiakClient(createActorSystem(Some(config)))
-  }
 }
 
 trait RandomKeySupport {
