@@ -210,6 +210,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
       // Well, there is a surprise from Riak: it will respond with gzip anyway if previous `store value` request was performed with `Content-Encoding: gzip` header! o_O
       // Yes, it's that weird...
       // And adding `addHeader(`Accept-Encoding`(NoEncoding.encoding))` directive for request will break it: Riak might respond with '406 Not Acceptable'
+      // Issue for tracking: https://github.com/agemooij/riak-scala-client/issues/42
       sendReceive ~> decode(Gzip)
     }
   }
@@ -274,6 +275,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
     implicit val FixedMultipartContentUnmarshaller =
       // we always pass a Gzip decoder. Just in case if Riak decides to respond with gzip suddenly. o_O
+      // Issue for tracking: https://github.com/agemooij/riak-scala-client/issues/42
       multipartContentUnmarshaller(HttpCharsets.`UTF-8`, decoder = Gzip)
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
@@ -306,6 +308,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
     implicit val FixedMultipartContentUnmarshaller =
       // we always pass a Gzip decoder. Just in case if Riak decides to respond with gzip suddenly. o_O
+      // Issue for tracking: https://github.com/agemooij/riak-scala-client/issues/42
       multipartContentUnmarshaller(HttpCharsets.`UTF-8`, decoder = Gzip)
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
