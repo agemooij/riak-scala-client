@@ -166,6 +166,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
     // For some reason, Riak set bucket props HTTP endpoint doesn't handle compressed request properly.
     // So we disable compression for this request unconditionally.
+    // Issue for tracking: https://github.com/agemooij/riak-scala-client/issues/41
     httpRequest(enableCompression = false)(Put(PropertiesUri(server, bucket), entity)).map { response ⇒
       response.status match {
         case NoContent            ⇒ ()
