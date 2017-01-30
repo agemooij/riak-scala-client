@@ -45,7 +45,10 @@ private[riak] class RiakClientSettings(config: Config) {
 
   /**
    * Setting for controlling whether the Riak client should use a compression (e.g. Gzip)
-   * when sending and receiving data via HTTP connection to Riak.
+   * when *receiving* data via HTTP connection from Riak.
+   *
+   * *Note* that this settings does not enable requests payload compression.
+   * This is done due to a number of known problems on Riak side in regards to handling compressed requests.
    *
    * This value defaults to *false*.
    */
