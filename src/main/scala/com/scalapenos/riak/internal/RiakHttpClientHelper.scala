@@ -17,7 +17,11 @@
 package com.scalapenos.riak
 package internal
 
+import java.util.zip.ZipException
+
 import akka.actor._
+
+import scala.util.Try
 
 private[riak] object RiakHttpClientHelper {
   import spray.http.HttpEntity
@@ -202,16 +206,23 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private lazy val clientId = java.util.UUID.randomUUID().toString
   private val clientIdHeader = if (settings.AddClientIdHeader) Some(RawHeader(`X-Riak-ClientId`, clientId)) else None
 
+  private def safeDecode: ResponseTransformer = { response ⇒
+    Try(decode(Gzip).apply(response)).recover {
+      // recover from a ZipException: this means that, although the response has a "Content-Encoding: gzip" header, but it's payload is not gzipped.
+      case e: ZipException ⇒ response
+    }.get
+  }
+
   private def basePipeline(enableCompression: Boolean) = {
     if (enableCompression) {
-      addHeader(`Accept-Encoding`(Gzip.encoding)) ~> encode(Gzip) ~> sendReceive ~> decode(Gzip)
+      addHeader(`Accept-Encoding`(Gzip.encoding)) ~> encode(Gzip) ~> sendReceive ~> safeDecode
     } else {
       // So one might argue why would you need even to decode if you haven't asked for a gzip response via `Accept-Encoding` header? (the enableCompression=false case).
       // Well, there is a surprise from Riak: it will respond with gzip anyway if previous `store value` request was performed with `Content-Encoding: gzip` header! o_O
       // Yes, it's that weird...
       // And adding `addHeader(`Accept-Encoding`(NoEncoding.encoding))` directive for request will break it: Riak might respond with '406 Not Acceptable'
       // Issue for tracking: https://github.com/agemooij/riak-scala-client/issues/42
-      sendReceive ~> decode(Gzip)
+      sendReceive ~> safeDecode
     }
   }
 
