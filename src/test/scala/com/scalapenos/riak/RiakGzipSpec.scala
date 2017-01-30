@@ -17,6 +17,9 @@
 package com.scalapenos.riak
 
 import java.util.UUID.randomUUID
+import java.util.zip.ZipException
+
+import scala.concurrent.Future
 
 class RiakGzipSpec extends AkkaActorSystemSpecification {
 
@@ -80,6 +83,51 @@ class RiakGzipSpec extends AkkaActorSystemSpecification {
       // Try to fetch it with both clients (with and without compression)
       checkFetch(gzipEnabledClient, bucketName, key, expectedValue)
       checkFetch(gzipDisabledClient, bucketName, key, expectedValue)
+    }
+
+    "be able to have 2 clients (with compression) trying to delete same values from the same bucket" in {
+
+      /*
+       * This test scenario covers an interesting Riak behaviour when returning 'Not Found 404' responses to 'delete key' requests.
+       *
+       * Sometimes, Riak can return a 404 response with a text/plain body - 'not found'. However, this response MIGHT have a "Content-Encoding: gzip" header.
+       * Trying to decompress the payload of such response leads to an internal "java.util.zip.ZipException: Not in GZIP format" exception in the riak client's http pipeline.
+       */
+
+      val BatchSize = 1000
+      val BucketName = s"$baseBucketName-$randomUUID"
+
+      val client1 = createRiakClient(true)
+      val client2 = createRiakClient(true)
+
+      val bucket1 = client1.bucket(BucketName)
+      val bucket2 = client2.bucket(BucketName)
+
+      def createKey(i: Int) = s"foo-$i"
+
+      // First store initial values
+      val storeFutures =
+        for {
+          i ← 1 to BatchSize
+        } yield bucket1.storeAndFetch(createKey(i), "bar")
+
+      // Wait till all store operations succeed.
+      Future.sequence(storeFutures).await
+
+      // Now try to delete those keys twice in parallel.
+      val deleteFutures1 =
+        for {
+          i ← 1 to BatchSize
+        } yield bucket1.delete(createKey(i))
+
+      val deleteFutures2 =
+        for {
+          i ← 1 to BatchSize
+        } yield bucket2.delete(createKey(i))
+
+      // Wait for both deletion batches to succeed.
+      Future.sequence(deleteFutures1).await must not(throwAn[ZipException])
+      Future.sequence(deleteFutures2).await must not(throwAn[ZipException])
     }
   }
 
