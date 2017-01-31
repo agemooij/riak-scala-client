@@ -384,6 +384,11 @@ private[internal] object FixedMultipartContentUnmarshalling {
     }
 
   private def decompressData(headers: List[HttpHeader], decoder: Decoder, data: Array[Byte]): Array[Byte] = {
+    // According to RFC (https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html),
+    // "If multiple encodings have been applied to an entity, the content codings MUST be listed in the order in which
+    // they were applied. Additional information about the encoding parameters MAY be provided by other entity-header
+    // fields not defined by this specification."
+    // This means that, if there were multiple encodings applied, this will NOT work.
     if (headers.findByType[`Content-Encoding`].exists(_.encoding == decoder.encoding)) {
       decoder.newDecompressor.decompress(data)
     } else {
