@@ -211,7 +211,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
    */
   private def safeDecodeGzip: ResponseTransformer = { response ⇒
     Try(decode(Gzip).apply(response)).recover {
-      // recover from a ZipException: this means that, although the response has a "Content-Encoding: gzip" header, but it's payload is not gzipped.
+      // recover from a ZipException: this means that, although the response has a "Content-Encoding: gzip" header, but its payload is not gzipped.
       case e: ZipException ⇒ response
     }.get
   }
