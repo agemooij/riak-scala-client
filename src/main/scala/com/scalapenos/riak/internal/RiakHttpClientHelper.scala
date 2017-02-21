@@ -17,7 +17,11 @@
 package com.scalapenos.riak
 package internal
 
+import java.util.zip.ZipException
+
 import akka.actor._
+
+import scala.util.Try
 
 private[riak] object RiakHttpClientHelper {
   import spray.http.HttpEntity
@@ -42,9 +46,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   import spray.http.StatusCodes._
   import spray.http.HttpHeaders._
   import spray.httpx.SprayJsonSupport._
+  import spray.httpx.encoding.Gzip
   import spray.json.DefaultJsonProtocol._
-
-  import org.slf4j.LoggerFactory
 
   import SprayClientExtras._
   import RiakHttpHeaders._
@@ -165,6 +168,8 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
 
     val entity = JsObject("props" -> JsObject(newProperties.map(property ⇒ (property.name -> property.json)).toMap))
 
+    // *Warning*: for some reason, Riak set bucket props HTTP endpoint doesn't handle compressed request properly.
+    // Do not try to enable it here. Issue for tracking: https://github.com/agemooij/riak-scala-client/issues/41
     httpRequest(Put(PropertiesUri(server, bucket), entity)).map { response ⇒
       response.status match {
         case NoContent            ⇒ ()
@@ -200,10 +205,36 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   private lazy val clientId = java.util.UUID.randomUUID().toString
   private val clientIdHeader = if (settings.AddClientIdHeader) Some(RawHeader(`X-Riak-ClientId`, clientId)) else None
 
+  /**
+   * Tries to decode gzipped response payload if response has an appropriate `Content-Encoding` header.
+   * Returns the payload 'as is' if Gzip decoder throws a [[ZipException]].
+   */
+  private def safeDecodeGzip: ResponseTransformer = { response ⇒
+    Try(decode(Gzip).apply(response)).recover {
+      // recover from a ZipException: this means that, although the response has a "Content-Encoding: gzip" header, but its payload is not gzipped.
+      case e: ZipException ⇒ response
+    }.get
+  }
+
+  private def basePipeline(enableCompression: Boolean) = {
+    if (enableCompression) {
+      // Note that we don't compress request payload in here (e.g. using `encode(Gzip)` transformer).
+      // This is due to a number of known shortcomings of Riak in regards to handling gzipped requests.
+      addHeader(`Accept-Encoding`(Gzip.encoding)) ~> sendReceive ~> safeDecodeGzip
+    } else {
+      // So one might argue why would you need even to decode if you haven't asked for a gzip response via `Accept-Encoding` header? (the enableCompression=false case).
+      // Well, there is a surprise from Riak: it will respond with gzip anyway if previous `store value` request was performed with `Content-Encoding: gzip` header! o_O
+      // Yes, it's that weird...
+      // And adding `addHeader(`Accept-Encoding`(NoEncoding.encoding))` directive for request will break it: Riak might respond with '406 Not Acceptable'
+      // Issue for tracking: https://github.com/agemooij/riak-scala-client/issues/42
+      sendReceive ~> safeDecodeGzip
+    }
+  }
+
   private def httpRequest = {
     addOptionalHeader(clientIdHeader) ~>
       addHeader("Accept", "*/*, multipart/mixed") ~>
-      sendReceive
+      basePipeline(settings.EnableHttpCompression)
   }
 
   private def createStoreHttpRequest(value: RiakValue) = {
@@ -233,7 +264,6 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   }
 
   private def dateTimeFromLastModified(lm: `Last-Modified`): DateTime = fromSprayDateTime(lm.date)
-  private def lastModifiedFromDateTime(dateTime: DateTime): `Last-Modified` = `Last-Modified`(toSprayDateTime(dateTime))
 
   // ==========================================================================
   // Index result fetching
@@ -253,12 +283,16 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   // Conflict Resolution
   // ==========================================================================
 
+  import spray.http._
+
   private def resolveConflict(server: RiakServerInfo, bucket: String, key: String, response: HttpResponse, resolver: RiakConflictsResolver): Future[RiakValue] = {
-    import spray.http._
     import spray.httpx.unmarshalling._
     import FixedMultipartContentUnmarshalling._
 
-    implicit val FixedMultipartContentUnmarshaller = multipartContentUnmarshaller(HttpCharsets.`UTF-8`)
+    implicit val FixedMultipartContentUnmarshaller =
+      // we always pass a Gzip decoder. Just in case if Riak decides to respond with gzip suddenly. o_O
+      // Issue for tracking: https://github.com/agemooij/riak-scala-client/issues/42
+      multipartContentUnmarshaller(HttpCharsets.`UTF-8`, decoder = Gzip)
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
@@ -288,7 +322,10 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     import spray.httpx.unmarshalling._
     import FixedMultipartContentUnmarshalling._
 
-    implicit val FixedMultipartContentUnmarshaller = multipartContentUnmarshaller(HttpCharsets.`UTF-8`)
+    implicit val FixedMultipartContentUnmarshaller =
+      // we always pass a Gzip decoder. Just in case if Riak decides to respond with gzip suddenly. o_O
+      // Issue for tracking: https://github.com/agemooij/riak-scala-client/issues/42
+      multipartContentUnmarshaller(HttpCharsets.`UTF-8`, decoder = Gzip)
 
     val vclockHeader = response.headers.find(_.is(`X-Riak-Vclock`.toLowerCase)).toList
 
@@ -320,17 +357,19 @@ private[internal] object FixedMultipartContentUnmarshalling {
   import org.parboiled.common.FileUtils
   import scala.collection.JavaConverters._
   import spray.http.parser.HttpParser
+  import spray.httpx.encoding.Decoder
   import spray.httpx.unmarshalling._
   import spray.util._
   import spray.http._
   import MediaTypes._
   import HttpHeaders._
 
-  def multipartContentUnmarshaller(defaultCharset: HttpCharset): Unmarshaller[MultipartContent] =
-    multipartPartsUnmarshaller[MultipartContent](`multipart/mixed`, defaultCharset, MultipartContent(_))
+  def multipartContentUnmarshaller(defaultCharset: HttpCharset, decoder: Decoder): Unmarshaller[MultipartContent] =
+    multipartPartsUnmarshaller[MultipartContent](`multipart/mixed`, defaultCharset, decoder, MultipartContent(_))
 
   private def multipartPartsUnmarshaller[T <: MultipartParts](mediaRange: MediaRange,
     defaultCharset: HttpCharset,
+    decoder: Decoder,
     create: Seq[BodyPart] ⇒ T): Unmarshaller[T] =
     Unmarshaller[T](mediaRange) {
       case HttpEntity.NonEmpty(contentType, data) ⇒
@@ -339,12 +378,25 @@ private[internal] object FixedMultipartContentUnmarshalling {
             sys.error("Content-Type with a multipart media type must have a non-empty 'boundary' parameter")
           case Some(boundary) ⇒
             val mimeMsg = new MIMEMessage(new ByteArrayInputStream(data.toByteArray), boundary, mimeParsingConfig)
-            create(convertMimeMessage(mimeMsg, defaultCharset))
+            create(convertMimeMessage(mimeMsg, defaultCharset, decoder))
         }
       case HttpEntity.Empty ⇒ create(Nil)
     }
 
-  private def convertMimeMessage(mimeMsg: MIMEMessage, defaultCharset: HttpCharset): Seq[BodyPart] = {
+  private def decompressData(headers: List[HttpHeader], decoder: Decoder, data: Array[Byte]): Array[Byte] = {
+    // According to RFC (https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html),
+    // "If multiple encodings have been applied to an entity, the content codings MUST be listed in the order in which
+    // they were applied. Additional information about the encoding parameters MAY be provided by other entity-header
+    // fields not defined by this specification."
+    // This means that, if there were multiple encodings applied, this will NOT work.
+    if (headers.findByType[`Content-Encoding`].exists(_.encoding == decoder.encoding)) {
+      decoder.newDecompressor.decompress(data)
+    } else {
+      data // pass-through
+    }
+  }
+
+  private def convertMimeMessage(mimeMsg: MIMEMessage, defaultCharset: HttpCharset, decoder: Decoder): Seq[BodyPart] = {
     mimeMsg.getAttachments.asScala.map { part ⇒
       val rawHeaders: List[HttpHeader] = part.getAllHeaders.asScala.map(h ⇒ RawHeader(h.getName, h.getValue))(collection.breakOut)
 
@@ -360,7 +412,10 @@ private[internal] object FixedMultipartContentUnmarshalling {
             .getOrElse(ContentType(`text/plain`, defaultCharset)) // RFC 2046 section 5.1
           val outputStream = new ByteArrayOutputStream
           FileUtils.copyAll(part.readOnce(), outputStream)
-          BodyPart(HttpEntity(contentType, outputStream.toByteArray), headers)
+
+          val data = decompressData(headers, decoder, outputStream.toByteArray)
+          BodyPart(HttpEntity(contentType, data), headers)
+
         case (errors, _) ⇒ sys.error("Multipart part contains %s illegal header(s):\n%s".format(errors.size, errors.mkString("\n")))
       }
     }(collection.breakOut)

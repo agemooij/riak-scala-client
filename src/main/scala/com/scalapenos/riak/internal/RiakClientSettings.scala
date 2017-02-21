@@ -43,6 +43,17 @@ private[riak] class RiakClientSettings(config: Config) {
    */
   final val IgnoreTombstones: Boolean = config.getBoolean("riak.ignore-tombstones")
 
+  /**
+   * Setting for controlling whether the Riak client should use a compression (e.g. Gzip)
+   * when *receiving* data via HTTP connection from Riak.
+   *
+   * *Note* that this settings does not enable requests payload compression.
+   * This is done due to a number of known problems on Riak side in regards to handling compressed requests.
+   *
+   * This value defaults to *false*.
+   */
+  final val EnableHttpCompression: Boolean = config.getBoolean("riak.enable-http-compression")
+
   // TODO: add setting for silently ignoring indexes on backends that don't allow them. The alternative is failing/throwing exceptions
 
 }

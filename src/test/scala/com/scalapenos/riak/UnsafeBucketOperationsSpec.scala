@@ -17,7 +17,8 @@
 package com.scalapenos.riak
 
 class UnsafeBucketOperationsSpec extends RiakClientSpecification with RandomKeySupport with RandomBucketSupport {
-  def randomUnsafeBucketOperations = randomBucket.unsafe
+
+  def randomUnsafeBucketOperations = randomBucket(client).unsafe
 
   "UnsafeBucketOperations" should {
     "list all keys" in {
@@ -25,13 +26,13 @@ class UnsafeBucketOperationsSpec extends RiakClientSpecification with RandomKeyS
       val numberOfKeys = 5
       val keys = (1 to numberOfKeys).map(_ ⇒ randomKey)
 
-      keys.map { key ⇒
+      keys.foreach { key ⇒
         unsafeBucketOperations.store(key, "value").await
       }
 
       val allKeys = unsafeBucketOperations.allKeys().await
 
-      keys.map { key ⇒
+      keys.foreach { key ⇒
         unsafeBucketOperations.delete(key).await
       }
 
@@ -46,5 +47,4 @@ class UnsafeBucketOperationsSpec extends RiakClientSpecification with RandomKeyS
       allKeys.keys should be(Nil)
     }
   }
-
 }

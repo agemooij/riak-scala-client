@@ -16,12 +16,11 @@
 
 package com.scalapenos.riak
 
-class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySupport {
-  private def randomBucket = client.bucket("riak-bucket-tests-" + randomKey)
+class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomBucketSupport with RandomKeySupport {
 
   "A RiakBucket" should {
     "support setting and getting the bucket properties" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
       val oldProperties = bucket.properties.await
 
       val newNumberOfReplicas = oldProperties.numberOfReplicas + 1
@@ -49,7 +48,7 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
     }
 
     "support setting the bucket properties with an empty set (nothing happens)" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
       val oldProperties = bucket.properties.await
 
       bucket.setProperties(Set()).await
@@ -60,7 +59,7 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
     }
 
     "support directly setting the 'n_val' bucket property" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
 
       (bucket.numberOfReplicas = 5).await
       bucket.numberOfReplicas.await must beEqualTo(5)
@@ -70,7 +69,7 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
     }
 
     "support directly setting the 'allow_mult' bucket property" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
 
       (bucket.allowSiblings = true).await
       bucket.allowSiblings.await must beTrue
@@ -80,7 +79,7 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
     }
 
     "support directly setting the 'last_write_wins' bucket property" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
 
       (bucket.lastWriteWins = true).await
       bucket.lastWriteWins.await must beTrue
@@ -90,7 +89,7 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
     }
 
     "fail when directly setting the 'n_val' bucket property to any integer smaller than 1" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
 
       (bucket.numberOfReplicas = 0).await must throwA[IllegalArgumentException]
       (bucket.numberOfReplicas = -1).await must throwA[IllegalArgumentException]
@@ -103,5 +102,4 @@ class RiakBucketPropertiesSpec extends RiakClientSpecification with RandomKeySup
       NumberOfReplicas(-42) must throwA[IllegalArgumentException]
     }
   }
-
 }

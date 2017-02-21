@@ -59,6 +59,7 @@ Other features include:
     - builtin spray-json (de)serializers
 - Automatic indexing of Scala (case) classes using type classes
 - Auto-retry of fetches and stores (a standard feature of the underlying spray-client library)
+- Optional compression of Riak HTTP **responses** (see _enable-http-compression_ setting).
 
 The following Riak (http) API features are not supported at this time:
 
@@ -88,6 +89,16 @@ The riak-scala-client has been tested against [Riak] versions 1.2.x, 1.3.x, 1.4.
   And earlier version did manual double URL encoding/decoding but that was not a
   sustainable solution. Please avoid using characters like ' ', ',', '?', '&', etc.
   in index names and index values for now.
+- HTTP compression, when enabled (_enable-http-compression = true_), is only used for **Riak responses**.
+  Request payloads are sent to Riak as they are due to a number of known limitations: 
+    - Riak value that has been stored with a non-empty `Content-Encoding` header is always served by Riak 
+    with that encoding, regardless the value of `Accept-Encoding` _fetch object request_ header.
+    See https://github.com/agemooij/riak-scala-client/issues/42 for details.
+    - Riak _set bucket properties_ endpoint doesn't handle compressed payloads properly.
+    See https://github.com/agemooij/riak-scala-client/issues/41 for details.
+    - Delete requests with `Accept-Encoding: gzip` header may be served with `HTTP 404 Not Found` responses 
+    which have `Content-Encoding: gzip` header, but `text/plain` body.
+    See https://github.com/agemooij/riak-scala-client/issues/43 for details.
 
 
 ## Why such a boring name?

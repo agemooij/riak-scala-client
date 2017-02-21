@@ -20,7 +20,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
 
   "A RiakBucket" should {
     "not be able to store an empty String value" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
       val key = randomKey
 
       // Riak will reject the request with a 400 because the request will
@@ -29,7 +29,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
     }
 
     "treat tombstone values as if they don't exist when allow_mult = false" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
       val key = randomKey
 
       bucket.store(key, "value").await
@@ -41,7 +41,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
     }
 
     "treat tombstone values as if they don't exist when allow_mult = true" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
       val key = randomKey
 
       (bucket.allowSiblings = true).await
@@ -55,7 +55,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
     }
 
     "fetch all sibling values and return them to the client if they exist for a given Riak entry" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
       val key = randomKey
 
       (bucket.allowSiblings = true).await
@@ -75,7 +75,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
     }
 
     "return a set containing a single value for given Riak entry if there are no siblings when fetching with siblings mode" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
       val key = randomKey
 
       (bucket.allowSiblings = true).await
@@ -91,7 +91,7 @@ class RiakBucketSpec extends RiakClientSpecification with RandomKeySupport with 
     }
 
     "return None if entry hasn't been found when fetching with siblings mode" in {
-      val bucket = randomBucket
+      val bucket = randomBucket(client)
       val key = randomKey
 
       (bucket.allowSiblings = true).await

@@ -152,5 +152,4 @@ class ConflictResolutionSpec extends RiakClientSpecification with RandomKeySuppo
       bucket.fetch(key).await must throwA[ConflicResolutionNotImplemented]
     }
   }
-
 }
