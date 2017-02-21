@@ -19,6 +19,7 @@ package com.scalapenos.riak
 trait RiakBucket {
   import scala.concurrent.{ ExecutionContext, Future }
   import internal._
+  import RiakBucket._
 
   val name: String
 
@@ -28,7 +29,7 @@ trait RiakBucket {
    */
   def resolver: RiakConflictsResolver
 
-  def fetch(key: String): Future[Option[RiakValue]]
+  def fetch(key: String, conditionalParams: ConditionalRequestParam*): Future[Option[RiakValue]]
   def fetchWithSiblings(key: String): Future[Option[Set[RiakValue]]]
 
   def fetch(index: String, value: String): Future[List[RiakValue]] = fetch(RiakIndex(index, value))
@@ -72,4 +73,45 @@ trait RiakBucket {
   def setLastWriteWins(value: Boolean): Future[Unit] = setProperties(Set(LastWriteWins(value)))
 
   def unsafe: UnsafeBucketOperations
+}
+
+object RiakBucket {
+
+  /**
+   * Parameter for conditional request semantics.
+   * Can be used for Fetch Value and Store Value operations.
+   */
+  sealed trait ConditionalRequestParam
+
+  /**
+   * Perform a request on a RiakValue only if value's ETag does not match the given one.
+   *
+   * @param eTag the target ETag value.
+   */
+  case class IfNotMatch(eTag: ETag) extends ConditionalRequestParam
+
+  /**
+   * Perform a request on a RiakValue only if value's ETag matches the given one.
+   *
+   * @param eTag the target ETag value.
+   */
+  case class IfMatch(eTag: ETag) extends ConditionalRequestParam
+
+  /**
+   * Perform a request on a RiakValue only if value's Last-Modified time is after the given timestamp.
+   *
+   * @param timestamp
+   *
+   * *Note*: if target time is in the future then Riak always treats this condition as `true`.
+   */
+  case class IfModifiedSince(timestamp: DateTime) extends ConditionalRequestParam
+
+  /**
+   * Perform a request on a RiakValue only if value's Last-Modified time is before the given timestamp.
+   *
+   * @param timestamp
+   *
+   * *Note*: if target time is in the future then Riak always treats this condition as `true`.
+   */
+  case class IfUnmodifiedSince(timestamp: DateTime) extends ConditionalRequestParam
 }

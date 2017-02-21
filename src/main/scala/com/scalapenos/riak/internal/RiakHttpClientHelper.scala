@@ -37,7 +37,7 @@ private[riak] object RiakHttpClientHelper {
   }
 }
 
-private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSupport with RiakIndexSupport with DateTimeSupport {
+private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakHttpSupport with RiakIndexSupport with DateTimeSupport {
   import scala.concurrent.Future
   import scala.concurrent.Future._
 
@@ -52,6 +52,7 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
   import SprayClientExtras._
   import RiakHttpHeaders._
   import RiakHttpClientHelper._
+  import RiakBucket._
 
   import system.dispatcher
 
@@ -71,14 +72,15 @@ private[riak] class RiakHttpClientHelper(system: ActorSystem) extends RiakUriSup
     }
   }
 
-  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver): Future[Option[RiakValue]] = {
-    httpRequest(Get(KeyUri(server, bucket, key))).flatMap { response ⇒
+  def fetch(server: RiakServerInfo, bucket: String, key: String, resolver: RiakConflictsResolver, conditionalParams: Seq[ConditionalRequestParam] = Seq()): Future[Option[RiakValue]] = {
+    httpRequest(Get(KeyUri(server, bucket, key)).withHeaders(conditionalParams.map(_.asHttpHeader): _*)).flatMap { response ⇒
       response.status match {
-        case OK              ⇒ successful(toRiakValue(response))
-        case NotFound        ⇒ successful(None)
-        case MultipleChoices ⇒ resolveConflict(server, bucket, key, response, resolver).map(Some(_))
-        case other           ⇒ throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
-        // TODO: case NotModified => successful(None)
+        case OK                 ⇒ successful(toRiakValue(response))
+        case NotFound           ⇒ successful(None)
+        case NotModified        ⇒ successful(None) // This means that client is not able to distinguish cases when value is not in Riak or a supplied condition is not met.
+        case MultipleChoices    ⇒ resolveConflict(server, bucket, key, response, resolver).map(Some(_))
+        case PreconditionFailed ⇒ successful(None) // Fetch with If-Match header returns that if ETag value doesn't match.
+        case other              ⇒ throw new BucketOperationFailed(s"Fetch for key '$key' in bucket '$bucket' produced an unexpected response code '$other'.")
       }
     }
   }

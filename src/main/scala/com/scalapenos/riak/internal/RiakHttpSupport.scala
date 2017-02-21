@@ -17,9 +17,10 @@
 package com.scalapenos.riak
 package internal
 
-private[riak] trait RiakUriSupport {
-  import spray.http.Uri
-  import spray.http.Uri._
+private[riak] trait RiakHttpSupport {
+  import spray.http.{ Uri, HttpHeader, HttpHeaders, EntityTag }, HttpHeaders._, Uri._
+  import DateTimeSupport._
+  import RiakBucket._
 
   // ==========================================================================
   // Query Parameters
@@ -35,6 +36,22 @@ private[riak] trait RiakUriSupport {
 
   case class StoreQueryParameters(returnBody: Boolean = false) extends QueryParameters {
     def query = ("returnbody", s"$returnBody") +: Query.Empty
+  }
+
+  // ==========================================================================
+  // Conditional Request Parameters Support
+  // ==========================================================================
+
+  implicit class ConditionalHttpRequestParam(conditionalParam: ConditionalRequestParam) {
+    def asHttpHeader: HttpHeader = {
+      conditionalParam match {
+        case IfModifiedSince(date)   ⇒ `If-Modified-Since`(toSprayDateTime(date))
+        case IfUnmodifiedSince(date) ⇒ `If-Unmodified-Since`(toSprayDateTime(date))
+        case IfMatch(eTag)           ⇒ RawHeader("If-Match", eTag.value) // TODO this `If-Match`(EntityTag(eTag)) doesn't work as spray escapes double quotes in ETag value
+        case IfNotMatch(eTag)        ⇒ RawHeader("If-None-Match", eTag.value) // TODO this `If-None-Match`(EntityTag(eTag)) doesn't work as spray escapes double quotes in ETag value
+        case _                       ⇒ throw new IllegalArgumentException("Unknown conditional request param: cannot convert to HTTP header.")
+      }
+    }
   }
 
   // ==========================================================================

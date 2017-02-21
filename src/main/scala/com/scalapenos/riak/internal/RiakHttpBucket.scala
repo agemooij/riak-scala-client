@@ -17,9 +17,13 @@
 package com.scalapenos.riak
 package internal
 
+import RiakBucket._
+
 private[riak] sealed class RiakHttpBucket(helper: RiakHttpClientHelper, server: RiakServerInfo, val name: String, val resolver: RiakConflictsResolver) extends RiakBucket {
-  def fetch(key: String) = helper.fetch(server, name, key, resolver)
+
+  def fetch(key: String, conditionalParams: ConditionalRequestParam*) = helper.fetch(server, name, key, resolver, conditionalParams)
   def fetchWithSiblings(key: String) = helper.fetchWithSiblings(server, name, key, resolver)
+
   def fetch(index: RiakIndex) = helper.fetch(server, name, index, resolver)
   def fetch(indexRange: RiakIndexRange) = helper.fetch(server, name, indexRange, resolver)
 
